@@ -1,0 +1,15 @@
+mcp:
+  servers:
+    skill-server:
+      command: /opt/anaconda3/bin/python3
+      args:
+        - /Users/kentchiu/Documents/Github/new-openc/mcp_skill_agent/skill_server.py
+    filesystem-server:
+      command: /opt/anaconda3/bin/python3
+      args:
+        - /Users/kentchiu/Documents/Github/new-openc/mcp_fs/server.py
+
+openai:
+  api_key: ollama
+  base_url: http://localhost:11434/v1
+  default_model: Nemotron-3-nano
