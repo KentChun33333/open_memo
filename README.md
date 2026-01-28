@@ -1,2 +1,3 @@
 # open memo
-- collection of gist 
+
+the learning memos

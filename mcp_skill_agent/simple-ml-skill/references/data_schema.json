@@ -1,8 +1,0 @@
-{
-  "description": "Schema for CSV datasets used with simple-ml-skill.",
-  "example": {
-    "features": ["sepal_length", "sepal_width", "petal_length", "petal_width"],
-    "target": "species"
-  },
-  "required_columns": ["feature1", "feature2", "feature3", "label"]
-}

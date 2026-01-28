@@ -2,73 +2,35 @@ import os
 import glob
 import yaml
 import logging
-from dataclasses import dataclass
 from typing import Dict, List, Optional
 import sys
+import time
+
+from skill_discovery import SkillDiscovery, SkillMetadata
 
 logger = logging.getLogger(__name__)
 
-@dataclass
-class SkillMetadata:
-    name: str
-    description: str
-    path: str
-
 class SkillManager:
     def __init__(self, skills_dir: str = ".agent/skills"):
-        # Resolves to absolute path relative to the workspace root if typical, 
-        # but here we assume the script runs from root or we find the root.
-        # Let's try to be robust about finding the .agent directory.
-        self.skills_dir = os.path.abspath(skills_dir)
-        self.skills: Dict[str, SkillMetadata] = {}
-        self._load_skills()
-
-    def _load_skills(self):
-        """Scans the skills directory for SKILL.md files and parses frontmatter."""
-        pattern = os.path.join(self.skills_dir, "**", "SKILL.md")
-        # Recursive search
-        skill_files = glob.glob(pattern, recursive=True)
-        
-        for file_path in skill_files:
-            try:
-                with open(file_path, 'r', encoding='utf-8') as f:
-                    content = f.read()
-                
-                # Parse frontmatter (assumes "---" at start and after frontmatter)
-                if content.startswith("---"):
-                    parts = content.split("---", 2)
-                    if len(parts) >= 3:
-                        frontmatter_raw = parts[1]
-                        metadata = yaml.safe_load(frontmatter_raw)
-                        
-                        name = metadata.get("name")
-                        description = metadata.get("description")
-                        
-                        if name and description:
-                            self.skills[name] = SkillMetadata(
-                                name=name,
-                                description=description,
-                                path=file_path
-                            )
-            except Exception as e:
-                print(f"Error loading skill from {file_path}: {e}")
+        # Initialize discovery service
+        self.discovery = SkillDiscovery(skills_dir)
+    
+    @property
+    def skills(self) -> Dict[str, SkillMetadata]:
+        return self.discovery.skills
 
     def get_skill_names(self) -> List[str]:
-        return list(self.skills.keys())
+        return self.discovery.get_skill_names()
 
     def get_skill_description(self, name: str) -> Optional[str]:
-        skill = self.skills.get(name)
+        skill = self.discovery.get_skill_metadata(name)
         return skill.description if skill else None
 
-    def get_all_skills_info(self) -> str:
-        """Returns a formatted string of all available skills and their descriptions."""
-        info = []
-        for name, skill in self.skills.items():
-            info.append(f"- {name}: {skill.description}")
-        return "\n".join(info)
+    # Note: get_all_skills_info is REMOVED intentionally as per request to decouple discovery logic.
+    # Users should use SkillDiscovery.get_all_skills_info() directly if they need the list.
 
     def get_skill_content(self, name: str) -> str:
-        """Returns the full content of the SKILL.md file."""
+        """Returns the full content of the SKILL.md file and directory structure in raw text format."""
         logger.info(f"get_skill_content called for skill: {name}")
         skill = self.skills.get(name)
         if not skill:
@@ -79,8 +41,26 @@ class SkillManager:
         try:
             with open(skill.path, 'r', encoding='utf-8') as f:
                 content = f.read()
-                logger.info(f"Successfully read content for skill: {name} ({len(content)} bytes)")
-                return content
+            
+            # Use tree view for resource discovery
+            skill_dir = os.path.dirname(skill.path)
+            tree_view = self._generate_tree_view(skill_dir)
+            
+            # Format outputs
+            output = f"""SKILL: {skill.name}
+DESCRIPTION: {skill.description}
+PATH: {skill.path}
+
+[DIRECTORY STRUCTURE]
+{tree_view}
+
+[INSTRUCTIONS (SKILL.md)]
+{content}
+"""
+            
+            logger.info(f"Successfully constructed content for skill: {name}")
+            return output
+
         except Exception as e:
             msg = f"Error reading skill content: {e}"
             logger.error(msg)
@@ -138,9 +118,20 @@ class SkillManager:
         full_path = os.path.join(skill_dir, reference_path)
         
         if not os.path.exists(full_path):
-            msg = f"Error: Reference '{reference_path}' not found in skill '{name}'."
-            logger.error(msg)
-            return msg
+            # Fallback: check "references/" subdirectory if not already in path
+            if not reference_path.startswith("references/"):
+                 fallback_path = os.path.join(skill_dir, "references", reference_path)
+                 if os.path.exists(fallback_path):
+                     logger.info(f"Reference '{reference_path}' found in subdirectory: {fallback_path}")
+                     full_path = fallback_path
+                 else:
+                     msg = f"Error: Reference '{reference_path}' not found in skill '{name}' (checked root and references/)."
+                     logger.error(msg)
+                     return msg
+            else:
+                 msg = f"Error: Reference '{reference_path}' not found in skill '{name}'."
+                 logger.error(msg)
+                 return msg
             
         try:
             with open(full_path, 'r', encoding='utf-8') as f:
@@ -154,10 +145,12 @@ class SkillManager:
 
     def run_skill_script(self, name: str, script_name: str, args: List[str]) -> str:
         """Runs a script from the skill's scripts directory."""
-        logger.info(f"run_skill_script called for skill: {name}, script: {script_name}, args: {args}")
+        start_time = time.time()
+        logger.info(f"[SKILL_START] Executing skill '{name}' script '{script_name}' with args: {args}")
+        
         skill = self.skills.get(name)
         if not skill:
-            msg = f"Error: Skill '{name}' not found."
+            msg = f"[FAILURE] Error: Skill '{name}' not found."
             logger.error(msg)
             return msg
             
@@ -165,7 +158,7 @@ class SkillManager:
         script_path = os.path.join(skill_dir, "scripts", script_name)
         
         if not os.path.exists(script_path):
-            msg = f"Error: Script '{script_name}' not found in skill '{name}'/scripts."
+            msg = f"[FAILURE] Error: Script '{script_name}' not found in skill '{name}'/scripts."
             logger.error(msg)
             return msg
             
@@ -189,16 +182,21 @@ class SkillManager:
         print(f"[SkillManager] Executing: {' '.join(cmd)}", file=sys.stderr)
             
         try:
-            # Run the script with the skill directory as CWD
+            # Run the script with the skill directory as CWD? 
+            # NO: Users expect outputs in their project root (agent's CWD).
+            # Scripts must use __file__ to locate bundled resources.
             result = subprocess.run(
                 cmd, 
-                cwd=skill_dir, # Scripts might expect CWD to be skill root
+                cwd=os.getcwd(), # Execute in the current working directory of the agent
                 capture_output=True, 
                 text=True, 
                 timeout=60 # Increased timeout for potentially long operations
             )
             
+            duration = time.time() - start_time
             output = ""
+            status_prefix = ""
+
             # Always capture stdout
             if result.stdout:
                 output += f"Stdout:\n{result.stdout}\n"
@@ -213,21 +211,100 @@ class SkillManager:
                 
             # Capture exit code if failure
             if result.returncode != 0:
+                status_prefix = "[FAILURE] "
                 err_msg = f"\nExit Code: {result.returncode}"
                 output += err_msg
-                logger.error(f"Script failed with exit code: {result.returncode}")
+                logger.error(f"[SKILL_END] Script failed with exit code: {result.returncode} (Duration: {duration:.2f}s)")
                 print(f"[SkillManager] {err_msg}", file=sys.stderr)
             else:
-                logger.info("Script executed successfully (exit code 0)")
+                status_prefix = "[SUCCESS] "
+                logger.info(f"[SKILL_END] Script executed successfully (Duration: {duration:.2f}s)")
                 
             if not output:
                  output = "Script executed successfully with no output."
                  logger.info(output)
                  print(f"[SkillManager] {output}", file=sys.stderr)
 
-            return output
+            # [ENHANCEMENT] Append tree view of the skill directory to help the agent orient itself
+            tree_view = self._generate_tree_view(skill_dir)
+            output += f"\n\n[Skill Structure Preview]:\n{tree_view}"
+
+            # [ENHANCEMENT] Also show the Project/Current directory so Agent sees created artifacts
+            project_view = self._generate_tree_view(os.getcwd(), max_depth=2, exclude_dirs=['node_modules', '__pycache__', 'venv', 'env', '.git', '.agent'])
+            output += f"\n\n[Project Directory Preview (Depth=2)]:\n{project_view}"
+
+            return f"{status_prefix}{output}"
         except Exception as e:
-            err_msg = f"Error executing script: {e}"
-            logger.error(err_msg)
+            duration = time.time() - start_time
+            err_msg = f"[FAILURE] Error executing script: {e}"
+            logger.error(f"[SKILL_END] Script execution exception: {e} (Duration: {duration:.2f}s)")
             print(f"[SkillManager] {err_msg}", file=sys.stderr)
             return err_msg
+
+    def _generate_tree_view(self, root_dir: str, max_depth: int = 3, exclude_dirs: List[str] = None) -> str:
+        """Generates a tree-like string representation of a directory."""
+        if exclude_dirs is None:
+            exclude_dirs = []
+            
+        tree = []
+        root_name = os.path.basename(root_dir) or root_dir
+        tree.append(f"{root_name}/")
+        
+        root_dir = os.path.abspath(root_dir)
+        
+        for root, dirs, files in os.walk(root_dir):
+            # Calculate current depth
+            rel_path = os.path.relpath(root, root_dir)
+            if rel_path == ".":
+                level = 0
+            else:
+                level = rel_path.count(os.sep) + 1
+                
+            if level >= max_depth:
+                # Stop recursing into this directory
+                dirs[:] = [] 
+                continue
+
+            indent = '│   ' * (level)
+            subindent = '│   ' * (level + 1)
+            
+            # Don't show the root itself again
+            if root != root_dir:
+                dirname = os.path.basename(root)
+                tree.append(f"{indent}├── {dirname}/")
+            
+            # Filter directories in-place to prevent recursion
+            dirs[:] = [d for d in dirs if not d.startswith('.') and d not in exclude_dirs]
+            files = [f for f in files if not f.startswith('.')]
+            
+            for i, f in enumerate(files):
+                # Simple tree view
+                tree.append(f"{subindent}{f}")
+                
+        return "\n".join(tree)
+    
+    def get_skill_instruction(self, name: str) -> str:
+        """
+        Constructs a complete System Instruction for a specialized Subagent.
+        It uses the full XML content of the skill (manual + references + scripts list).
+        """
+        xml_content = self.get_skill_content(name)
+        
+        instruction = f"""You are a Specialized Subagent for the skill: '{name}'.
+Your goal is to complete a specific task using ONLY the tools and scripts provided by this skill.
+
+SKILL CONTEXT:
+{xml_content}
+
+INSTRUCTIONS:
+1. Understand the user's task.
+2. Refer to `[INSTRUCTIONS]` and `[DIRECTORY STRUCTURE]` in the Context above.
+3. You have access to `run_skill_script` to execute scripts found in the `scripts/` directory.
+4. You have access to `read_file`, `write_file`, `list_directory`, `search_files`, and `replace_in_file`.
+5. DEVELOPER PROTOCOL (CRITICAL):
+   - AFTER running an initialization script, you MUST use `list_directory` to see what was created.
+   - YOU MUST NOT STOP at the template. You MUST customize the code.
+   - Continue editing to match the user's request.
+6. If a script fails, consult the Manual and retry with corrected arguments.
+"""
+        return instruction

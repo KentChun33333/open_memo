@@ -1,4 +1,4 @@
-from fastmcp import FastMCP
+from mcp.server import FastMCP
 from skill_manager import SkillManager
 import os
 
@@ -13,10 +13,7 @@ skill_manager = SkillManager(skills_dir=skills_path)
 # Create the server
 mcp = FastMCP("Skill-Loader")
 
-@mcp.tool()
-def list_available_skills() -> str:
-    """Lists all available skills and their descriptions."""
-    return skill_manager.get_all_skills_info()
+# [REMOVED] list_available_skills: Decoupled to SkillDiscovery (upstream)
 
 @mcp.tool()
 def activate_skill(skill_name: str) -> str:

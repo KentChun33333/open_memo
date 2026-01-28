@@ -7,6 +7,9 @@ license: Complete terms in LICENSE.txt
 # Web Artifacts Builder
 
 To build powerful frontend claude.ai artifacts, follow these steps:
+
+**Agent Note**: You must complete steps 1, 2, AND 3 in sequence. Do not stop until you have produced the bundled HTML file.
+
 1. Initialize the frontend repo using `scripts/init-artifact.sh`
 2. Develop your artifact by editing the generated code
 3. Bundle all code into a single HTML file using `scripts/bundle-artifact.sh`
@@ -24,12 +27,14 @@ VERY IMPORTANT: To avoid what is often referred to as "AI slop", avoid using exc
 ### Step 1: Initialize Project
 
 Run the initialization script to create a new React project:
+
 ```bash
 bash scripts/init-artifact.sh <project-name>
 cd <project-name>
 ```
 
 This creates a fully configured project with:
+
 - ✅ React + TypeScript (via Vite)
 - ✅ Tailwind CSS 3.4.1 with shadcn/ui theming system
 - ✅ Path aliases (`@/`) configured
@@ -40,12 +45,26 @@ This creates a fully configured project with:
 
 ### Step 2: Develop Your Artifact
 
-To build the artifact, edit the generated files. See **Common Development Tasks** below for guidance.
+Start develop your artifact that you initialized in step 1.
+
+Build your application by editing the generated files:
+
+1. **Entry Point**: Modify `src/App.tsx` to implement your main logic, content and layout.
+
+2. **Components**:
+   - Create new components in `src/components/`.
+   - Use pre-installed shadcn/ui components: `import { Button } from "@/components/ui/button"`.
+3. **Styling**: Apply Tailwind CSS classes directly (e.g., `className="p-4 rounded-lg"`).
+4. **Icons**: Use `lucide-react` for icons (pre-installed).
+
+**Tip**: Keep the design self-contained. Avoid external image links if possible; use SVG components or base64 data URIs so the final bundled artifact works offline.
 
 ### Step 3: Bundle to Single HTML File
 
 To bundle the React app into a single HTML artifact:
+
 ```bash
+# you are in the  <project-name> where is the root folder now
 bash scripts/bundle-artifact.sh
 ```
 
@@ -54,6 +73,7 @@ This creates `bundle.html` - a self-contained artifact with all JavaScript, CSS,
 **Requirements**: Your project must have an `index.html` in the root directory.
 
 **What the script does**:
+
 - Installs bundling dependencies (parcel, @parcel/config-default, parcel-resolver-tspaths, html-inline)
 - Creates `.parcelrc` config with path alias support
 - Builds with Parcel (no source maps)
@@ -71,4 +91,4 @@ To test/visualize the artifact, use available tools (including other Skills or b
 
 ## Reference
 
-- **shadcn/ui components**: https://ui.shadcn.com/docs/components
+- **shadcn/ui components**: <https://ui.shadcn.com/docs/components>
