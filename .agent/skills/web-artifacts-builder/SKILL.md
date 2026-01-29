@@ -49,12 +49,12 @@ Start develop your artifact in the <Vite Project Folder> that you initialized in
 
 As professional nodejs developer, Build your application by editing the generated files, instrunction as below.
 
-Notice that the main file is src/App.tsx, you can first define the UI, then implement the logic, and components.
+Notice that the main file is <project-name>/src/App.tsx, you can first define the UI, then implement the logic, and components.
 
-1. **Entry Point**: Modify `src/App.tsx` to implement your main logic, content and layout.
+1. **Entry Point**: Modify `<project-name>/src/App.tsx` to implement your main logic, content and layout.
 
 2. **Components**:
-   - Create new components in `src/components/` if needed.
+   - Create new components in `<project-name>/src/components/` if needed.
    - Use pre-installed shadcn/ui components: `import { Button } from "@/components/ui/button"`.
 3. **Styling**: Apply Tailwind CSS classes directly (e.g., `className="p-4 rounded-lg"`).
 4. **Icons**: Use `lucide-react` for icons (pre-installed).
@@ -65,9 +65,10 @@ Notice that the main file is src/App.tsx, you can first define the UI, then impl
 
 To bundle the React app into a single HTML artifact:
 
+you are in the  <project-name> where is the root folder now, and you run the skill script at skill script folder
+
 ```bash
-# you are in the  <project-name> where is the root folder now
-bash scripts/bundle-artifact.sh
+bash <your skill folder>/scripts/bundle-artifact.sh
 ```
 
 This creates `bundle.html` - a self-contained artifact with all JavaScript, CSS, and dependencies inlined. This file can be directly shared in Claude conversations as an artifact.
@@ -83,7 +84,7 @@ This creates `bundle.html` - a self-contained artifact with all JavaScript, CSS,
 
 ### Step 4: Share Artifact with User
 
-Finally, share the bundled HTML file in conversation with the user so they can view it as an artifact.
+Finally, share or point out the bundled HTML file in conversation with the user so they can view it as an artifact.
 
 ### Step 5: Testing/Visualizing the Artifact (Optional)
 
