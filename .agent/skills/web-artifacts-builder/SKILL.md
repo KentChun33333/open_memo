@@ -43,16 +43,18 @@ This creates a fully configured project with:
 - ✅ Parcel configured for bundling (via .parcelrc)
 - ✅ Node 18+ compatibility (auto-detects and pins Vite version)
 
-### Step 2: Develop Your Artifact
+### Step 2: Develop Your Artifact in the <Vite Project Folder>
 
-Start develop your artifact that you initialized in step 1.
+Start develop your artifact in the <Vite Project Folder> that you initialized in step 1.
 
-Build your application by editing the generated files:
+As professional nodejs developer, Build your application by editing the generated files, instrunction as below.
+
+Notice that the main file is src/App.tsx, you can first define the UI, then implement the logic, and components.
 
 1. **Entry Point**: Modify `src/App.tsx` to implement your main logic, content and layout.
 
 2. **Components**:
-   - Create new components in `src/components/`.
+   - Create new components in `src/components/` if needed.
    - Use pre-installed shadcn/ui components: `import { Button } from "@/components/ui/button"`.
 3. **Styling**: Apply Tailwind CSS classes directly (e.g., `className="p-4 rounded-lg"`).
 4. **Icons**: Use `lucide-react` for icons (pre-installed).

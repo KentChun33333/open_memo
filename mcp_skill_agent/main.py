@@ -57,8 +57,7 @@ async def main(query):
             4. **Tool Usage**:
                - Only Use `run_skill_script` for skill actions.
             """,
-            # Subagent needs skill-server (for run_skill_script) and bash-tools
-            server_names=["skill-server", "code-server"] 
+            server_names=["skill-server", "file-tools"] 
         )
         
         # 3. Attach LLM and run with High Stamina (REPL Mode)
@@ -112,7 +111,7 @@ INSTRUCTIONS:
         planner = Agent(
             name="planner_agent",
             instruction=planner_instruction,
-            server_names=["skill-server", "bash-tools"] 
+            server_names=["skill-server", "file-tools"] 
         )
         
         planner_output = ""
