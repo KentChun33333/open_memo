@@ -143,10 +143,10 @@ PATH: {skill.path}
             logger.error(msg)
             return msg
 
-    def run_skill_script(self, name: str, script_name: str, args: List[str]) -> str:
-        """Runs a script from the skill's scripts directory."""
+    def run_skill_script(self, name: str, script_name: str, args: List[str], project_root: Optional[str] = None) -> str:
+        """Runs a skill script from the skill-folder, where the command is executed in the project_root folder"""
         start_time = time.time()
-        logger.info(f"[SKILL_START] Executing skill '{name}' script '{script_name}' with args: {args}")
+        logger.info(f"[SKILL_START] Executing skill '{name}' script '{script_name}' with args: {args} in cwd: {project_root}")
         
         skill = self.skills.get(name)
         if not skill:
@@ -185,9 +185,12 @@ PATH: {skill.path}
             # Run the script with the skill directory as CWD? 
             # NO: Users expect outputs in their project root (agent's CWD).
             # Scripts must use __file__ to locate bundled resources.
+            # Determine CWD: Use provided project_root or default to current process CWD
+            cwd = project_root if project_root and os.path.exists(project_root) else os.getcwd()
+
             result = subprocess.run(
                 cmd, 
-                cwd=os.getcwd(), # Execute in the current working directory of the agent
+                cwd=cwd, 
                 capture_output=True, 
                 text=True, 
                 timeout=60 # Increased timeout for potentially long operations

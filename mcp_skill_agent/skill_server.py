@@ -43,17 +43,22 @@ def read_skill_reference(skill_name: str, reference_path: str) -> str:
     return skill_manager.read_skill_reference(skill_name, reference_path)
 
 @mcp.tool()
-def run_skill_script(skill_name: str, script_name: str, args: str = "") -> str:
+def run_skill_script(skill_name: str, script_name: str, args: str = "", project_root: str = "") -> str:
     """Runs a script from the skill's scripts directory.
     
     Args:
         skill_name: The name of the skill.
         script_name: The name of the script (e.g., 'utils.py').
         args: Space-separated arguments to pass to the script.
+        project_root: Optional absolute path to run the script in (e.g., target project directory).
     """
     # Simple splitting of args string into list
     arg_list = args.split() if args else []
-    return skill_manager.run_skill_script(skill_name, script_name, arg_list)
+    
+    # Treat empty string as None for logic handling
+    cwd = project_root if project_root.strip() else None
+    
+    return skill_manager.run_skill_script(skill_name, script_name, arg_list, project_root=cwd)
 
 if __name__ == "__main__":
     mcp.run(transport="stdio")

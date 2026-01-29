@@ -1,29 +1,22 @@
 {
-  \"name\": \"mcp-skill-ui\",
-  \"version\": \"1.0.0\",
-  \"private\": true,
-  \"scripts\": {
-    \"dev\": \"next dev\",
-    \"build\": \"next build && next export\",
-    \"start\": \"next start\"
+  "name": "mcp-demo",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --open",
+    "build": "vite build",
+    "preview": "vite preview"
   },
-  \"dependencies\": {
-    \"next\": \"14.2.3\",
-    \"react\": \"18.3.1\",
-    \"react-dom\": \"18.3.1\",
-    \"@radix-ui/react-dialog\": ^1,
-    \"@radix-ui/react-toast\": ^1,
-    \"@radix-ui/react-tabs\": ^1,
-    \"@radix-ui/react-switch\": ^1,
-    \"@radix-ui/react-slot\": ^1,
-    \"@radix-ui/react-checkbox\": ^1,
-    \"@radix-ui/react-separator\": ^1,
-    \"@headlessui/react\": ^2.0.0",
-    \"@heroicons/react\": ^2.1.3\"
+  "dependencies": {
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0"
   },
-  \"devDependencies\": {
-    \"tailwindcss\": ^3.4.1\",
-    \"postcss\": ^8.4.4\",
-    \"autoprefixer\": ^10.4.18\"
+  "devDependencies": {
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.2",
+    "typescript": "^5.5.2",
+    "vite": "^5.4.0"
   }
 }

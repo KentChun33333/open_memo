@@ -2,7 +2,6 @@ import asyncio
 import os
 import re
 import sys
-import glob
 import json
 import logging
 from typing import List, Dict, Any, Optional
@@ -12,7 +11,8 @@ from mcp_agent.agents.agent import Agent
 from mcp_agent.workflows.llm.augmented_llm_openai import OpenAIAugmentedLLM
 from mcp_agent.workflows.llm.augmented_llm import RequestParams
 from skill_manager import SkillManager
-from navigator import Navigator
+from memory.session_memory import SessionMemory
+from validator import Validator
 
 # Configure logging
 logging.basicConfig(
@@ -21,19 +21,15 @@ logging.basicConfig(
     datefmt='%H:%M:%S',
     stream=sys.stderr
 )
-# Reduce noise
-logging.getLogger("mcp_agent").setLevel(logging.WARNING) 
-logger = logging.getLogger("main_v3")
+logging.getLogger("mcp_agent").setLevel(logging.WARNING)
+logger = logging.getLogger("orchestrator_v3")
 
 config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.yaml")
 
-
-
-# --- AGENT PROMPTS ---
+# --- PROMPTS ---
 
 MANAGER_INSTRUCTION = """You are the MANAGER.
 Your goal is to break down the User's Request into a sequence of ATOMIC STEPS.
-You have access to a library of Skills.
 
 User Request: "{query}"
 
@@ -42,68 +38,64 @@ Available Skills:
 
 INSTRUCTIONS:
 1. Select the most relevant skill (if any).
-2. Decompose the request into a list of steps.
-3. For EACH step, you MUST define a "Verification Artifact" - a file that checks if the step is done.
-4. IMPORTANT: Keep paths SIMPLE. Do not create deep nested structures like 'projects/my-app' unless explicitly asked. Prefer 'my-app/'.
+2. Decompose the request into steps.
+3. For EACH step, define a "Verification Artifact" (file path).
+4. KEEP PATHS SIMPLE.
 
-OUTPUT JSON FORMAT ONLY:
+OUTPUT JSON ONLY:
 {{
   "skill_used": "skill_name_or_none",
   "steps": [
     {{
-      "title": "Short Title",
-      "goal": "Precise instruction. Mention `mkdir -p` if creating directories.",
-      "artifact": "verification/file.ext" 
+      "title": "Setup Project",
+      "goal": "Initialize project structure.",
+      "artifact": "package.json",
+      "type": "ops" 
+    }},
+    {{
+      "title": "Create App Component",
+      "goal": "Write the App.tsx file.",
+      "artifact": "src/App.tsx",
+      "type": "coding"
     }}
   ]
 }}
+Note: "type" should be "coding" if it involves writing code/files, "ops" for shell commands/scripts.
 """
 
-WORKER_VP_PROMPT = """You are a WORKER Agent.
+OPS_PROMPT = """You are an OPS Agent.
 Your Goal: {goal}
 Current Working Directory: {active_dir}
 
-ROADMAP (Overview):
+ROADMAP:
 {roadmap}
 
 INSTRUCTIONS:
-1. Execute the task using available tools.
-2. If you create a file, ENSURE it is written to disk.
-3. IMPORTANT: `run_command` does not persist directory state. Always chain your commands:
-   `cd {active_dir} && <your_command>`
-4. When finished, output: [STEP_COMPLETE]
+1. Execute the task using Shell Tools or Skill Scripts.
+2. If running "run_skill_script", check the args carefully.
+3. ALWAYS chain usage: `cd {active_dir} && <command>`
+4. Output [STEP_COMPLETE] when done.
+
+{defensive_alert}
 """
 
-DEVELOPMENT_PROMPT = """You are now in the DEVELOPMENT phase.
-Your goal: Implement the application logic.
+CODING_PROMPT = """You are a CODING Agent.
+Your Goal: {goal}
+Current Working Directory: {active_dir}
 
-GOAL: {goal}
-ACTIVE_DIR: {active_dir}
-
-### INSTRUCTIONS
-1. **Explore**: Use `ls -R` to find the directory structure.
-2. **Plan**: Identify which files need modification.
-3. **Execute**: For every file you create or modify, you MUST follow this format:
-   
-   FILE: <path_relative_to_project_root>
-   ```language
-   // code here
-   ```
-
-4. **Persist**: Use the `write_file` tool for every file identified above.
-5. **Verify**: Use `ls -R` after writing to confirm the files are on disk.
-
-CONTEXT
-CONTEXT
-ACTIVE_DIR: {active_dir}
-
-ROADMAP (Overview):
+ROADMAP:
 {roadmap}
 
-IMPORTANT:
-- `run_command` usage: ALWAYS chain `cd {active_dir} && command`.
-- Do not use purple gradients or 'AI slop' designs. Focus on clean, professional implementation.
-- When done and verified, output [STEP_COMPLETE].
+INSTRUCTIONS:
+1. Plan the code structure.
+2. Use the `write_file` tool.
+3. PROTOCOL: You MUST use the `FILE:` format logic (though tool usage is primary).
+   If you show code, ensure you CALL `write_file`.
+
+CONTEXT:
+{defensive_alert}
+
+Output [STEP_COMPLETE] when verified.
 """
 
 class Orchestrator:
@@ -111,163 +103,119 @@ class Orchestrator:
         self.app = MCPApp(name="Industrial_Orchestrator_v3", settings=config_path)
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         skills_path = os.path.join(base_dir, ".agent", "skills")
+        
         self.skill_manager = SkillManager(skills_dir=skills_path)
-        self.context = {
-            "workspace_root": os.getcwd(),
-            "active_dir": os.getcwd() # Dynamic
-        }
-        self.navigator = Navigator(self.context["workspace_root"])
+        self.memory = SessionMemory(os.getcwd())
+        self.validator = Validator()
 
     async def run_manager(self, query: str) -> Dict[str, Any]:
-        """Runs the Manager Agent to produce the Plan."""
-        skills_info = self.skill_manager.discovery.get_all_skills_info()
+        """Runs Manager to get the Plan."""
+        skills = self.skill_manager.discovery.get_all_skills_info()
+        instruction = MANAGER_INSTRUCTION.format(query=query, available_skills=skills)
         
-        instruction = MANAGER_INSTRUCTION.format(
-            query=query,
-            available_skills=skills_info
-        )
-        
-        print("\n========== PHASE 1: MANAGER PLANNING ==========")
         async with self.app.run():
-            manager = Agent(
-                name="Manager",
-                instruction=instruction,
-                server_names=["skill-server"]
-            )
+            manager = Agent(name="Manager", instruction=instruction, server_names=["skill-server"])
             async with manager:
                 llm = await manager.attach_llm(OpenAIAugmentedLLM)
-                # Max iterations=1 because we just want the plan, no tool usage really needed unless it wants to read skill details
-                # But to be safe, maybe allow it to read skills.
-                response = await llm.generate_str("Create the Execution Plan.", RequestParams(max_iterations=5))
-                
-                # Extract JSON
+                response = await llm.generate_str("Create Plan", RequestParams(max_iterations=5))
                 try:
-                    # Naive extraction - improved industrial version would use a parser utility
+                    # Clean JSON
                     json_str = response.strip()
-                    if "```json" in json_str:
-                        json_str = json_str.split("```json")[1].split("```")[0]
-                    elif "```" in json_str:
-                        json_str = json_str.split("```")[1].split("```")[0]
-                    
-                    plan = json.loads(json_str)
-                    print(f"[Manager] Plan Created: {len(plan.get('steps', []))} steps.")
-                    return plan
+                    if "```json" in json_str: json_str = json_str.split("```json")[1].split("```")[0]
+                    elif "```" in json_str: json_str = json_str.split("```")[1].split("```")[0]
+                    return json.loads(json_str)
                 except Exception as e:
-                    logger.error(f"Failed to parse Manager plan: {e}")
-                    print(f"[Manager Raw Output]: {response}")
+                    logger.error(f"Plan Parsing Failed: {e}")
                     return None
 
-    async def execute_step(self, step: Dict[str, str], retry_count: int = 0):
-        """Executes a single step with a fresh Worker."""
-        print(f"\n>>> EXECUTING STEP: {step['title']}")
-        print(f"    GOAL: {step['goal']}")
-        print(f"    TARGET ARTIFACT: {step['artifact']}")
-        print(f"    CWD: {self.context['active_dir']}")
-
-        # Select Prompt based on Step Type
-        is_coding_step = any(kw in step['title'].lower() for kw in ["develop", "code", "implement", "react", "app"])
-        is_coding_step = is_coding_step or any(kw in step['goal'].lower() for kw in ["write", "create file", "component"])
+    async def execute_step(self, step: Dict[str, str], retry_count: int):
+        """Dispatch and Execute Step."""
+        # 1. Update State (Active Directory Check)
+        self.memory.update_active_folder() # Follow the cursor
         
-        roadmap = self.navigator.get_roadmap(self.context['active_dir'])
+        # 2. Defensive Check
+        context_alert = ""
+        switch = self.validator.detect_context_switch(step['title'], step['goal'])
+        if switch['detected']:
+            print(f"[Defensive] Context Switch Predicted: {switch['reason']}")
+            context_alert = f"[ALERT] This step involves {switch['reason']}. Check for a NEW directory after running."
 
-        if is_coding_step:
-            print("    [System] Detected Development Step. Using Coding Protocol.")
-            worker_instruction = DEVELOPMENT_PROMPT.format(
-                goal=step['goal'],
-                active_dir=self.context['active_dir'],
-                roadmap=roadmap
+        # 3. Dispatch Agent
+        step_type = step.get('type', 'ops')
+        is_coding = step_type == 'coding' or any(k in step['goal'].lower() for k in ['write', 'implement', 'code'])
+        
+        roadmap = self.memory.get_roadmap()
+        
+        if is_coding:
+            prompt = CODING_PROMPT.format(
+                goal=step['goal'], 
+                active_dir=self.memory.active_folder,
+                roadmap=roadmap,
+                defensive_alert=context_alert
             )
+            agent_name = f"Coder-{retry_count}"
         else:
-            worker_instruction = WORKER_VP_PROMPT.format(
-                goal=step['goal'],
-                active_dir=self.context['active_dir'],
-                roadmap=roadmap
+            prompt = OPS_PROMPT.format(
+                 goal=step['goal'], 
+                 active_dir=self.memory.active_folder,
+                 roadmap=roadmap,
+                 defensive_alert=context_alert
             )
-        
-        # Fresh Worker for every step (Industrial Pattern: Stateless Execution)
-        worker = Agent(
-            name=f"Worker-{step['title']}-{retry_count}",
-            instruction=worker_instruction,
-            server_names=["skill-server", "file-tools"]
-        )
-        
+            agent_name = f"Ops-{retry_count}"
+
+        # 4. Execute
+        worker = Agent(name=agent_name, instruction=prompt, server_names=["skill-server", "file-tools"])
         async with worker:
             llm = await worker.attach_llm(OpenAIAugmentedLLM)
-            try:
-                # We use generate_str with high iterations for ReAct self-correction within the step
-                response = await llm.generate_str(
-                    f"Execute Step: {step['title']}", 
-                    RequestParams(max_iterations=15) # Increased for coding
+            response = await llm.generate_str(f"Execute: {step['title']}", RequestParams(max_iterations=15))
+            
+            # 5. Interventions (Auto-Write)
+            missed = self.validator.detect_missed_writes(response)
+            if missed:
+                print(f"[Intervention] Missed writes detected: {missed}. Fixing...")
+                await llm.generate_str(
+                    f"You forgot to write these files: {missed}. Call write_file NOW.", 
+                    RequestParams(max_iterations=5)
                 )
-                
-                # --- INTERVENTION: Smarter Auto-Write (DeepCode Pattern) ---
-                if "FILE:" in response and "write_file" not in response:
-                     print("    [System] 'FILE:' claim detected but tool execution unclear. Checking...")
-                     
-                     # Extract matches: FILE: <path>
-                     missed_files = re.findall(r"FILE:\s*([^\s\n]+)", response)
-                     
-                     if missed_files:
-                         print(f"    [System] Detected missed writes for: {missed_files}. Triggering Intervention.")
-                         aw_prompt = f"""You identified '{missed_files}' but didn't call the tool.
-                         Call `write_file` for EACH of these paths NOW with the code you provided.
-                         Then output [STEP_COMPLETE]."""
-                         
-                         await llm.generate_str(
-                             aw_prompt,
-                             RequestParams(max_iterations=10)
-                         )
 
-                return response
-            except Exception as e:
-                logger.error(f"Worker failed: {e}")
-                return str(e)
+            return response
 
     async def run(self, query: str):
-        # 1. Manager Phase
-        plan = await self.run_manager(query)
-        if not plan or not plan.get("steps"):
-            print("Error: No valid plan generated.")
-            return
-
-        steps = plan["steps"]
+        print(f"\n⚡ ORCHESTRATOR STARTING: {query}")
         
-        # 2. Execution Loop
-        print("\n========== PHASE 2: WORKER EXECUTION ==========")
-        async with self.app.run(): # Re-enter app context for workers
-             for step in steps:
-                 step_success = False
-                 
-                 # Retry Loop
-                 for attempt in range(3):
-                     # A. Dynamic Path Finding (The Path Finder)
-                     self.context["active_dir"] = self.navigator.find_project_root(self.context["workspace_root"])
-                     
-                     # B. Run Worker
-                     await self.execute_step(step, attempt)
-                     
-                     # C. Reality Check (Disk verification)
-                     # Resolve expected artifact path relative to ACTIVE dir
-                     check_path = os.path.join(self.context["active_dir"], step["artifact"])
-                     
-                     if os.path.exists(check_path):
-                         print(f"✓ VERIFIED: {step['artifact']} exists.")
-                         step_success = True
-                         break
-                     else:
-                         print(f"✗ FAILED: {step['artifact']} not found at {check_path}.")
-                         print("  Retrying...")
-                 
-                 if not step_success:
-                     print(f"!!! CRITICAL FAILURE: Step '{step['title']}' could not be verified after 3 attempts.")
-                     break
-                     
-        print("\n========== MISSION COMPLETE ==========")
+        # Phase 1: Plan
+        plan = await self.run_manager(query)
+        if not plan: return
+        
+        print(f"\n📋 PLAN: {len(plan['steps'])} steps loaded.")
+
+        # Phase 2: Execute
+        async with self.app.run(): # Context for workers
+            for i, step in enumerate(plan['steps']):
+                print(f"\n▶️ STEP {i+1}: {step['title']}")
+                print(f"   Goal: {step['goal']}")
+                
+                success = False
+                for attempt in range(3):
+                    await self.execute_step(step, attempt)
+                    
+                    # Phase 3: Verify (Validator)
+                    result = self.validator.verify_step_artifacts([step['artifact']], self.memory.active_folder)
+                    
+                    if result['success']:
+                        print(f"   ✅ Verified: {step['artifact']}")
+                        self.memory.register_artifact(f"{i+1}", step['artifact'])
+                        success = True
+                        break
+                    else:
+                        print(f"   ❌ Failed Verification: {step['artifact']} missing. Retrying...")
+                
+                if not success:
+                    print(f"   ⛔ CRITICAL STOP: Step {i+1} failed.")
+                    break
+                    
+        print("\n✅ MISSION COMPLETE")
 
 if __name__ == "__main__":
-    query = 'please build a web artifact that example the Modle context protocol'
-    if len(sys.argv) > 1:
-        query = sys.argv[1]
-    
-    orchestrator = Orchestrator()
-    asyncio.run(orchestrator.run(query))
+    query = sys.argv[1] if len(sys.argv) > 1 else 'build a react app'
+    asyncio.run(Orchestrator().run(query))
