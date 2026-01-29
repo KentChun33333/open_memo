@@ -7,17 +7,20 @@ mcp:
     file-tools:
       command: /opt/anaconda3/bin/python3
       args:
-        - /Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent/mcp_server.py
+        - /Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent/file_server.py
     code-server:
       command: /opt/anaconda3/bin/python3
       args:
         - /Users/kentchiu/Documents/Github/open_memo/tools/code_implementation_server.py
+    memo-server:
+      command: /opt/anaconda3/bin/python3
+      args:
+        - /Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent/memo_server.py
 
 openai:
   api_key: ollama
   base_url: http://localhost:11434/v1
   default_model: Nemotron-3-nano
-  # Nemotron-3-nano
   #GLM-4.7-Flash
   #gemma3:27b - not support tools 
   #Nemotron-3-nano

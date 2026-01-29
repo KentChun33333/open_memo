@@ -17,6 +17,7 @@ class SkillStep:
     title: str
     content: str = ""
     references: List[str] = field(default_factory=list)
+    expected_artifacts: List[str] = field(default_factory=list)
     status: str = "pending"
 
 class SOPAgent:
@@ -40,20 +41,36 @@ class SOPAgent:
         logger.info("SOPAgent: Initializing Chunk-and-Tag Parsing...")
 
         # 1. Identify Steps
-        step_titles = await self._identify_steps(skill_content)
-        if not step_titles:
+        # 1. Identify Steps & Expectations
+        step_data = await self._identify_steps(skill_content)
+        if not step_data:
             logger.warning("No steps identified. Falling back to single step.")
             self.steps = [SkillStep(id=1, title="Execute Skill", content=skill_content)]
             return
 
         # Initialize Steps
-        self.steps = [SkillStep(id=i+1, title=title) for i, title in enumerate(step_titles)]
+        # Initialize Steps (Rich Metadata)
+        # Handle backward compatibility if _identify_steps returns plain strings (though we updated it)
+        try:
+             self.steps = []
+             for i, s_data in enumerate(step_data):
+                  if isinstance(s_data, str):
+                       self.steps.append(SkillStep(id=i+1, title=s_data))
+                  else:
+                       title = s_data.get("title", f"Step {i+1}")
+                       artifacts = s_data.get("expected_files", [])
+                       self.steps.append(SkillStep(id=i+1, title=title, expected_artifacts=artifacts))
+        except Exception:
+             # Fallback
+             self.steps = [SkillStep(id=i+1, title=t) for i, t in enumerate(step_data)]
         
         # 2. Chunk Content
         chunks = self._split_by_paragraphs(skill_content)
         
         # 3. Tag Chunks
-        tagged_map = await self._tag_chunks(chunks, step_titles)
+        # Extract titles for tagging prompt
+        titles_only = [s.title for s in self.steps]
+        tagged_map = await self._tag_chunks(chunks, titles_only)
         
         # 4. Aggregate Content & References
         for i, step in enumerate(self.steps):
@@ -77,20 +94,25 @@ class SOPAgent:
         self.current_index = 0
         logger.info(f"SOPAgent: Parsed {len(self.steps)} steps.")
 
-    async def _identify_steps(self, content: str) -> List[str]:
-        """Ask LLM to list high-level steps."""
+    async def _identify_steps(self, content: str) -> List[Dict]:
+        """Ask LLM to list high-level steps with expected artifacts."""
         prompt = f"""You are a PLANNER.
-Analyze the following Technical Manual and list the High-Level Execution Steps.
+Analyze the Technical Manual. 
+Break it down into Execution Steps.
+For each step, identify ANY file/artifact that MUST exist after completion.
 
 MANUAL:
-{content[:10000]}...
+{content[:15000]}...
 
 OUTPUT JSON ONLY:
 {{
-  "steps": ["Step 1 Title", "Step 2 Title"]
+  "steps": [
+    {{ "title": "Initialize Repository", "expected_files": ["package.json"] }},
+    {{ "title": "Create User Component", "expected_files": ["src/components/User.tsx"] }}
+  ]
 }}
 """
-        agent = Agent(name="StepIdent", instruction="Extract steps as JSON.")
+        agent = Agent(name="StepIdent", instruction="Extract steps and artifacts as JSON.")
         async with agent:
             llm = await agent.attach_llm(OpenAIAugmentedLLM)
             try:
@@ -207,3 +229,29 @@ OUTPUT JSON ONLY:
             if step == self.get_current_step(): mark = "[/]"
             summary.append(f"{mark} {step.title}")
         return "\n".join(summary)
+
+    def detect_context_switch(self, step: SkillStep) -> Dict[str, Union[bool, str]]:
+        """
+        Defensive Check: Analyze step to predict if it will change the filesystem root.
+        Focuses on: 'run_skill_script', 'mkdir', 'create project', 'cd'.
+        """
+        content_lower = step.content.lower() + " " + step.title.lower()
+        
+        # 1. Script Execution (High Probability of Init)
+        if "run_skill_script" in content_lower:
+            return {"detected": True, "reason": "Detected 'run_skill_script' execution."}
+            
+        # 2. Key Phrases
+        triggers = [
+            "mkdir", 
+            "create project", 
+            "new project", 
+            "initialize", 
+            "cd "
+        ]
+        
+        for trigger in triggers:
+            if trigger in content_lower:
+                return {"detected": True, "reason": f"Detected keyword '{trigger}'."}
+                
+        return {"detected": False, "reason": ""}

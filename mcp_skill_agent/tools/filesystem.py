@@ -21,7 +21,7 @@ def read_file(path: str) -> str:
 
 @mcp.tool()
 def write_file(path: str, content: str) -> str:
-    """Writes content to a file at the given path. Overwrites if exists."""
+    """Writes content to a file or artifacts or code asset at the given path. Overwrites if exists."""
     logger.info(f"Writing file to: {path}")
     try:
         os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
@@ -40,18 +40,7 @@ def list_directory() -> str:
     logger.info(f"Listing directory tree (glob): {path}")
     
     try:
-        # Use glob to find all files recursively
-        # recursive=True with '**' matches all files and directories
-        # we can filter if needed, but 'all files' usually implies excluding directories or including them.
-        # User requested 'list all files under current root', usually implies paths.
-        
         files = glob.glob('**/*', recursive=True)
-        
-        # Filter out hidden files/dirs if desired, matching previous behavior
-        # Previous behavior: if not (i.startswith(".") and i != ".")
-        # Glob doesn't match dotfiles by default unless patterns start with dot.
-        # '**/*' will not match .git/ etc usually.
-        
         output = f"Contents of {path} (recursive):\n"
         for f in files:
             output += f"{f}\n"
