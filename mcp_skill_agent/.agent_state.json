@@ -1,16 +1,36 @@
 {
   "workspace_root": "/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent",
   "active_folder": "/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent",
-  "artifacts": {
-    "2": [
-      "src/App.tsx"
-    ],
-    "1": [
-      "/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent/mcp_react_app/package.json"
-    ]
-  },
-  "logs": [],
-  "directory_tree": [],
+  "artifacts": {},
+  "logs": [
+    "Step 1 Started: Initialize Repository",
+    "Step 1 Started: Initialize Repository",
+    "Step 1 Started: Initialize Project"
+  ],
+  "directory_tree": [
+    "\ud83d\udcc2 mcp_skill_agent/ (Current)",
+    "  \ud83d\udcc4 config_loader.py",
+    "  \ud83d\udcc4 main_v3.py",
+    "  \ud83d\udcc4 sop_agent.py",
+    "  \ud83d\udcc4 skill_discovery.py",
+    "  \ud83d\udcc4 skill_server.py",
+    "  \ud83d\udcc4 config.yaml",
+    "  \ud83d\udcc4 __init__.py",
+    "  ... (11 more file(s))",
+    "  \ud83d\udcc2 tools/",
+    "    \ud83d\udcc4 python_runner.py",
+    "    \ud83d\udcc4 tasks.py",
+    "    \ud83d\udcc4 filesystem.py",
+    "    \ud83d\udcc4 __init__.py",
+    "    \ud83d\udcc4 core.py",
+    "    \ud83d\udcc4 editor.py",
+    "    \ud83d\udcc4 executor.py",
+    "  \ud83d\udcc2 orchestrator/",
+    "    \ud83d\udcc4 __init__.py",
+    "    \ud83d\udcc4 step_executor.py",
+    "    \ud83d\udcc4 orchestrator.py",
+    "    \ud83d\udcc4 verifier.py"
+  ],
   "current_step_id": 0,
-  "state_file": ".agent_state.json"
+  "state_file": "/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent/.agent_state.json"
 }

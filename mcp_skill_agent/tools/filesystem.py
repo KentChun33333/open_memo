@@ -33,11 +33,10 @@ def write_file(path: str, content: str) -> str:
         return f"Error writing file: {str(e)}"
 
 @mcp.tool()
-def list_directory() -> str:
-    """Lists all files under the current working directory using glob."""
+def list_directory(path: str = ".") -> str:
+    """Lists all files under the given root directory using glob."""
     import glob
-    path = os.getcwd()
-    logger.info(f"Listing directory tree (glob): {path}")
+    logger.info(f"Listing directory tree (glob): {path}")``
     
     try:
         files = glob.glob('**/*', recursive=True)

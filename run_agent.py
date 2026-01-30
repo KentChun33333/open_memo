@@ -2,16 +2,13 @@ import sys
 import os
 import asyncio
 
-# Fix import path to include parent directory
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Add current directory to path so we can import mcp_skill_agent
+sys.path.append(os.getcwd())
 
 from mcp_skill_agent.orchestrator import Orchestrator
 
 def main():
-    """
-    Main Entry Point for the Production Skill Agent.
-    Delegates lifecycle management to the Orchestrator.
-    """
+    """Run the Production Orchestrator from the project root."""
     query = 'please build a web artifact that example the Modle context protocol'
     if len(sys.argv) > 1:
         query = sys.argv[1]

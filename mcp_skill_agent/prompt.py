@@ -34,7 +34,7 @@ EXPECTED ARTIFACTS (VALIDATION TARGETS):
 {tool_context_str}
 
 CRITICAL PROTOCOL:
-1. CONSULT ROADMAP: You have a map above. Use it to orient yourself. Do NOT call `list_dir` unless verifying a NEWly created directory.
+1. CONSULT ROADMAP: You have a map above. Use it to orient yourself and validate new generated files.
 2. TRUST THE SYSTEM: The system will verify your work.
    - Just create the file/artifact.
    - Output `CREATED_FILE: <relative_path>` immediately.
