@@ -5,15 +5,7 @@ import logging
 from typing import Dict, List, Optional
 import sys
 import time
-
-try:
-    print(f"[DEBUG] SkillManager Import: Path={sys.path}", file=sys.stderr)
-    from .skill_discovery import SkillDiscovery, SkillMetadata
-    print("[DEBUG] Import successful: relative (.skill_discovery)", file=sys.stderr)
-except ImportError as e:
-    print(f"[DEBUG] Relative import failed ({e}). Trying absolute.", file=sys.stderr)
-    from skill_discovery import SkillDiscovery, SkillMetadata
-    print("[DEBUG] Import successful: absolute (skill_discovery)", file=sys.stderr)
+from skill_discovery import SkillDiscovery, SkillMetadata
 
 logger = logging.getLogger(__name__)
 

@@ -1,5 +1,6 @@
 import os
 import logging
+import glob
 from mcp.server.fastmcp import FastMCP
 from typing import Literal, Optional, List, Union
 from pathlib import Path
@@ -55,24 +56,6 @@ def write_file(path: str, content: str) -> str:
     except Exception as e:
         logger.error(f"Error writing file: {str(e)}")
         return f"Error writing file: {str(e)}"
-
-@mcp.tool()
-def list_directory() -> str:
-    """Lists all files under the current working directory using glob."""
-    import glob
-    path = os.getcwd()
-    logger.info(f"Listing directory tree (glob): {path}")
-    
-    try:
-        files = glob.glob('**/*', recursive=True)
-        output = f"Contents of {path} (recursive):\n"
-        for f in files:
-            output += f"{f}\n"
-            
-        return output
-    except Exception as e:
-        logger.error(f"Error listing directory: {str(e)}")
-        return f"Error listing directory: {str(e)}"
 
 
 def maybe_truncate(
