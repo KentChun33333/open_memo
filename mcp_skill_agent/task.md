@@ -1,5 +1,5 @@
 # Task List
 
 - [ ] Initialize Project <!-- id: 1 -->
-- [ ] Develop Artifact (Edit src/App.tsx) <!-- id: 2 -->
-- [ ] Bundle Artifact to Single HTML File <!-- id: 3 -->
+- [ ] Develop Artifact in Vite Project <!-- id: 2 -->
+- [ ] Bundle into Single HTML File <!-- id: 3 -->

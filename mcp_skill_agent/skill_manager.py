@@ -226,15 +226,6 @@ PATH: {skill.path}
                  output = "Script executed successfully with no output."
                  logger.info(output)
                  print(f"[SkillManager] {output}", file=sys.stderr)
-
-            # [ENHANCEMENT] Append tree view of the skill directory to help the agent orient itself
-            tree_view = self._generate_tree_view(skill_dir)
-            output += f"\n\n[Skill Structure Preview]:\n{tree_view}"
-
-            # [ENHANCEMENT] Also show the Project/Current directory so Agent sees created artifacts
-            project_view = self._generate_tree_view(os.getcwd(), max_depth=2, exclude_dirs=['node_modules', '__pycache__', 'venv', 'env', '.git', '.agent'])
-            output += f"\n\n[Project Directory Preview (Depth=2)]:\n{project_view}"
-
             return f"{status_prefix}{output}"
         except Exception as e:
             duration = time.time() - start_time
@@ -301,12 +292,10 @@ SKILL CONTEXT:
 INSTRUCTIONS:
 1. Understand the user's task.
 2. Refer to `[INSTRUCTIONS]` and `[DIRECTORY STRUCTURE]` in the Context above.
-3. You have access to `run_skill_script` to execute scripts found in the `scripts/` directory.
-4. You have access to `read_file`, `write_file`, `list_directory`, `search_files`, and `replace_in_file`.
-5. DEVELOPER PROTOCOL (CRITICAL):
-   - AFTER running an initialization script, you MUST use `list_directory` to see what was created.
+3. You have access to `run_skill_script` to execute scripts found in the `<skill_name>/scripts/` directory.
+4. DEVELOPER PROTOCOL (CRITICAL):
    - YOU MUST NOT STOP at the template. You MUST customize the code.
    - Continue editing to match the user's request.
-6. If a script fails, consult the Manual and retry with corrected arguments.
+5. If a script fails, consult the Manual and retry with corrected arguments.
 """
         return instruction

@@ -37,7 +37,6 @@ CRITICAL PROTOCOL:
 1. CONSULT ROADMAP: You have a map above. Use it to orient yourself and validate new generated files.
 2. TRUST THE SYSTEM: The system will verify your work.
    - Just create the file/artifact.
-   - Output `CREATED_FILE: <relative_path>` immediately.
    - Do NOT double-check using tools unless you encounter an error.
 3. OUTPUT SIGNAL: End with [STEP_COMPLETE] when done.
 """
