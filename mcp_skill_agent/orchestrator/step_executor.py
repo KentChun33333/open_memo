@@ -27,9 +27,10 @@ class StepExecutor:
     - Spawns an EPHEMERAL Worker Agent.
     - Runs the ReAct loop.
     """
-    def __init__(self, memory_manager: SessionMemoryManager, tool_context_str: str):
+    def __init__(self, memory_manager: SessionMemoryManager, tool_context_str: str, telemetry: Any = None):
         self.memory_manager = memory_manager
         self.tool_context_str = tool_context_str
+        self.telemetry = telemetry
         self.max_react_steps = 15 # Configurable?
 
     async def execute(self, 
@@ -45,7 +46,11 @@ class StepExecutor:
         """
         # 1. Prepare Context (Snapshot)
         active_folder = self.memory_manager.memory.active_folder
-        context_from_previous = json.dumps(self.memory_manager.memory.artifacts, indent=2)
+        session_snapshot = {
+            "artifacts": self.memory_manager.memory.artifacts,
+            "env_vars": self.memory_manager.memory.env_vars
+        }
+        session_context = json.dumps(session_snapshot, indent=2)
         roadmap = self.memory_manager.get_roadmap()
         expectations = getattr(current_step, "expected_artifacts", [])
 
@@ -54,7 +59,7 @@ class StepExecutor:
             task_input=task_input,
             active_folder=active_folder,
             roadmap=roadmap,
-            context_from_previous=context_from_previous,
+            session_context=session_context,
             expectations=json.dumps(expectations, indent=2),
             tool_context_str=self.tool_context_str
         )
@@ -69,6 +74,12 @@ class StepExecutor:
         
         # Log Start
         self.memory_manager.log_event(f"Step {current_step.id} Started: {current_step.title}")
+        if self.telemetry:
+            self.telemetry.log_event(
+                event_type="STEP_START",
+                step_id=current_step.id,
+                details={"title": current_step.title, "attempt": attempt_idx}
+            )
 
         # 3. Spawn Ephemeral Agent
         worker_name = f"Worker-{skill_name}-{current_step.id}-{attempt_idx}"
@@ -111,7 +122,16 @@ class StepExecutor:
                     response = await llm.generate_str(current_prompt, RequestParams(max_iterations=self.max_react_steps))
                     final_response = response
                     
+                    final_response = response
+                    
                     logger.debug(f"[{worker_name}] Cycle {cycle} Output: {response[:100]}...")
+                    if self.telemetry:
+                        self.telemetry.log_event(
+                            event_type="ACTION", 
+                            step_id=current_step.id,
+                            agent_name=worker_name,
+                            details={"cycle": cycle, "response_preview": response[:200]}
+                        )
 
                     # --- Intervention: Auto-Write ---
                     if "```" in response and "write_file" not in response:
@@ -132,3 +152,4 @@ class StepExecutor:
             success=True, # Tentative, Verify decides
             output=final_response
         )
+

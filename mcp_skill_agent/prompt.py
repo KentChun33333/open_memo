@@ -25,8 +25,8 @@ CURRENT WORKING DIRECTORY: {active_folder}
 ROADMAP:
 {roadmap}
 
-PREVIOUS ARTIFACTS:
-{context_from_previous}
+CURRENT SESSION STATE:
+{session_context}
 
 EXPECTED ARTIFACTS (VALIDATION TARGETS):
 {expectations}
@@ -38,7 +38,13 @@ CRITICAL PROTOCOL:
 2. TRUST THE SYSTEM: The system will verify your work.
    - Just create the file/artifact.
    - Do NOT double-check using tools unless you encounter an error.
+   - Do not roll back to previous steps. Solve the error within the current step.
 3. OUTPUT SIGNAL: End with [STEP_COMPLETE] when done.
+
+SELF-CORRECTION CHECKLIST (MUST DO BEFORE COMPLETING):
+1. DEPENDENCY CHECK: If you imported a new library, did you check package.json/requirements.txt?
+2. SYNTAX CHECK: Did you verify your code isn't broken?
+3. FILE CHECK: Did you actually write the file?
 """
 
 USER_PROMPT_TEMPLATE = """
@@ -51,11 +57,11 @@ CONTEXT (SOP):
 {sop_context}
 """
 
-AUTO_WRITE_PROMPT = """if seems You provided code snippets in the previous response.
-You must now PHYSICALLY WRITE them to the disk using `write_file`.
-Do not ask for permission. Just write them.
-If they are already written, output [STEP_COMPLETE].
-"""
+# AUTO_WRITE_PROMPT = """if seems You provided code snippets in the previous response.
+# You must now PHYSICALLY WRITE them to the disk using `write_file`.
+# Do not ask for permission. Just write them.
+# If they are already written, output [STEP_COMPLETE].
+# """
 
 AUTO_WRITE_PROMPT = """I detected code blocks in your previous message that were not saved to disk.
 1. Identify every file path mentioned in your code blocks.
@@ -65,12 +71,25 @@ AUTO_WRITE_PROMPT = """I detected code blocks in your previous message that were
 
 Do not explain yourself. Just call the tools."""
 
-#This is a solid "nudge" prompt, 
-# but it contains a logic trap that often trips up agents in production. 
-# The phrase "if after checks, there is no code snippets, 
-# just output [STEP_COMPLETE]" gives the agent a "lazy exit."
-# 
-# In industrial practice, we call this the "False Positive Escape." 
-# If the agent is tired or the context is too long, 
-# it will hallucinate that "there were no snippets"
-# just to reach the [STEP_COMPLETE] signal and stop working.
+
+CRITIC_INSTRUCTION = """You are a TECHNICAL CRITIC.
+Your goal is to AUDIT the work of a Subagent based on the provided XML Context.
+
+CONTEXT:
+{context_xml}
+
+PROTOCOL:
+1. READ: Parse the <WorkerOutput> and <StepTitle>.
+2. VERIFY:
+   - Use `read_files` to inspect all created/modified files.
+   - Use `check_syntax` on every file.
+   - Use `validate_imports` on every file.
+3. VALIDATE against <ProjectRoadmap>:
+   - Did the agent create files in the correct directories?
+   - Are there duplicates or misplaced files?
+4. DECISION:
+   - If ANY blocking issue (syntax, import, logic, wrong folder) is found:
+     Output: [REJECTED] followed by a numbered list of fixes.
+   - If acceptable:
+     Output: [APPROVED]
+"""

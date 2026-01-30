@@ -1,4 +1,5 @@
 import os
+import glob
 import json
 import logging
 from typing import List, Dict, Any, Optional
@@ -13,6 +14,8 @@ class SessionMemory:
     artifacts: Dict[str, List[str]] = field(default_factory=dict)
     logs: List[str] = field(default_factory=list)
     directory_tree: List[str] = field(default_factory=list)
+    env_vars: Dict[str, str] = field(default_factory=dict)     # New: Environment Variables
+    step_outputs: Dict[int, str] = field(default_factory=dict) # New: Step Outputs
     current_step_id: int = 0
     state_file: str = ".agent_state.json"
 
@@ -51,6 +54,8 @@ class SessionMemoryManager:
                         artifacts=data.get("artifacts", {}),
                         logs=data.get("logs", []),
                         directory_tree=data.get("directory_tree", []),
+                        env_vars=data.get("env_vars", {}),
+                        step_outputs={int(k): v for k, v in data.get("step_outputs", {}).items()},
                         current_step_id=data.get("current_step_id", 0),
                         state_file=data.get("state_file", ".agent_state.json")
                     )
@@ -143,34 +148,53 @@ class SessionMemoryManager:
         self.save_state()
 
     def get_roadmap(self) -> str:
-        """Generates a concise tree view of the active folder."""
+        """Generates a concise tree view of the active folder using glob."""
         tree_lines = []
         active_dir = self.memory.active_folder
-        start_depth = active_dir.rstrip(os.sep).count(os.sep)
         
-        for root, dirs, files in os.walk(active_dir):
-            current_depth = root.rstrip(os.sep).count(os.sep)
-            level = current_depth - start_depth
+        # Define ignored directories
+        IGNORED_DIRS = {".git", "node_modules", ".venv", "__pycache__", "dist", "build", "memory"}
+        
+        # Root display
+        display_name = os.path.basename(active_dir) or active_dir
+        tree_lines.append(f"📂 {display_name}/ (Current)")
+        
+        def process_directory(path: str, current_level: int, max_level: int = 2):
+            try:
+                # Use glob to find all items in the current directory
+                items = sorted(glob.glob(os.path.join(path, "*")))
+            except Exception:
+                return
+
+            sub_dirs = []
+            sub_files = []
             
-            if level > 2: # Max depth 2 for readability
-                continue
-            
-            # Filter in-place
-            dirs[:] = [d for d in dirs if d not in [".git", "node_modules", ".venv", "__pycache__", "dist", "build", "memory"]]
-            
-            indent = "  " * level
-            display_name = os.path.basename(root) or root
-            if level == 0:
-                tree_lines.append(f"📂 {display_name}/ (Current)")
-            else:
-                tree_lines.append(f"{indent}📂 {display_name}/")
+            for item in items:
+                name = os.path.basename(item)
+                if name.startswith("."): continue
                 
-            sub_indent = "  " * (level + 1)
-            for i, f in enumerate(files):
-                if f.startswith("."): continue
-                if i > 8: 
-                    tree_lines.append(f"{sub_indent}... ({len(files)-8} more file(s))")
+                if os.path.isdir(item):
+                    if name not in IGNORED_DIRS:
+                        sub_dirs.append(item)
+                else:
+                    sub_files.append(item)
+            
+            # Print files
+            file_indent = "  " * (current_level + 1)
+            for i, f in enumerate(sub_files):
+                if i > 8:
+                    tree_lines.append(f"{file_indent}... ({len(sub_files)-8} more file(s))")
                     break
-                tree_lines.append(f"{sub_indent}📄 {f}")
-                
+                tree_lines.append(f"{file_indent}📄 {os.path.basename(f)}")
+            
+            # Recurse into directories
+            next_level = current_level + 1
+            if next_level <= max_level:
+                for d in sub_dirs:
+                    dir_name = os.path.basename(d)
+                    dir_indent = "  " * next_level
+                    tree_lines.append(f"{dir_indent}� {dir_name}/")
+                    process_directory(d, next_level, max_level)
+
+        process_directory(active_dir, 0)
         return "\n".join(tree_lines)

@@ -19,6 +19,8 @@ class SkillStep:
     references: List[str] = field(default_factory=list)
     expected_artifacts: List[str] = field(default_factory=list)
     status: str = "pending"
+    allow_rollback: bool = False
+    
 
 class SOPAgent:
     def __init__(self, app: MCPApp):

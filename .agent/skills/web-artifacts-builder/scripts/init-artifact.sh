@@ -68,6 +68,11 @@ $SED_INPLACE 's/<title>.*<\/title>/<title>'"$PROJECT_NAME"'<\/title>/' index.htm
 echo "📦 Installing base dependencies..."
 pnpm install
 
+# Pin @types/react-dom to match React 18 (prevent v19 mismatch)
+echo "📌 Pinning @types/react-dom to ^18.3.1..."
+pnpm add -D @types/react-dom@^18.3.1
+
+
 # Pin Vite version for Node 18
 if [ "$NODE_VERSION" -lt 20 ]; then
   echo "📌 Pinning Vite to $VITE_VERSION for Node 18 compatibility..."

@@ -17,6 +17,7 @@ from ..memory.session_memory import SessionMemoryManager
 from .step_executor import StepExecutor
 from .verifier import Verifier
 from ..prompt import PLANNER_INSTRUCTION
+from ..telemetry import TelemetryManager
 
 # Setup Logger
 logger = get_logger("orchestrator")
@@ -66,6 +67,7 @@ class Orchestrator:
         skills_path = os.path.join(self.base_dir, ".agent", "skills")
         self.skill_manager = SkillManager(skills_dir=skills_path)
         self.memory_manager = SessionMemoryManager(os.getcwd())
+        self.telemetry = TelemetryManager()
         
         logger.info("Orchestrator Initialized.")
 
@@ -108,7 +110,7 @@ It is highly likely that a NEW directory will be created or the context will cha
 3. If you run a script, VERIFY the folder structure afterwards."""
                 
                 # 2. Execute Step
-                executor = StepExecutor(self.memory_manager, tool_context)
+                executor = StepExecutor(self.memory_manager, tool_context, self.telemetry)
                 
                 # Retry Loop (Orchestrator Level)
                 max_retries = 2
@@ -151,14 +153,24 @@ It is highly likely that a NEW directory will be created or the context will cha
                          retry_feedback = "VALIDATION ERROR: Files claimed but not found."
                     elif explicit_done or (not missing and expectations) or is_script:
                          # Success!
-                         step_success = True
                          
-                         # Register Artifacts
-                         for vf in verified:
-                             self.memory_manager.register_artifact(str(current_step.id), vf)
+                         # --- CRITIC PHASE ---
+                         critic_feedback = await self._run_critic_phase(result.output, current_step)
                          
-                         logger.info(f"Step {current_step.id} Complete.")
-                         break # Exit Retry Loop
+                         if "[APPROVED]" in critic_feedback:
+                             step_success = True
+                             
+                             # Register Artifacts
+                             for vf in verified:
+                                 self.memory_manager.register_artifact(str(current_step.id), vf)
+                             
+                             logger.info(f"Step {current_step.id} Complete (Approved by Critic).")
+                             break # Exit Retry Loop
+                         else:
+                             # Critic Rejected
+                             logger.warning(f"Critic Rejected Step {current_step.id}")
+                             retry_feedback = f"CRITIC REJECTED your work. Feedback:\n{critic_feedback}\nFIX THESE ISSUES IMMEDIATELY."
+                             # Continue to next attempt
                     else:
                          logger.warning("Step incomplete or verification failed.")
                          retry_feedback = "Step not marked complete or validation failed."
@@ -177,6 +189,72 @@ It is highly likely that a NEW directory will be created or the context will cha
             logger.critical(f"Global Error: {e}", exc_info=True)
 
     # --- Internal Helpers ---
+
+    async def _run_critic_phase(self, worker_output: str, current_step: SkillStep) -> str:
+        """
+        Generalized Critic Phase.
+        Technical Audit with Structured Handover and Telemetry.
+        """
+        # 1. Detect if this is a technical step
+        keywords = ["develop", "code", "build", "script", "implement", "create"]
+        needs_technical_audit = any(kw in current_step.title.lower() for kw in keywords)
+
+        if not needs_technical_audit:
+            return "[APPROVED] (Non-technical step)"
+            
+        # 2. Prepare Structured Context
+        from .structs import CriticHandover
+        from ..prompt import CRITIC_INSTRUCTION
+        
+        roadmap = self.memory_manager.get_roadmap()
+        expectations = getattr(current_step, "expected_artifacts", [])
+        
+        handover = CriticHandover(
+            step_id=current_step.id,
+            step_title=current_step.title,
+            worker_output=worker_output,
+            active_folder=self.memory_manager.memory.active_folder,
+            roadmap=roadmap,
+            expectations=expectations
+        )
+        
+        critic_xml_context = handover.to_xml()
+        
+        # 3. Telemetry: Start
+        self.telemetry.log_event(
+            event_type="CRITIC_START",
+            step_id=current_step.id,
+            agent_name="Technical-Critic",
+            details={"step_title": current_step.title}
+        )
+
+        logger.info(f"[Orchestrator] Invoking Technical Critic for '{current_step.title}'...")
+
+        # 4. Construct Instruction
+        instruction = CRITIC_INSTRUCTION.format(
+            context_xml=critic_xml_context
+        )
+
+        critic = Agent(name="Technical-Critic", instruction=instruction, server_names=["file-tools", "skill-server"])
+        
+        async with critic:
+            llm_critic = await critic.attach_llm(OpenAIAugmentedLLM)
+            # Short prompt since context is in system instruction
+            critic_prompt = "Perform the audit based on the provided XML Context. Output [APPROVED] or [REJECTED] with feedback."
+            
+            critic_response = await llm_critic.generate_str(critic_prompt)
+            
+            # 5. Telemetry: Decision
+            decision = "APPROVED" if "[APPROVED]" in critic_response else "REJECTED"
+            self.telemetry.log_event(
+                event_type="CRITIC_DECISION",
+                step_id=current_step.id,
+                agent_name="Technical-Critic",
+                details={"decision": decision, "feedback_snippet": critic_response[:100]}
+            )
+            
+            print(f"[Critic Feedback]:\n{critic_response}\n")
+            return critic_response 
 
     async def _run_planning(self, query: str) -> Tuple[Optional[str], Optional[str]]:
         """Determines skill and task input."""
@@ -226,7 +304,7 @@ It is highly likely that a NEW directory will be created or the context will cha
         with open("task.md", "w") as f: f.write(task_md)
         
         return sop
-
+    
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: python orchestrator.py <query>")

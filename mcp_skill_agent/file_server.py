@@ -1,8 +1,12 @@
 import os
 import logging
 import glob
+import ast
+import json
+import re
+import subprocess
 from mcp.server.fastmcp import FastMCP
-from typing import Literal, Optional, List, Union
+from typing import Literal, Optional, List, Union, Dict, Tuple
 from pathlib import Path
 # Initialize FastMCP server instance shared by all modules
 mcp = FastMCP("file-tools")
@@ -29,33 +33,179 @@ Command = Literal[
     "undo_edit",
 ]
 
-@mcp.tool()
-def read_file(path: str) -> str:
-    """Reads the content of a file at the given path."""
-    logger.info(f"Reading file: {path}")
-    try:
-        if not os.path.exists(path):
-            logger.error(f"Error: File not found at {path}")
-            return f"Error: File not found at {path}"
+# @mcp.tool()
+# def read_file(path: str) -> str:
+#     """Reads the content of a file at the given path."""
+#     logger.info(f"Reading file: {path}")
+#     try:
+#         if not os.path.exists(path):
+#             logger.error(f"Error: File not found at {path}")
+#             return f"Error: File not found at {path}"
         
-        with open(path, 'r', encoding='utf-8') as f:
-            return f.read()
-    except Exception as e:
-        logger.error(f"Error reading file: {str(e)}")
-        return f"Error reading file: {str(e)}"
+#         with open(path, 'r', encoding='utf-8') as f:
+#             return f.read()
+#     except Exception as e:
+#         logger.error(f"Error reading file: {str(e)}")
+#         return f"Error reading file: {str(e)}"
+
+# @mcp.tool()
+# def write_file(path: str, content: str) -> str:
+#     """Writes content to a file or artifacts or code asset at the given path. Overwrites if exists."""
+#     logger.info(f"Writing file to: {path}")
+#     try:
+#         os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
+#         with open(path, 'w', encoding='utf-8') as f:
+#             f.write(content)
+#         return f"Successfully wrote to {path}"
+#     except Exception as e:
+#         logger.error(f"Error writing file: {str(e)}")
+#         return f"Error writing file: {str(e)}"
+
 
 @mcp.tool()
-def write_file(path: str, content: str) -> str:
-    """Writes content to a file or artifacts or code asset at the given path. Overwrites if exists."""
-    logger.info(f"Writing file to: {path}")
+def read_files(paths: List[str]) -> str:
+    """Reads multiple files. Returns a formatted block with separate sections."""
+    logger.info(f"Reading {len(paths)} files")
+    output = []
+    for p in paths:
+        try:
+            if not os.path.exists(p):
+                output.append(f"--- FILE: {p} (NOT FOUND) ---")
+                continue
+            with open(p, 'r', encoding='utf-8') as f:
+                content = f.read()
+            output.append(f"--- FILE: {p} ---\n{content}\n")
+        except Exception as e:
+            output.append(f"--- FILE: {p} (ERROR: {str(e)}) ---")
+    return "\n".join(output)
+
+@mcp.tool()
+def write_files(files: Dict[str, str]) -> str:
+    """Writes multiple files or artifacts or code assets. 
+    Keys are paths, values are content. Overwrites if exists."""
+    logger.info(f"Writing {len(files)} files")
+    results = []
+    for path, content in files.items():
+        try:
+            os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
+            with open(path, 'w', encoding='utf-8') as f:
+                f.write(content)
+            results.append(f"Successfully wrote to {path}")
+        except Exception as e:
+            results.append(f"Error writing {path}: {str(e)}")
+    return "\n".join(results)
+
+@mcp.tool()
+def check_syntax(path: str) -> str:
+    """Checks syntax for Python (ast) and JS/TS (node -c)."""
+    p = Path(path).resolve()
+    if not p.exists():
+        return f"Error: File {path} not found."
+    
     try:
-        os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
-        with open(path, 'w', encoding='utf-8') as f:
-            f.write(content)
-        return f"Successfully wrote to {path}"
+        content = p.read_text(encoding='utf-8')
+        if p.suffix == '.py':
+            ast.parse(content)
+            return "Syntax OK (Python)"
+        elif p.suffix in ['.js', '.jsx', '.mjs', '.cjs']:
+             cmd = ["node", "--check", str(p)]
+             subprocess.run(cmd, check=True, capture_output=True)
+             return "Syntax OK (Node.js)"
+        elif p.suffix in ['.ts', '.tsx']:
+             return "Syntax Check Skipped (TypeScript: requires compile step)"
+        return f"Syntax Check Skipped (Unsupported extension {p.suffix})"
+    except SyntaxError as e:
+        return f"Syntax Error in {path}: line {e.lineno}, col {e.offset}: {e.msg}"
+    except subprocess.CalledProcessError as e:
+         return f"Syntax Error: {e.stderr.decode()}"
     except Exception as e:
-        logger.error(f"Error writing file: {str(e)}")
-        return f"Error writing file: {str(e)}"
+        return f"Error checking syntax: {str(e)}"
+
+@mcp.tool()
+def validate_imports(path: str) -> str:
+    """Checks if imports in the file are present in package.json or environment."""
+    import sys
+    p = Path(path).resolve()
+    if not p.exists():
+        return f"Error: File {path} not found."
+        
+    content = p.read_text(encoding='utf-8')
+    missing = []
+    
+    if p.suffix in ['.ts', '.tsx', '.js', '.jsx']:
+        package_json = None
+        curr = p.parent
+        while curr != curr.parent:
+            pj = curr / "package.json"
+            if pj.exists():
+                package_json = pj
+                break
+            curr = curr.parent
+            
+        if not package_json:
+            return "Warning: No package.json found in parent directories."
+            
+        try:
+            deps = set()
+            pj_data = json.loads(package_json.read_text())
+            deps.update(pj_data.get('dependencies', {}).keys())
+            deps.update(pj_data.get('devDependencies', {}).keys())
+            
+            imports = re.findall(r"(?:from|import|require)\s*['\"]([^'\"]+)['\"]", content)
+            
+            for imp in imports:
+                if imp.startswith('.') or imp.startswith('/'): continue 
+                pkg = imp.split('/')[0]
+                if imp.startswith('@'): 
+                    parts = imp.split('/')
+                    if len(parts) >= 2:
+                        pkg = f"{parts[0]}/{parts[1]}"
+                
+                if pkg in ['fs', 'path', 'os', 'http', 'https', 'child_process', 'util', 'events', 'stream', 'crypto', 'buffer']: continue
+                if pkg == 'react': continue 
+                
+                if pkg not in deps:
+                    missing.append(pkg)
+                    
+        except Exception as e:
+            return f"Error reading package.json: {e}"
+            
+    elif p.suffix == '.py':
+         try:
+             tree = ast.parse(content)
+             params = []
+             for node in ast.walk(tree):
+                 if isinstance(node, ast.Import):
+                     for alias in node.names:
+                         params.append(alias.name.split('.')[0])
+                 elif isinstance(node, ast.ImportFrom):
+                     if node.module:
+                         params.append(node.module.split('.')[0])
+             
+             req_file = None
+             curr = p.parent
+             while curr != curr.parent:
+                 rf = curr / "requirements.txt"
+                 if rf.exists():
+                     req_file = rf
+                     break
+                 curr = curr.parent
+            
+             if req_file:
+                 reqs = req_file.read_text().lower()
+                 for imp in params:
+                     if hasattr(sys, 'stdlib_module_names') and imp in sys.stdlib_module_names: continue 
+                     if imp.lower() not in reqs: 
+                         missing.append(imp)
+             else:
+                 return f"Imports detected: {params}. No requirements.txt found to validate against."
+                 
+         except Exception as e:
+             return f"Error parsing Python imports: {e}"
+
+    if missing:
+        return f"MISSING DEPENDENCIES: The following packages seem to be missing from config: {missing}"
+    return "Imports validation passed."
 
 
 def maybe_truncate(

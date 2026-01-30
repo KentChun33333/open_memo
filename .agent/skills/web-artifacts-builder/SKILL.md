@@ -55,7 +55,9 @@ Notice that the main file is <project-name>/src/App.tsx, you can first define th
 
 2. **Components**:
    - Create new components in `<project-name>/src/components/` if needed.
-   - Use pre-installed shadcn/ui components: `import { Button } from "@/components/ui/button"`.
+   - Only Use pre-installed shadcn/ui components: `import { Button } from "@/components/ui/button"`.
+   - Do not use any other components to make sure the artifact can be bundled into a single HTML file in next step.
+
 3. **Styling**: Apply Tailwind CSS classes directly (e.g., `className="p-4 rounded-lg"`).
 4. **Icons**: Use `lucide-react` for icons (pre-installed).
 
