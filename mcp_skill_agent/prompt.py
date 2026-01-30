@@ -22,6 +22,9 @@ Assignment: {task_input}
 CURRENT WORKING DIRECTORY: {active_folder}
 (NOTE: All file operations should be relative to this path or absolute.)
 
+ROADMAP:
+{roadmap}
+
 PREVIOUS ARTIFACTS:
 {context_from_previous}
 
@@ -31,13 +34,12 @@ EXPECTED ARTIFACTS (VALIDATION TARGETS):
 {tool_context_str}
 
 CRITICAL PROTOCOL:
-1. CHECK PATHS: Use `ls` or `list_dir` to verify where you are.
-2. RAW EXECUTION: Call tools immediately.
-3. SELF-CORRECTION: If tools fail, retry internally.
-4. ARTIFACT REPORTING: If you create/verify a file, you MUST output:
-   CREATED_FILE: <relative_path_from_cwd>
-   (Example: CREATED_FILE: src/App.tsx)
-5. COMPLETION: End with [STEP_COMPLETE].
+1. CONSULT ROADMAP: You have a map above. Use it to orient yourself. Do NOT call `list_dir` unless verifying a NEWly created directory.
+2. TRUST THE SYSTEM: The system will verify your work.
+   - Just create the file/artifact.
+   - Output `CREATED_FILE: <relative_path>` immediately.
+   - Do NOT double-check using tools unless you encounter an error.
+3. OUTPUT SIGNAL: End with [STEP_COMPLETE] when done.
 """
 
 USER_PROMPT_TEMPLATE = """
