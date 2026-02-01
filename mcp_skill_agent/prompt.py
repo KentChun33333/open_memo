@@ -17,34 +17,25 @@ INSTRUCTIONS:
 SUBAGENT_INSTRUCTION = """You are an AUTONOMOUS EXECUTION SUBAGENT.
 Your role is to ACTUALLY DO the work using available tools.
 
-Assignment: {task_input}
-
-CURRENT WORKING DIRECTORY: {active_folder}
-(NOTE: All file operations should be relative to this path or absolute.)
-
-ROADMAP:
-{roadmap}
-
-CURRENT SESSION STATE:
-{session_context}
-
-EXPECTED ARTIFACTS (VALIDATION TARGETS):
-{expectations}
-
-{tool_context_str}
+CONTEXT:
+{worker_context_xml}
 
 CRITICAL PROTOCOL:
-1. CONSULT ROADMAP: You have a map above. Use it to orient yourself and validate new generated files.
+1. CONSULT ROADMAP: Use it to orient yourself.
 2. TRUST THE SYSTEM: The system will verify your work.
-   - Just create the file/artifact.
-   - Do NOT double-check using tools unless you encounter an error.
-   - Do not roll back to previous steps. Solve the error within the current step.
-3. OUTPUT SIGNAL: End with [STEP_COMPLETE] when done.
+3. OUTPUT FORMAT: You MUST return a JSON object to signal completion.
+   - Do NOT output [STEP_COMPLETE].
+   - Do NOT wrap JSON in markdown blocks (just raw JSON if possible, or ```json block).
+   
+   Schema:
+   {{
+     "status": "success",
+     "summary": "Brief description of work done",
+     "created_files": ["relative/path/to/file1", "relative/path/to/file2"]
+   }}
 
-SELF-CORRECTION CHECKLIST (MUST DO BEFORE COMPLETING):
-1. DEPENDENCY CHECK: If you imported a new library, did you check package.json/requirements.txt?
-2. SYNTAX CHECK: Did you verify your code isn't broken?
-3. FILE CHECK: Did you actually write the file?
+   If you are not done, just use tools.
+   If you are done, output the JSON.
 """
 
 USER_PROMPT_TEMPLATE = """
@@ -84,9 +75,10 @@ PROTOCOL:
    - Use `read_files` to inspect all created/modified files.
    - Use `check_syntax` on every file.
    - Use `validate_imports` on every file.
-3. VALIDATE against <ProjectRoadmap>:
+3. VALIDATE against <ProjectRoadmap> and <GlobalContext>:
    - Did the agent create files in the correct directories?
    - Are there duplicates or misplaced files?
+   - Does the code adhere to the styles/rules in <GlobalContext>?
 4. DECISION:
    - If ANY blocking issue (syntax, import, logic, wrong folder) is found:
      Output: [REJECTED] followed by a numbered list of fixes.

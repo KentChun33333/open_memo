@@ -9,199 +9,122 @@ from mcp_agent.app import MCPApp
 from mcp_agent.agents.agent import Agent
 from mcp_agent.workflows.llm.augmented_llm_openai import OpenAIAugmentedLLM
 
+# Import from structs
+from .orchestrator.structs import SkillStep
+
 logger = logging.getLogger(__name__)
 
-@dataclass
-class SkillStep:
-    id: int
-    title: str
-    content: str = ""
-    references: List[str] = field(default_factory=list)
-    expected_artifacts: List[str] = field(default_factory=list)
-    status: str = "pending"
-    allow_rollback: bool = False
-    
-
 class SOPAgent:
-    def __init__(self, app: MCPApp):
-        self.app = app
+    def __init__(self):
         self.steps: List[SkillStep] = []
         self.current_index = 0
-        self.skill_context = ""
-        self.resources_info = ""
 
-    async def initialize(self, skill_content: str, resources_info: str = ""):
+    async def initialize(self, skill_content: str, resources_info: str = "", task_input: str = ""):
         """
-        Refactored Initialization: Chunk-and-Tag Strategy.
-        1. Identify Steps (LLM)
-        2. Chunk Content (Rule)
-        3. Tag Chunks (LLM)
-        4. Aggregate
+        Refactored Initialization: Stateless & Linear.
+        1. Identify Steps (LLM) with Rich Metadata
+        2. Instantiate SkillStep objects
         """
-        self.skill_context = skill_content
-        self.resources_info = resources_info
-        logger.info("SOPAgent: Initializing Chunk-and-Tag Parsing...")
+        logger.info("SOPAgent: Initializing Linear Parsing...")
 
-        # 1. Identify Steps
-        # 1. Identify Steps & Expectations
-        step_data = await self._identify_steps(skill_content)
+        # 1. Identify Steps & Expectations (Rich Metadata)
+        step_data = await self._identify_steps(skill_content, resources_info, task_input)
         if not step_data:
             logger.warning("No steps identified. Falling back to single step.")
-            self.steps = [SkillStep(id=1, title="Execute Skill", content=skill_content)]
+            self.steps = [SkillStep(id=1, title="Execute Skill", content=skill_content, skill_raw_context=skill_content)]
             return
 
-        # Initialize Steps
-        # Initialize Steps (Rich Metadata)
-        # Handle backward compatibility if _identify_steps returns plain strings (though we updated it)
+        # 2. Initialize Steps (Rich Metadata)
         try:
              self.steps = []
              for i, s_data in enumerate(step_data):
                   if isinstance(s_data, str):
-                       self.steps.append(SkillStep(id=i+1, title=s_data))
+                       self.steps.append(SkillStep(id=i+1, title=s_data, skill_raw_context=skill_content))
                   else:
                        title = s_data.get("title", f"Step {i+1}")
-                       artifacts = s_data.get("expected_files", [])
-                       self.steps.append(SkillStep(id=i+1, title=title, expected_artifacts=artifacts))
-        except Exception:
+                       # Fallback support for various key names
+                       artifacts = s_data.get("expected_files", []) or s_data.get("expected_artifacts", [])
+                       narrative = s_data.get("task_instruction", "")
+                       action = s_data.get("task_query", "")
+                       refs = s_data.get("references", [])
+                       
+                       # Use narrative as default content if available
+                       content = narrative if narrative else "(See Task Instruction)"
+
+                       self.steps.append(SkillStep(
+                           id=i+1, 
+                           title=title, 
+                           expected_artifacts=artifacts,
+                           task_instruction=narrative,
+                           task_query=action,
+                           references=refs,
+                           skill_raw_context=skill_content, # Pass full context
+                           content=content
+                        ))
+        except Exception as e:
+             logger.error(f"Failed to parse step data: {e}")
              # Fallback
-             self.steps = [SkillStep(id=i+1, title=t) for i, t in enumerate(step_data)]
-        
-        # 2. Chunk Content
-        chunks = self._split_by_paragraphs(skill_content)
-        
-        # 3. Tag Chunks
-        # Extract titles for tagging prompt
-        titles_only = [s.title for s in self.steps]
-        tagged_map = await self._tag_chunks(chunks, titles_only)
-        
-        # 4. Aggregate Content & References
-        for i, step in enumerate(self.steps):
-            # Get chunks for this step (1-based ID)
-            step_chunks = tagged_map.get(step.id, [])
-            
-            # Concatenate content
-            step.content = "\n\n".join(step_chunks)
-            
-            # [Optimization] We could ask LLM to identify references per step here, 
-            # or just append general resources info to every step context. 
-            # User asked for "reference... provide path". 
-            # Let's simple append the RESOURCES INFO to the bottom of the content 
-            # so the subagent can choose. 
-            # Or better, we can assume the chunks contain the reference text if the manual works that way.
-            # Let's add a "RESOURCES" section if available.
-            
-            if not step.content.strip():
-                 step.content = "(No content found for this step in manual.)"
+             self.steps = [SkillStep(id=i+1, title=str(d), skill_raw_context=skill_content) for i, d in enumerate(step_data)]
         
         self.current_index = 0
         logger.info(f"SOPAgent: Parsed {len(self.steps)} steps.")
 
-    async def _identify_steps(self, content: str) -> List[Dict]:
-        """Ask LLM to list high-level steps with expected artifacts."""
-        prompt = f"""You are a PLANNER.
-Analyze the Technical Manual. 
-Break it down into Execution Steps.
-For each step, identify ANY file/artifact that MUST exist after completion.
+    async def _identify_steps(self, content: str, resources: str, query: str) -> List[Dict]:
+        """Ask LLM to list high-level steps with rich metadata."""
+        prompt = f"""You are a STRATEGIC PLANNER.
+Analyze the Technical Manual and the User's Query.
+Break the workflow down into Linear Execution Steps.
+
+USER QUERY: "{query}"
+
+AVAILABLE RESOURCES:
+{resources}
 
 MANUAL:
 {content[:15000]}...
 
+CRITICAL INSTRUCTION:
+For each step, generate:
+1. title: Concise title.
+2. task_instruction: High-level narrative of what to do (the 'Plan').
+3. task_query: Specific, actionable detailed instruction for the Subagent to execute now (contextualized to the User's Query).
+4. expected_artifacts: List of files created/modified.
+5. references: List of relevant files/docs from Resource list.
+
 OUTPUT JSON ONLY:
 {{
   "steps": [
-    {{ "title": "Initialize Repository", "expected_files": ["package.json"] }},
-    {{ "title": "Create User Component", "expected_files": ["src/components/User.tsx"] }}
+    {{
+      "title": "Initialize Repository",
+      "task_instruction": "Set up the project structure using the init script.",
+      "task_query": "Run `init-artifact.sh` to scaffold the project for a 'Waitlist Page'.",
+      "expected_artifacts": ["package.json", "vite.config.ts"],
+      "references": ["scripts/init-artifact.sh"]
+    }}
   ]
 }}
 """
-        agent = Agent(name="StepIdent", instruction="Extract steps and artifacts as JSON.")
+        agent = Agent(name="StepIdent", instruction="Extract steps as JSON.")
         async with agent:
             llm = await agent.attach_llm(OpenAIAugmentedLLM)
             try:
                 resp = await llm.generate_str(prompt)
                 import json
-                json_str = resp.strip().replace("```json", "").replace("```", "")
+                import re
+                
+                # Robust extraction
+                json_str = resp.strip()
+                match = re.search(r"```json\s*(\{.*?\})\s*```", resp, re.DOTALL)
+                if match: json_str = match.group(1)
+                elif re.search(r"(\{.*\})", resp, re.DOTALL):
+                     json_str = re.search(r"(\{.*\})", resp, re.DOTALL).group(1)
+                
                 data = json.loads(json_str)
                 return data.get("steps", [])
             except Exception as e:
                 logger.error(f"Step ID failed: {e}")
                 return []
 
-    def _split_by_paragraphs(self, content: str) -> List[str]:
-        """Split by double newline."""
-        # Normalize newlines
-        content = content.replace("\r\n", "\n")
-        # Split by empty lines
-        chunks = [c.strip() for c in content.split("\n\n") if c.strip()]
-        return chunks
-
-    async def _tag_chunks(self, chunks: List[str], step_titles: List[str]) -> Dict[int, List[str]]:
-        """
-        Ask LLM to assign each chunk to a Step ID.
-        Returns: { step_id: [chunk_text, ...] }
-        """
-        # We process in batches to avoid huge context, but ideally we want global context.
-        # Let's try to do it effectively: index chunks and ask for a map.
-        
-        # Prepare Step Map for Prompt
-        steps_str = "\n".join([f"{i+1}. {t}" for i, t in enumerate(step_titles)])
-        
-        # We'll map chunks to steps. 
-        # Output: { chunk_index: step_id }
-        
-        # Prepare Chunks with Indices
-        chunk_text_block = ""
-        for i, c in enumerate(chunks):
-            preview = c[:100].replace("\n", " ")
-            chunk_text_block += f"[{i}] {preview}...\n"
-            
-        prompt = f"""You are a CONTENT SORTER.
-Map each Text Chunk to the most relevant Step ID.
-
-STEPS:
-{steps_str}
-
-TEXT CHUNKS:
-{chunk_text_block}
-
-TASK: Return a JSON mapping of Chunk Index -> Step ID.
-If a chunk is irrelevant (preamble), map to 0.
-If a chunk applies to multiple, pick the FIRST relevant one.
-
-OUTPUT JSON ONLY:
-{{
-  "mapping": {{
-    "0": 1,
-    "1": 1,
-    "2": 2
-  }}
-}}
-"""
-        agent = Agent(name="ChunkTagger", instruction="Map chunks to steps.")
-        async with agent:
-            llm = await agent.attach_llm(OpenAIAugmentedLLM)
-            try:
-                resp = await llm.generate_str(prompt)
-                import json
-                json_str = resp.strip().replace("```json", "").replace("```", "")
-                data = json.loads(json_str)
-                mapping = data.get("mapping", {})
-                
-                # Reconstruct
-                result = {}
-                for idx_str, step_id in mapping.items():
-                    idx = int(idx_str)
-                    if 0 <= idx < len(chunks) and step_id > 0:
-                        if step_id not in result: result[step_id] = []
-                        result[step_id].append(chunks[idx])
-                
-                # Handle unmapped chunks? (Maybe preamble)
-                return result
-                
-            except Exception as e:
-                logger.error(f"Tagging failed: {e}")
-                # Fallback: All to Step 1
-                return {1: chunks}
 
     # --- Runtime Control ---
 
@@ -232,28 +155,4 @@ OUTPUT JSON ONLY:
             summary.append(f"{mark} {step.title}")
         return "\n".join(summary)
 
-    def detect_context_switch(self, step: SkillStep) -> Dict[str, Union[bool, str]]:
-        """
-        Defensive Check: Analyze step to predict if it will change the filesystem root.
-        Focuses on: 'run_skill_script', 'mkdir', 'create project', 'cd'.
-        """
-        content_lower = step.content.lower() + " " + step.title.lower()
-        
-        # 1. Script Execution (High Probability of Init)
-        if "run_skill_script" in content_lower:
-            return {"detected": True, "reason": "Detected 'run_skill_script' execution."}
-            
-        # 2. Key Phrases
-        triggers = [
-            "mkdir", 
-            "create project", 
-            "new project", 
-            "initialize", 
-            "cd "
-        ]
-        
-        for trigger in triggers:
-            if trigger in content_lower:
-                return {"detected": True, "reason": f"Detected keyword '{trigger}'."}
-                
-        return {"detected": False, "reason": ""}
+    # Context Switch Logic Removed

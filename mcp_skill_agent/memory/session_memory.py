@@ -10,14 +10,29 @@ logger = logging.getLogger(__name__)
 @dataclass
 class SessionMemory:
     workspace_root: str
-    active_folder: str
+    cwd_rel: str = "." # Stores relative path from workspace_root
     artifacts: Dict[str, List[str]] = field(default_factory=dict)
     logs: List[str] = field(default_factory=list)
-    directory_tree: List[str] = field(default_factory=list)
+    # directory_tree removed (redundant)
     env_vars: Dict[str, str] = field(default_factory=dict)     # New: Environment Variables
     step_outputs: Dict[int, str] = field(default_factory=dict) # New: Step Outputs
+    tool_history: List[Dict[str, Any]] = field(default_factory=list) # New: Tool Execution History
+    agent_feedback_history: List[Dict[str, Any]] = field(default_factory=list) # New: Generic Feedback History
     current_step_id: int = 0
     state_file: str = ".agent_state.json"
+
+    @property
+    def active_folder(self) -> str:
+        """Dynamic property to get absolute active folder path."""
+        return os.path.abspath(os.path.join(self.workspace_root, self.cwd_rel))
+
+    @active_folder.setter
+    def active_folder(self, value: str):
+        """Setter to update cwd_rel from an absolute or relative path."""
+        if os.path.isabs(value):
+            self.cwd_rel = os.path.relpath(value, self.workspace_root)
+        else:
+            self.cwd_rel = value
 
 class SessionMemoryManager:
     """
@@ -36,7 +51,7 @@ class SessionMemoryManager:
             logger.warning(f"Workspace mismatch in state file. Resetting memory for {self.workspace_root}")
             self.memory = SessionMemory(
                 workspace_root=self.workspace_root,
-                active_folder=self.workspace_root,
+                cwd_rel=".",
                 state_file=self.state_file_path
             )
             self.save_state()
@@ -47,15 +62,23 @@ class SessionMemoryManager:
             try:
                 with open(self.state_file_path, "r") as f:
                     data = json.load(f)
-                    # Handle backward compatibility or missing fields
+                    
+                    # Migration: Handle 'active_folder' -> 'cwd_rel'
+                    cwd_rel = data.get("cwd_rel", ".")
+                    if "active_folder" in data and "cwd_rel" not in data:
+                        # Convert old absolute path to relative
+                        old_active = data["active_folder"]
+                        if os.path.isabs(old_active) and old_active.startswith(self.workspace_root):
+                            cwd_rel = os.path.relpath(old_active, self.workspace_root)
+                    
                     return SessionMemory(
                         workspace_root=data.get("workspace_root", self.workspace_root),
-                        active_folder=data.get("active_folder", self.workspace_root),
+                        cwd_rel=cwd_rel,
                         artifacts=data.get("artifacts", {}),
                         logs=data.get("logs", []),
-                        directory_tree=data.get("directory_tree", []),
                         env_vars=data.get("env_vars", {}),
                         step_outputs={int(k): v for k, v in data.get("step_outputs", {}).items()},
+                        tool_history=data.get("tool_history", []),
                         current_step_id=data.get("current_step_id", 0),
                         state_file=data.get("state_file", ".agent_state.json")
                     )
@@ -65,7 +88,7 @@ class SessionMemoryManager:
         # Default new session
         return SessionMemory(
             workspace_root=self.workspace_root,
-            active_folder=self.workspace_root,
+            cwd_rel=".",
             state_file=self.state_file_path
         )
 
@@ -73,16 +96,14 @@ class SessionMemoryManager:
         """Persists SessionMemory to JSON file."""
         try:
             with open(self.state_file_path, "w") as f:
+                # asdict will exclude property 'active_folder', effectively removing duplication
                 json.dump(asdict(self.memory), f, indent=2)
         except Exception as e:
             logger.error(f"Failed to save state: {e}")
 
     def update_active_folder(self, new_dir: Optional[str] = None):
         """
-        Updates active_folder.
-        Rules:
-        1. If new_dir provided, validate and set.
-        2. Else, scan for activity (mtime).
+        Updates active_folder (via cwd_rel).
         """
         target_dir = None
         
@@ -96,9 +117,7 @@ class SessionMemoryManager:
             
         if target_dir and target_dir != self.memory.active_folder:
             logger.info(f"SessionMemory: Switching active folder to {target_dir}")
-            self.memory.active_folder = target_dir
-            # Update directory tree when folder changes
-            self.memory.directory_tree = self.get_roadmap().split("\n")
+            self.memory.active_folder = target_dir # Uses the setter to update cwd_rel
             self.save_state()
 
     def _scan_for_activity(self) -> Optional[str]:
@@ -127,6 +146,34 @@ class SessionMemoryManager:
             return None
             
         return latest_file_dir
+
+    def log_tool_usage(self, agent_name: str, step_id: int, tool_name: str, args: Dict[str, Any]):
+        """Logs a tool execution event to the history."""
+        entry = {
+            "timestamp": "TODO: Add timestamp", # Simplified for now
+            "agent": agent_name,
+            "step_id": step_id,
+            "tool": tool_name,
+            "args": args
+        }
+        self.memory.tool_history.append(entry)
+        # Keep history manageable? Maybe limit size implicitly by file system interaction
+        self.save_state()
+
+    def log_agent_feedback(self, step_id: int, agent_name: str, feedback: str, feedback_type: str = "critique"):
+        """
+        Logs generalized feedback from an agent (Critic, Verifier, Human).
+        Schema: {timestamp, step_id, agent_name, feedback, type}
+        """
+        entry = {
+            "timestamp": "TODO: Add timestamp",
+            "step_id": step_id,
+            "agent_name": agent_name,
+            "feedback": feedback,
+            "type": feedback_type
+        }
+        self.memory.agent_feedback_history.append(entry)
+        self.save_state()
 
     def register_artifact(self, step_id: str, file_path: str):
         """Registers a created file to a step ID."""

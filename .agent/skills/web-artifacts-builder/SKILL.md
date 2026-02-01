@@ -33,7 +33,13 @@ bash scripts/init-artifact.sh <project-name>
 cd <project-name>
 ```
 
-This creates a fully configured project with:
+### Step 2: Develop Your Artifact in the <Vite Project Folder>
+
+As professional nodejs developer, Build your application by editing the generated files, instrunction base on user request.
+
+##### Codeing Guildence
+
+1. levaerge the component we built in step 1 to build your artifact. where we have
 
 - ✅ React + TypeScript (via Vite)
 - ✅ Tailwind CSS 3.4.1 with shadcn/ui theming system
@@ -42,14 +48,6 @@ This creates a fully configured project with:
 - ✅ All Radix UI dependencies included
 - ✅ Parcel configured for bundling (via .parcelrc)
 - ✅ Node 18+ compatibility (auto-detects and pins Vite version)
-
-### Step 2: Develop Your Artifact in the <Vite Project Folder>
-
-Start develop your artifact in the <Vite Project Folder> that you initialized in step 1.
-
-As professional nodejs developer, Build your application by editing the generated files, instrunction as below.
-
-Notice that the main file is <project-name>/src/App.tsx, you can first define the UI, then implement the logic, and components.
 
 1. **Entry Point**: Modify `<project-name>/src/App.tsx` to implement your main logic, content and layout.
 
@@ -61,7 +59,7 @@ Notice that the main file is <project-name>/src/App.tsx, you can first define th
 3. **Styling**: Apply Tailwind CSS classes directly (e.g., `className="p-4 rounded-lg"`).
 4. **Icons**: Use `lucide-react` for icons (pre-installed).
 
-**Tip**: Keep the design self-contained. Avoid external image links if possible; use SVG components or base64 data URIs so the final bundled artifact works offline.
+5. **Tip**: Keep the design self-contained. Avoid external image links if possible; use SVG components or base64 data URIs so the final bundled artifact works offline.
 
 ### Step 3: Bundle to Single HTML File
 
@@ -87,12 +85,6 @@ This creates `bundle.html` - a self-contained artifact with all JavaScript, CSS,
 ### Step 4: Share Artifact with User
 
 Finally, share or point out the bundled HTML file in conversation with the user so they can view it as an artifact.
-
-### Step 5: Testing/Visualizing the Artifact (Optional)
-
-Note: This is a completely optional step. Only perform if necessary or requested.
-
-To test/visualize the artifact, use available tools (including other Skills or built-in tools like Playwright or Puppeteer). In general, avoid testing the artifact upfront as it adds latency between the request and when the finished artifact can be seen. Test later, after presenting the artifact, if requested or if issues arise.
 
 ## Reference
 

@@ -12,10 +12,11 @@ from mcp_agent.workflows.llm.augmented_llm_openai import OpenAIAugmentedLLM
 from ..config_loader import config
 from ..logger import get_logger, setup_logging
 from ..skill_manager import SkillManager
-from ..sop_agent import SOPAgent, SkillStep
+from ..sop_agent import SOPAgent
 from ..memory.session_memory import SessionMemoryManager
 from .step_executor import StepExecutor
 from .verifier import Verifier
+from .structs import SkillStep, WorkerHandover, StepHandover, CriticHandover # Explicit import
 from ..prompt import PLANNER_INSTRUCTION
 from ..telemetry import TelemetryManager
 
@@ -31,32 +32,9 @@ class Orchestrator:
         # 1. Initialize Infrastructure
         setup_logging(level=config.get("logging.level", "INFO"))
         
-        # Base dir is now one level up from this file's dir (which is 'orchestrator')
-        # actually, base dir logic:
-        # __file__ = .../mcp_skill_agent/orchestrator/orchestrator.py
-        # os.path.dirname(__file__) = .../mcp_skill_agent/orchestrator
-        # os.path.dirname(...) = .../mcp_skill_agent
-        # os.path.dirname(...) = ... (root)
-        
-        # Wait, previous logic:
-        # __file__ = .../mcp_skill_agent/orchestrator.py
-        # dirname = .../mcp_skill_agent
-        # dirname = ... (root)
-        
-        # New logic:
-        # __file__ = .../mcp_skill_agent/orchestrator/orchestrator.py
-        # dirname = .../mcp_skill_agent/orchestrator
-        # dirname = .../mcp_skill_agent
-        # dirname = .../ (root) 
-        
-        # So we need one more dirname call?
         self.base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         
         # Config path: mcp_skill_agent/config.yaml
-        # relative from self.base_dir?
-        # or relative from __file__?
-        # config.yaml is in mcp_skill_agent/
-        
         config_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) # mcp_skill_agent
         self.config_path = os.path.join(config_dir, "config.yaml")
         
@@ -82,7 +60,7 @@ class Orchestrator:
 
             # --- PHASE 2: DISCOVERY & SETUP ---
             tool_context = await self._run_discovery()
-            sop = await self._initialize_sop(skill_name)
+            sop = await self._initialize_sop(skill_name, task_input)
             
             # --- PHASE 3: EXECUTION LOOP ---
             print("\n========== PHASE 2: EXECUTION (SOP GUIDED) ==========")
@@ -92,22 +70,6 @@ class Orchestrator:
                 if not current_step: break
                 
                 print(f"\n--- EXECUTION: Step {current_step.id} [{current_step.title}] ---")
-                
-                # 1. Context Update
-                self.memory_manager.update_active_folder()
-                
-                # 1b. Defensive Check: Context Switch
-                ctx_switch = sop.detect_context_switch(current_step)
-                warning_msg = ""
-                if ctx_switch["detected"]:
-                    print(f"[Defensive Check] Potential Context Switch Detected: {ctx_switch['reason']}")
-                    logger.warning(f"Context Switch Detected: {ctx_switch['reason']}")
-                    warning_msg = f"""[ALERT: CONTEXT SWITCH EXPECTED]
-This step involves: {ctx_switch['reason']}
-It is highly likely that a NEW directory will be created or the context will change.
-1. Be aware of the new directory path.
-2. Any subsequent file edits MUST be inside the new directory.
-3. If you run a script, VERIFY the folder structure afterwards."""
                 
                 # 2. Execute Step
                 executor = StepExecutor(self.memory_manager, tool_context, self.telemetry)
@@ -124,8 +86,7 @@ It is highly likely that a NEW directory will be created or the context will cha
                         skill_name=skill_name,
                         sop_context=sop.get_progress_summary(),
                         retry_feedback=retry_feedback,
-                        attempt_idx=attempt,
-                        context_switch_warning=warning_msg
+                        attempt_idx=attempt
                     )
                     
                     # 3. Verification (The Judge)
@@ -155,7 +116,8 @@ It is highly likely that a NEW directory will be created or the context will cha
                          # Success!
                          
                          # --- CRITIC PHASE ---
-                         critic_feedback = await self._run_critic_phase(result.output, current_step)
+                         global_ctx = sop.raw_content if hasattr(sop, 'raw_content') else ""
+                         critic_feedback = await self._run_critic_phase(result.output, current_step, global_context=global_ctx)
                          
                          if "[APPROVED]" in critic_feedback:
                              step_success = True
@@ -190,7 +152,7 @@ It is highly likely that a NEW directory will be created or the context will cha
 
     # --- Internal Helpers ---
 
-    async def _run_critic_phase(self, worker_output: str, current_step: SkillStep) -> str:
+    async def _run_critic_phase(self, worker_output: str, current_step: SkillStep, global_context: str = "") -> str:
         """
         Generalized Critic Phase.
         Technical Audit with Structured Handover and Telemetry.
@@ -215,6 +177,7 @@ It is highly likely that a NEW directory will be created or the context will cha
             worker_output=worker_output,
             active_folder=self.memory_manager.memory.active_folder,
             roadmap=roadmap,
+            global_context=global_context, # Pass global context
             expectations=expectations
         )
         
@@ -246,6 +209,15 @@ It is highly likely that a NEW directory will be created or the context will cha
             
             # 5. Telemetry: Decision
             decision = "APPROVED" if "[APPROVED]" in critic_response else "REJECTED"
+            
+            # Log to Blackboard (Persistent Memory)
+            self.memory_manager.log_agent_feedback(
+                step_id=current_step.id,
+                agent_name="Technical-Critic",
+                feedback=critic_response,
+                feedback_type=decision
+            )
+
             self.telemetry.log_event(
                 event_type="CRITIC_DECISION",
                 step_id=current_step.id,
@@ -289,13 +261,15 @@ It is highly likely that a NEW directory will be created or the context will cha
                 context += f"- {t.name}: {t.description}\n"
         return context
 
-    async def _initialize_sop(self, skill_name: str) -> SOPAgent:
+    async def _initialize_sop(self, skill_name: str, task_input: str) -> SOPAgent:
         """Loads and parses the manual."""
         content = self.skill_manager.get_skill_content(skill_name)
         resources = self.skill_manager.list_skill_contents(skill_name)
         
-        sop = SOPAgent(self.app)
-        await sop.initialize(content, resources)
+        sop = SOPAgent()
+        # Store for context injection
+        sop.raw_content = content
+        await sop.initialize(content, resources, task_input=task_input)
         
         # Init Task Artifact
         task_md = "# Task List\n\n"
