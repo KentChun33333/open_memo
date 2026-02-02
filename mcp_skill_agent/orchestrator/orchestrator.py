@@ -3,7 +3,7 @@ import re
 import sys
 import json
 import asyncio
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List, Dict, Union
 
 from mcp_agent.app import MCPApp
 from mcp_agent.agents.agent import Agent
@@ -11,17 +11,18 @@ from mcp_agent.workflows.llm.augmented_llm_openai import OpenAIAugmentedLLM
 
 from ..config_loader import config
 from ..logger import get_logger, setup_logging
-from ..skill_manager import SkillManager
-from ..sop_agent import SOPAgent
 from ..memory.session_memory import SessionMemoryManager
 from .step_executor import StepExecutor
-from .verifier import Verifier
-from .structs import SkillStep, WorkerHandover, StepHandover, CriticHandover # Explicit import
+from .structs import SkillStep, CriticInput, CriticOutput, AtomicPlannerInput, AtomicPlannerOutput # Explicit import
 from ..prompt import PLANNER_INSTRUCTION
 from ..telemetry import TelemetryManager
 
 # Setup Logger
 logger = get_logger("orchestrator")
+from ..skill_manager import SkillManager
+from .atomic_planner import AtomicPlanner
+from .verifier import Verifier
+
 
 class Orchestrator:
     """
@@ -46,30 +47,38 @@ class Orchestrator:
         self.skill_manager = SkillManager(skills_dir=skills_path)
         self.memory_manager = SessionMemoryManager(os.getcwd())
         self.telemetry = TelemetryManager()
+        self.verifier = Verifier(self.memory_manager)
         
         logger.info("Orchestrator Initialized.")
 
     async def run(self, query: str):
         """Main Entry Point."""
+        task_input = query # Alias for consistency
         try:
-            # --- PHASE 1: PLANNING ---
-            skill_name, task_input = await self._run_planning(query)
+            # --- PHASE 1: ATOMIC PLANNING ---
+            skill_name = await self._discover_skill(query)
             if not skill_name:
                 logger.error("Planning failed. Aborting.")
                 return
 
-            # --- PHASE 2: DISCOVERY & SETUP ---
-            tool_context = await self._run_discovery()
-            sop = await self._initialize_sop(skill_name, task_input)
+            skill_context = await self._discover_skill_context(skill_name)
+            plan_output = await self._plan_atomic_steps(skill_context, query)
+            steps = plan_output.steps
             
-            # --- PHASE 3: EXECUTION LOOP ---
+            # --- PHASE 2: EXECUTION LOOP ---
+            tool_context = skill_context.tool_definitions
             print("\n========== PHASE 2: EXECUTION (SOP GUIDED) ==========")
             
-            while not sop.is_finished():
-                current_step = sop.get_current_step()
-                if not current_step: break
-                
+            step_idx = 0
+            sop = AtomicPlanner() # Helper for replanning
+
+            while step_idx < len(steps):
+                current_step = steps[step_idx]
+                current_step.status = "active"
                 print(f"\n--- EXECUTION: Step {current_step.id} [{current_step.title}] ---")
+                
+                # Save the Initial Plan to Memory (Persist)
+                self.memory_manager.save_plan(steps)
                 
                 # 2. Execute Step
                 executor = StepExecutor(self.memory_manager, tool_context, self.telemetry)
@@ -79,30 +88,27 @@ class Orchestrator:
                 step_success = False
                 retry_feedback = ""
                 
+                # Update status in memory
+                self.memory_manager.update_step_status(current_step.id, "running")
+                
                 for attempt in range(max_retries + 1):
                     result = await executor.execute(
                         current_step=current_step,
                         task_input=task_input, 
                         skill_name=skill_name,
-                        sop_context=sop.get_progress_summary(),
+                        # sop_context removed (Self-Service)
                         retry_feedback=retry_feedback,
                         attempt_idx=attempt
                     )
                     
                     # 3. Verification (The Judge)
                     expectations = getattr(current_step, "expected_artifacts", [])
-                    verified, missing, hallucinated = Verifier.verify_artifacts(
-                        self.memory_manager.memory.active_folder,
+                    verified, missing, hallucinated = self.verifier.verify_artifacts(
                         result.output,
                         expectations
                     )
                     
                     # 4. Decision Logic
-                    # Success conditions:
-                    # - Explicit [STEP_COMPLETE] + Verification Pass
-                    # - Implicit Success (Expectations Met)
-                    # - Script Execution (Optimistic)
-                    
                     is_script = "script" in current_step.title.lower() or "run" in current_step.title.lower()
                     explicit_done = "[STEP_COMPLETE]" in result.output
                     
@@ -116,10 +122,10 @@ class Orchestrator:
                          # Success!
                          
                          # --- CRITIC PHASE ---
-                         global_ctx = sop.raw_content if hasattr(sop, 'raw_content') else ""
-                         critic_feedback = await self._run_critic_phase(result.output, current_step, global_context=global_ctx)
+                         global_ctx = skill_context.raw_content
+                         critic_result = await self._run_critic_phase(result.output, current_step, global_context=global_ctx)
                          
-                         if "[APPROVED]" in critic_feedback:
+                         if critic_result.decision == "APPROVED":
                              step_success = True
                              
                              # Register Artifacts
@@ -131,19 +137,39 @@ class Orchestrator:
                          else:
                              # Critic Rejected
                              logger.warning(f"Critic Rejected Step {current_step.id}")
-                             retry_feedback = f"CRITIC REJECTED your work. Feedback:\n{critic_feedback}\nFIX THESE ISSUES IMMEDIATELY."
+                             retry_feedback = f"CRITIC REJECTED your work. Feedback:\n{critic_result.feedback}\nFIX THESE ISSUES IMMEDIATELY."
                              # Continue to next attempt
                     else:
                          logger.warning("Step incomplete or verification failed.")
                          retry_feedback = "Step not marked complete or validation failed."
                 
                 if not step_success:
-                    logger.critical(f"Step {current_step.id} Failed after retries.")
-                    break
-                
+                    logger.warning(f"Step {current_step.id} Failed after retries.")
+                    
+                    # === DYNAMIC SELF-HEALING ===
+                    logger.info(f"Initiating Self-Healing for Step {current_step.id}...")
+                    new_plan = await sop.replan(
+                        current_plan=AtomicPlannerOutput(steps=steps),
+                        failed_step=current_step,
+                        failure_reason=retry_feedback,
+                        skill_content=skill_context.raw_content
+                    )
+                    
+                    if new_plan.steps:
+                        logger.info("Self-Healing Successful. Injecting new steps.")
+                        # Replace failed step and ALL subsequent steps with the recovery plan
+                        # The recovery plan is expected to cover the rest of the mission
+                        steps = steps[:step_idx] + new_plan.steps
+                        # Do NOT increment step_idx, because we want to execute the first step of the new plan immediately
+                        continue 
+                    else:
+                        logger.critical("Self-Healing Failed. Aborting Mission.")
+                        break
+
                 # Advance
-                sop.mark_step_done()
+                current_step.status = "done"
                 self.memory_manager.save_state()
+                step_idx += 1
 
             print("\n========== MISSION COMPLETE ==========")
 
@@ -152,7 +178,7 @@ class Orchestrator:
 
     # --- Internal Helpers ---
 
-    async def _run_critic_phase(self, worker_output: str, current_step: SkillStep, global_context: str = "") -> str:
+    async def _run_critic_phase(self, worker_output: str, current_step: SkillStep, global_context: str = "") -> CriticOutput:
         """
         Generalized Critic Phase.
         Technical Audit with Structured Handover and Telemetry.
@@ -162,16 +188,17 @@ class Orchestrator:
         needs_technical_audit = any(kw in current_step.title.lower() for kw in keywords)
 
         if not needs_technical_audit:
-            return "[APPROVED] (Non-technical step)"
+            return CriticOutput(decision="APPROVED", feedback="(Non-technical step)")
             
         # 2. Prepare Structured Context
-        from .structs import CriticHandover
+        from .structs import CriticInput
         from ..prompt import CRITIC_INSTRUCTION
         
         roadmap = self.memory_manager.get_roadmap()
         expectations = getattr(current_step, "expected_artifacts", [])
         
-        handover = CriticHandover(
+        # Use CriticInput DTO
+        handover = CriticInput(
             step_id=current_step.id,
             step_title=current_step.title,
             worker_output=worker_output,
@@ -226,9 +253,9 @@ class Orchestrator:
             )
             
             print(f"[Critic Feedback]:\n{critic_response}\n")
-            return critic_response 
+            return CriticOutput(decision=decision, feedback=critic_response)
 
-    async def _run_planning(self, query: str) -> Tuple[Optional[str], Optional[str]]:
+    async def _discover_skill(self, query: str) -> Tuple[Optional[str], Optional[str]]:
         """Determines skill and task input."""
         print("\n========== PHASE 1: PLANNING ==========")
         discovery_info = self.skill_manager.discovery.get_all_skills_info()
@@ -238,46 +265,88 @@ class Orchestrator:
         )
         
         async with self.app.run():
-            planner = Agent(name="planner", instruction=instruction, server_names=["skill-server"])
-            async with planner:
-                llm = await planner.attach_llm(OpenAIAugmentedLLM)
-                output = await llm.generate_str(f"Plan for: {query}")
-                print(f"[Planner]:\n{output}\n")
+            skii_man = Agent(name="skill_discovery", instruction=instruction, server_names=["skill-server"])
+            async with skii_man:
+                llm = await skii_man.attach_llm(OpenAIAugmentedLLM)
+                output = await llm.generate_str(f"Check for: {query}")
+                print(f"[Check]:\n{output}\n")
                 
                 skill_match = re.search(r"SKILL_NAME:\s*(.+)", output)
-                task_match = re.search(r"SUBAGENT_TASK:\s*(.+)", output, re.DOTALL)
                 
-                if skill_match and task_match:
-                    return skill_match.group(1).strip(), task_match.group(1).strip()
-                return None, None
+                if skill_match:
+                    # Pass the original query as the task input
+                    return skill_match.group(1).strip()
+                return None
+
+    async def _discover_skill_context(self, skill_name: str) -> 'SkillContextDTO':
+        """
+        Phase 1: Context Discovery (The Librarian).
+        Fetches all skill resources up front.
+        """
+        from .structs import SkillContextDTO
+        
+        logger.info(f"Discovering context for skill: {skill_name}")
+        
+        # 1. Load Content
+        raw_content = self.skill_manager.get_skill_content(skill_name)
+        references = self.skill_manager.list_skill_contents(skill_name)
+        
+        # 2. Get Tools
+        # Note: Ideally we filter tools by skill, but for now we get all available tools
+        # or we could ask discovery agent to filter.
+        # Keeping it simple: get all tools for now, as in original _run_discovery
+        tool_context = await self._run_discovery() 
+        
+        # 3. Get Internal Roadmap (if any)
+        # We can scan the skill directory itself
+        skill_path = os.path.join(self.skill_manager.skills_dir, skill_name)
+        roadmap = ""
+        return SkillContextDTO(
+            skill_name=skill_name,
+            raw_content=raw_content,
+            references=references,
+            roadmap=roadmap,
+            tool_definitions=tool_context
+        )
 
     async def _run_discovery(self) -> str:
         """Lists available tools."""
         agent = Agent(name="discovery", server_names=["skill-server", "file-tools"])
         context = "AVAILABLE TOOLS:\n"
         async with agent:
-            res = await agent.list_tools()
-            for t in res.tools:
-                context += f"- {t.name}: {t.description}\n"
+            try:
+                res = await agent.list_tools()
+                for t in res.tools:
+                    context += f"- {t.name}: {t.description}\n"
+            except Exception as e:
+                logger.error(f"Discovery failed: {e}")
+                context += "(Tool discovery failed)"
         return context
 
-    async def _initialize_sop(self, skill_name: str, task_input: str) -> SOPAgent:
-        """Loads and parses the manual."""
-        content = self.skill_manager.get_skill_content(skill_name)
-        resources = self.skill_manager.list_skill_contents(skill_name)
+    async def _plan_atomic_steps(self, skill_context: 'SkillContextDTO', task_input: str) -> AtomicPlannerOutput:
+        """
+        Phase 2: Atomic Step Planning (The Architect).
+        Maps Protocol Constraints (from SkillContext) + User Intent (task_input) -> Atomic Actions.
+        """
+        logger.info(f"Planning atomic steps for task: {task_input[:50]}...")
         
-        sop = SOPAgent()
-        # Store for context injection
-        sop.raw_content = content
-        await sop.initialize(content, resources, task_input=task_input)
+        sop = AtomicPlanner()
         
-        # Init Task Artifact
-        task_md = "# Task List\n\n"
-        for s in sop.steps:
-            task_md += f"- [ ] {s.title} <!-- id: {s.id} -->\n"
-        with open("task.md", "w") as f: f.write(task_md)
+        # Inject DTO context into SOP for the planner prompt
+        # Use AtomicPlannerInput DTO
+        input_data = AtomicPlannerInput(
+            query=task_input,
+            skill_content=skill_context.raw_content,
+            resources="\n".join(skill_context.references) if isinstance(skill_context.references, list) else str(skill_context.references)
+        )
         
-        return sop
+        # Store raw content for later injection (legacy, might be redundant with SkillContextDTO but safer to keep)
+        # We don't need to store sop.raw_content anymore as sop is stateless
+        # We might need to pass it to Critic later, but Orchestrator has skill_context
+        
+        plan_output = await sop.plan(input_data)
+        
+        return plan_output
     
 if __name__ == "__main__":
     if len(sys.argv) < 2:

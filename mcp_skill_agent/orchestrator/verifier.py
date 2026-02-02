@@ -11,6 +11,9 @@ class Verifier:
     Controller Component: Validation Logic.
     Decouples "Checking" from "Doing".
     """
+    def __init__(self, memory_manager):
+        self.memory_manager = memory_manager
+
     @staticmethod
     def _smart_find(base_folder: str, filename: str, max_depth: int = 2) -> Optional[str]:
         """
@@ -35,12 +38,13 @@ class Verifier:
                 return os.path.relpath(full_path, base_folder)
         return None
 
-    @classmethod
-    def verify_artifacts(cls, active_folder: str, current_response: str, expected_artifacts: List[str]) -> Tuple[List[str], List[str], List[str]]:
+    def verify_artifacts(self, current_response: str, expected_artifacts: List[str]) -> Tuple[List[str], List[str], List[str]]:
         """
-        Physically verifies files on disk.
+        Physically verifies files on disk using session memory context.
         Returns: (verified_files, missing_expected, hallucinated_files)
         """
+        active_folder = self.memory_manager.memory.active_folder
+        
         # 1. Parse Reported Files
         reported_files = []
         
@@ -84,12 +88,16 @@ class Verifier:
                 if os.path.exists(abs_path) and os.path.getsize(abs_path) > 0:
                     logger.info(f"  [OK] Verified: {f_path} ({os.path.getsize(abs_path)} bytes)")
                     verified_files.append(f_path)
+                    # Log to Memory
+                    self.memory_manager.register_artifact(str(self.memory_manager.memory.current_step_id), f_path)
                 else:
                     # Smart Search for Reported File
-                    found_rel = cls._smart_find(active_folder, os.path.basename(clean_path))
+                    found_rel = self._smart_find(active_folder, os.path.basename(clean_path))
                     if found_rel:
                          logger.info(f"  [OK] Verified (Smart Search): {found_rel} (was reported as {f_path})")
                          verified_files.append(found_rel)
+                         # Log to Memory
+                         self.memory_manager.register_artifact(str(self.memory_manager.memory.current_step_id), found_rel)
                     else:
                         logger.error(f"  [FAIL] Missing or Empty: {f_path}")
                         hallucinated_files.append(f_path)
@@ -105,7 +113,7 @@ class Verifier:
                 logger.info(f"  [OK] Expected Artifact Found: {exp}")
             else:
                 # Smart Search for Expected File
-                found_rel = cls._smart_find(active_folder, os.path.basename(clean_exp))
+                found_rel = self._smart_find(active_folder, os.path.basename(clean_exp))
                 if found_rel:
                     logger.info(f"  [OK] Expected Artifact Found (Smart Search): {found_rel}")
                 else:

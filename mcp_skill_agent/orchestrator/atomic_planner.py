@@ -1,0 +1,205 @@
+import os
+import re
+import json
+from typing import Optional, List, Dict
+from mcp_agent.agents.agent import Agent
+from mcp_agent.workflows.llm.augmented_llm_openai import OpenAIAugmentedLLM
+
+from ..logger import get_logger
+from ..telemetry import TelemetryManager
+from ..prompt import ATOMIC_PLANNER_INSTRUCTION, ATOMIC_REPLANNER_INSTRUCTION
+from .structs import AtomicPlannerInput, AtomicPlannerOutput, SkillStep
+from .cache import PlanCache
+
+logger = get_logger("atomic_planner")
+
+class AtomicPlanner:
+    def __init__(self):
+        pass
+
+    async def plan(self, input_data: AtomicPlannerInput) -> AtomicPlannerOutput:
+        """
+        Refactored Initialization: Stateless & Linear.
+        1. Identify Steps (LLM) with Rich Metadata
+        2. Instantiate SkillStep objects
+        3. Return Output DTO
+        """
+        logger.info("AtomicPlanner: Initializing Linear Parsing...")
+        
+        # 0. Telemetry & Cache Check
+        tm = TelemetryManager()
+        tm.log_event(event_type="PLANNING_START", agent_name="AtomicPlanner", details={"query": input_data.query})
+        
+        # Cache Lookup
+        cache = PlanCache(os.getcwd())
+        cached_plan = cache.get(input_data.query, input_data.skill_content)
+        if cached_plan:
+            logger.info("AtomicPlanner: Cache Hit! Returning cached plan.")
+            tm.log_event(event_type="PLANNING_CACHE_HIT", agent_name="AtomicPlanner", details={"step_count": len(cached_plan.steps)})
+            return cached_plan
+
+        # 1. Identify Steps & Expectations (Rich Metadata)
+        raw_output = await self._identify_steps(input_data)
+        step_data = raw_output.get("steps", [])
+        reasoning = raw_output.get("reasoning", "No reasoning provided.")
+        
+        steps = []
+        
+        if not step_data:
+            logger.warning("No steps identified. Falling back to single step.")
+            steps = [SkillStep(id=1, title="Execute Skill", content=input_data.skill_content, skill_raw_context=input_data.skill_content)]
+            output = AtomicPlannerOutput(steps=steps, reasoning=reasoning)
+            return output
+
+        # 2. Initialize Steps (Rich Metadata)
+        try:
+            for i, s_data in enumerate(step_data):
+                if isinstance(s_data, str):
+                    steps.append(SkillStep(id=i+1, title=s_data, skill_raw_context=input_data.skill_content))
+                else:
+                    title = s_data.get("title", f"Step {i+1}")
+                    # Fallback support for various key names
+                    artifacts = s_data.get("expected_files", []) or s_data.get("expected_artifacts", [])
+                    narrative = s_data.get("task_instruction", "")
+                    action = s_data.get("task_query", "")
+                    refs = s_data.get("references", [])
+                    
+                    # Use narrative as default content if available
+                    content = narrative if narrative else "(See Task Instruction)"
+
+                    steps.append(SkillStep(
+                        id=i+1, 
+                        title=title, 
+                        expected_artifacts=artifacts,
+                        task_instruction=narrative,
+                        task_query=action,
+                        references=refs,
+                        skill_raw_context=input_data.skill_content, # Pass full context
+                        content=content
+                    ))
+        except Exception as e:
+            logger.error(f"Failed to parse step data: {e}")
+            # Fallback
+            steps = [SkillStep(id=i+1, title=str(d), skill_raw_context=input_data.skill_content) for i, d in enumerate(step_data)]
+        
+        logger.info(f"AtomicPlanner: Parsed {len(steps)} steps.")
+        
+        final_output = AtomicPlannerOutput(steps=steps, reasoning=reasoning)
+
+        # Telemetry: Log the full plan
+        tm.log_event(
+            event_type="PLANNING_COMPLETE", 
+            agent_name="AtomicPlanner", 
+            details={
+                "step_count": len(steps), 
+                "reasoning": reasoning,
+                "steps": [s.title for s in steps]
+            }
+        )
+        
+        # Save to Cache
+        cache.set(input_data.query, input_data.skill_content, final_output)
+        
+        return final_output
+
+    async def replan(self, current_plan: AtomicPlannerOutput, failed_step: SkillStep, failure_reason: str, skill_content: str) -> AtomicPlannerOutput:
+        """
+        Self-Healing Mode: Generates a rescue plan.
+        """
+        logger.info(f"AtomicPlanner: RE-PLANNING due to failure in '{failed_step.title}'...")
+        
+        # 0. Telemetry
+        tm = TelemetryManager()
+        tm.log_event(
+            event_type="REPLAN_START", 
+            agent_name="AtomicPlanner", 
+            details={
+                "failed_step": failed_step.title, 
+                "reason": failure_reason
+            }
+        )
+        
+        # 1. Ask LLM for Rescue Plan
+        prompt = ATOMIC_REPLANNER_INSTRUCTION.format(
+            query="Original Goal (Implied)", # We might need to persist original query or retrieve it.
+            failed_step=failed_step.title,
+            failure_reason=failure_reason,
+            content=skill_content[:10000]
+        )
+        
+        agent = Agent(name="AtomicRepanner", instruction="Generate Recovery Plan.")
+        
+        async with agent:
+            llm = await agent.attach_llm(OpenAIAugmentedLLM)
+            try:
+                resp = await llm.generate_str(prompt)
+                
+                # ... reuse extraction logic ... or extract to helper
+                json_str = resp.strip()
+                match = re.search(r"```json\s*(\{.*?\})\s*```", resp, re.DOTALL)
+                if match: json_str = match.group(1)
+                elif re.search(r"(\{.*\})", resp, re.DOTALL):
+                     json_str = re.search(r"(\{.*\})", resp, re.DOTALL).group(1)
+                
+                data = json.loads(json_str)
+                step_data = data.get("steps", [])
+                reasoning = data.get("reasoning", "Recovery Plan")
+                
+                # 2. Parse New Steps
+                new_steps = []
+                for i, s_data in enumerate(step_data):
+                        # ... simplified parsing (assuming replan prompt is strict) ...
+                        title = s_data.get("title", f"Recovery Step {i+1}")
+                        narrative = s_data.get("task_instruction", "")
+                        action = s_data.get("task_query", "")
+                        
+                        new_steps.append(SkillStep(
+                           id=failed_step.id + 1 + i, # Re-index properly later?
+                           title=title, 
+                           expected_artifacts=s_data.get("expected_artifacts", []),
+                           task_instruction=narrative,
+                           task_query=action,
+                           references=s_data.get("references", []),
+                           skill_raw_context=skill_content,
+                           content=narrative
+                        ))
+                
+                logger.info(f"AtomicPlanner: Generated {len(new_steps)} rescue steps.")
+                
+                tm.log_event(
+                    event_type="REPLAN_COMPLETE", 
+                    agent_name="AtomicPlanner", 
+                    details={"new_step_count": len(new_steps), "reasoning": reasoning}
+                )
+                
+                return AtomicPlannerOutput(steps=new_steps, reasoning=reasoning)
+
+            except Exception as e:
+                logger.error(f"Replanning failed: {e}")
+                return AtomicPlannerOutput(steps=[], reasoning="Replanning Failed")
+
+    async def _identify_steps(self, input_data: AtomicPlannerInput) -> Dict:
+        """Ask LLM to list high-level steps with rich metadata."""
+        prompt = ATOMIC_PLANNER_INSTRUCTION.format(
+            query=input_data.query,
+            content=input_data.skill_content[:15000],
+            resources=input_data.resources
+        )
+        agent = Agent(name="AtomicPlanner", instruction="Extract steps as JSON.")
+        async with agent:
+            llm = await agent.attach_llm(OpenAIAugmentedLLM)
+            try:
+                resp = await llm.generate_str(prompt)
+                
+                # Robust extraction
+                json_str = resp.strip()
+                match = re.search(r"```json\s*(\{.*?\})\s*```", resp, re.DOTALL)
+                if match: json_str = match.group(1)
+                elif re.search(r"(\{.*\})", resp, re.DOTALL):
+                     json_str = re.search(r"(\{.*\})", resp, re.DOTALL).group(1)
+                
+                data = json.loads(json_str)
+                return data
+            except Exception as e:
+                logger.error(f"Step ID failed: {e}")
+                return {}

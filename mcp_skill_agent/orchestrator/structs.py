@@ -3,9 +3,21 @@ from typing import List, Optional
 import xml.etree.ElementTree as ET
 
 @dataclass
-class WorkerHandover:
+class SkillContextDTO:
     """
-    Structured Context passed to the Worker Agent.
+    Rich Context for a Skill Discovery Phase.
+    Contains everything needed to plan and execute a skill.
+    """
+    skill_name: str
+    raw_content: str          # The full SKILL.md
+    references: List[str]     # Paths to resources
+    roadmap: str              # Directory structure of the skill (internal)
+    tool_definitions: str     # Available tools
+
+@dataclass
+class StepExecutorInput:
+    """
+    Structured Context passed to the Worker Agent (StepExecutor).
     """
     task_input: str
     active_folder: str
@@ -13,6 +25,9 @@ class WorkerHandover:
     session_context: str
     tool_definitions: str = ""
     expectations: List[str] = field(default_factory=list)
+    clipboard: str = "" # New: Persisted file content
+    step_content: str = "" # New: Moved from User Prompt
+    sop_context: str = ""  # New: Moved from User Prompt
 
     def to_xml(self) -> str:
         """Serializes the handover context to XML for the Worker."""
@@ -23,6 +38,15 @@ class WorkerHandover:
 <ProjectRoadmap>
 {self.roadmap}
 </ProjectRoadmap>
+<StepContent>
+{self.step_content}
+</StepContent>
+<SOPContext>
+{self.sop_context}
+</SOPContext>
+<FileCache>
+{self.clipboard}
+</FileCache>
 <SessionContext>
 {self.session_context}
 </SessionContext>
@@ -34,7 +58,7 @@ class WorkerHandover:
 """.strip()
 
 @dataclass
-class StepHandover:
+class StepExecutorOutput:
     """
     Structured Output from the Worker Agent (Step Execution).
     """
@@ -43,7 +67,7 @@ class StepHandover:
     feedback: str = ""
 
 @dataclass
-class CriticHandover:
+class CriticInput:
     """
     Structured Context passed to the Technical Critic.
     """
@@ -52,7 +76,7 @@ class CriticHandover:
     worker_output: str
     active_folder: str
     roadmap: str
-    global_context: str = "" # New field
+    global_context: str = "" 
     expectations: List[str] = field(default_factory=list)
 
     def to_xml(self) -> str:
@@ -69,12 +93,11 @@ class CriticHandover:
             elem.text = text if text else "(None)"
 
         add_section("WorkerOutput", self.worker_output)
-        add_section("GlobalContext", self.global_context) # Added
+        add_section("GlobalContext", self.global_context) 
         add_section("ProjectRoadmap", self.roadmap)
         add_section("ExpectedArtifacts", ", ".join(self.expectations))
 
-        # Pretty print logic hack for XML (ElementTree doesn't pretty print by default in old python)
-        # Using simple string formatting for robustness
+        # Pretty print logic hack for XML 
         xml_str = f"""
 <CriticContext>
 <StepID>{self.step_id}</StepID>
@@ -95,19 +118,72 @@ class CriticHandover:
         return xml_str.strip()
 
 @dataclass
+class CriticOutput:
+    """
+    Output from the Technical Critic.
+    """
+    decision: str # APPROVED / REJECTED
+    feedback: str
+
+@dataclass
 class SkillStep:
     """
     Structured SOP Step (The Plan).
-    Acts as the contract between SOPAgent (Planner) and StepExecutor.
+    Acts as the contract between AtomicPlanner and StepExecutor.
     """
     id: int
     title: str
-    task_instruction: str = "" # Generated instruction for this task (Narrative Plan)
-    task_query: str = ""       # Detail action required considering user query (Contextualized Action)
-    content: str = ""          # Legacy content/context (Optional)
+    task_instruction: str = "" 
+    task_query: str = ""       
+    content: str = ""          
     references: List[str] = field(default_factory=list)
     expected_artifacts: List[str] = field(default_factory=list)
-    skill_raw_context: str = "" # The raw SKILL.md content (Full Context)
+    skill_raw_context: str = "" 
     status: str = "pending"
     allow_rollback: bool = False
 
+@dataclass
+class TechLeadInput:
+    """
+    Input for the Tech Lead Agent.
+    """
+    context_xml: str
+    error_log: str
+
+@dataclass
+class TechLeadOutput:
+    """
+    Structured Advice from the Tech Lead Agent (Active Debugging).
+    """
+    diagnosis: str
+    advice: str
+    severity: str = "warning" # info, warning, critical
+    
+    def to_prompt_format(self) -> str:
+        """Formats the advice for injection into the Worker's prompt."""
+        icon = "ℹ️"
+        if self.severity == "warning": icon = "⚠️"
+        if self.severity == "critical": icon = "🚨"
+        
+        return f"""
+{icon} **TECH LEAD INTERVENTION**
+**Diagnosis**: {self.diagnosis}
+**Advice**: {self.advice}
+"""
+
+@dataclass
+class AtomicPlannerInput:
+    """
+    Input for AtomicPlanner Phase.
+    """
+    query: str
+    skill_content: str
+    resources: str # Joined string of resources
+
+@dataclass
+class AtomicPlannerOutput:
+    """
+    Output from AtomicPlanner Phase (The Plan).
+    """
+    steps: List[SkillStep]
+    reasoning: str = "" # Explanation of the plan logic

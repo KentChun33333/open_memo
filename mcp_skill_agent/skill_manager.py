@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 class SkillManager:
     def __init__(self, skills_dir: str = ".agent/skills"):
         # Initialize discovery service
+        self.skills_dir = skills_dir
         self.discovery = SkillDiscovery(skills_dir)
     
     @property

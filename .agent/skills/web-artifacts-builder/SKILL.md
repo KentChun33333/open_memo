@@ -61,6 +61,32 @@ As professional nodejs developer, Build your application by editing the generate
 
 5. **Tip**: Keep the design self-contained. Avoid external image links if possible; use SVG components or base64 data URIs so the final bundled artifact works offline.
 
+6. **Troubleshooting & Coding Guidance (Important for Builds)**:
+
+   If you encounter build errors related to PostCSS or Asset Resolution (Vite vs Parcel conflicts), follow these patterns:
+
+   **A) PostCSS Config Conflict**:
+   Parcel dislikes `postcss.config.js` with JS exports. Always use `.postcssrc` (JSON) and avoid redundant `autoprefixer`.
+   - **Bad**: `postcss.config.js` exists with `export default { plugins: { ... } }`
+   - **Fix**: Delete `postcss.config.js` and create `.postcssrc`:
+
+       ```json
+       {
+         "plugins": {
+           "tailwindcss": {}
+         }
+       }
+       ```
+
+   **B) Asset Paths (Vite vs Parcel)**:
+   Vite Magic (`/public/file.svg` -> `/file.svg`) does NOT work in Parcel builds. You must be explicit or import relatively.
+   - **Bad**: `import logo from '/vite.svg'` (assumes `public/` is root)
+   - **Fix (Option 1)**: Explicit public path: `import logo from '/public/vite.svg'`
+   - **Fix (Option 2)**: Relative import: `import logo from './assets/logo.svg'`
+
+   **C) Case Study: mcp-demo Failure**:
+   The `mcp-demo` template typically fails because it includes a JS-based `postcss.config.js` and uses root-relative asset imports (`/vite.svg`). Follw fixing A) and B) above will resolve this.
+
 ### Step 3: Bundle to Single HTML File
 
 To bundle the React app into a single HTML artifact:
