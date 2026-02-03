@@ -43,7 +43,7 @@ class Verifier:
         Physically verifies files on disk using session memory context.
         Returns: (verified_files, missing_expected, hallucinated_files)
         """
-        active_folder = self.memory_manager.memory.active_folder
+        active_folder = self.memory_manager.memory.project_root or self.memory_manager.memory.active_folder
         
         # 1. Parse Reported Files
         reported_files = []

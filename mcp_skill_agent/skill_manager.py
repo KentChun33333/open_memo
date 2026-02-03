@@ -2,6 +2,7 @@ import os
 import glob
 import yaml
 import logging
+import re
 from typing import Dict, List, Optional
 import sys
 import time
@@ -65,6 +66,33 @@ PATH: {skill.path}
             msg = f"Error reading skill content: {e}"
             logger.error(msg)
             return msg
+
+    def extract_required_scripts_from_content(self, content: str) -> List[str]:
+        """Extracts script names referenced in SKILL.md content in order of appearance."""
+        if not content:
+            return []
+        # Capture script references like scripts/init-artifact.sh
+        pattern = re.compile(r"scripts/([A-Za-z0-9._-]+\.(?:sh|py|js))")
+        matches = pattern.findall(content)
+        # Preserve order, dedupe
+        ordered = []
+        for m in matches:
+            if m not in ordered:
+                ordered.append(m)
+        return ordered
+
+    def get_required_scripts(self, name: str) -> List[str]:
+        """Reads SKILL.md and extracts referenced scripts."""
+        skill = self.skills.get(name)
+        if not skill:
+            return []
+        try:
+            with open(skill.path, "r", encoding="utf-8") as f:
+                content = f.read()
+            return self.extract_required_scripts_from_content(content)
+        except Exception as e:
+            logger.error(f"Failed to read SKILL.md for scripts: {e}")
+            return []
 
     def list_skill_contents(self, name: str) -> str:
         """Lists the bundled resources (scripts, references) for a skill."""
