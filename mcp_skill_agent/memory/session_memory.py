@@ -238,6 +238,29 @@ class SessionMemoryManager:
         self.memory.logs.append(message)
         self.save_state()
 
+    def log_tool_usage(self, agent_name: str, step_id: int, cycle: int, tool_name: str, args: Dict[str, Any]):
+        """Logs tool usage for a given step and cycle."""
+        self.memory.tool_history.append({
+            "agent_name": agent_name,
+            "step_id": step_id,
+            "cycle": cycle,
+            "tool_name": tool_name,
+            "args": args
+        })
+        self.save_state()
+
+    def get_tool_history(self, step_id: int) -> List[List[str]]:
+        """Returns tool usage grouped by cycle for a step."""
+        filtered = [h for h in self.memory.tool_history if h.get("step_id") == step_id]
+        if not filtered:
+            return []
+        # Group tools by cycle
+        cycles: Dict[int, List[str]] = {}
+        for h in filtered:
+            c = int(h.get("cycle", 0))
+            cycles.setdefault(c, []).append(h.get("tool_name", ""))
+        return [cycles[c] for c in sorted(cycles.keys())]
+
     def get_roadmap(self) -> str:
         """Generates a concise tree view of the active folder using glob."""
         tree_lines = []
@@ -289,3 +312,84 @@ class SessionMemoryManager:
 
         process_directory(active_dir, 0)
         return "\n".join(tree_lines)
+
+    def get_recent_file_paths(self, lookback_steps: int = 2) -> List[str]:
+        """
+        Retrieves file paths accessed in the last `lookback_steps` distinct steps.
+        
+        Args:
+            lookback_steps (int): Number of previous distinct steps to consider.
+            
+        Returns:
+            List[str]: List of unique file paths accessed.
+        """
+        paths = set()
+        seen_step_ids = set()
+        
+        # Iterate backwards through tool history
+        for entry in reversed(self.memory.tool_history):
+            step_id = entry.get("step_id")
+            tool_name = entry.get("tool_name", "")
+            args = entry.get("args", {})
+            
+            # If we've collected enough steps and this is a new one, stop
+            if len(seen_step_ids) >= lookback_steps and step_id not in seen_step_ids:
+                break
+                
+            seen_step_ids.add(step_id)
+            
+            # Check for file read tools
+            if tool_name in ["read_file", "read_multiple_files"]:
+                # Try to extract paths
+                # Handle single 'path'
+                if "path" in args and isinstance(args["path"], str):
+                    paths.add(args["path"])
+                    
+                # Handle list 'paths'
+                if "paths" in args and isinstance(args["paths"], list):
+                    for p in args["paths"]:
+                        if isinstance(p, str):
+                            paths.add(p)
+                            
+        return list(paths)
+
+    def get_clipboard_subset(self, paths: List[str]) -> Dict[str, str]:
+        """
+        Returns a subset of the clipboard containing only the specified paths.
+        Handles relative/absolute path matching.
+        """
+        subset = {}
+        
+        # Normalize request paths to keys used in clipboard
+        # The clipboard logic tries to store relative paths if within workspace
+        # We need to be robust in matching
+        
+        normalized_paths = set()
+        for p in paths:
+             # Add raw
+             normalized_paths.add(p)
+             # Add relative if absolute
+             if os.path.isabs(p) and p.startswith(self.workspace_root):
+                 normalized_paths.add(os.path.relpath(p, self.workspace_root))
+             # Add absolute if relative
+             elif not os.path.isabs(p):
+                 normalized_paths.add(os.path.join(self.workspace_root, p))
+                 
+        for key, content in self.memory.clipboard.items():
+            # Check if key (which might be rel or abs) matches any of our target paths
+            # We explicitly check direct match, or normalized match
+            
+            # 1. Exact match
+            if key in normalized_paths:
+                subset[key] = content
+                continue
+                
+            # 2. Key is relative, check if its absolute matches
+            key_abs = key
+            if not os.path.isabs(key):
+                key_abs = os.path.join(self.workspace_root, key)
+                
+            if key_abs in [p if os.path.isabs(p) else os.path.join(self.workspace_root, p) for p in normalized_paths]:
+                 subset[key] = content
+                 
+        return subset

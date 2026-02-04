@@ -69,6 +69,7 @@ class Orchestrator:
                     required_scripts=self.skill_manager.get_required_scripts(skill_name)
                 )
                 
+                
                 # --- PHASE 2: EXECUTION LOOP ---
                 tool_context = skill_context.tool_definitions
                 print("\n========== PHASE 2: EXECUTION (SOP GUIDED) ==========")
@@ -86,36 +87,10 @@ class Orchestrator:
                     self.memory_manager.memory.current_step_id = current_step.id
                     self.memory_manager.save_state()
                     
-                    # Script step short-circuit (enforced)
-                    if self._is_script_step(current_step):
-                        script_name = self._extract_script_name(current_step)
-                        if not script_name:
-                            logger.error("Script step missing script name. Aborting.")
-                            return
-                        script_args = self._extract_script_args(current_step, script_name, task_input)
-                        script_result = self.skill_manager.run_skill_script(
-                            name=skill_name,
-                            script_name=script_name,
-                            args=script_args,
-                            project_root=self.memory_manager.memory.active_folder
-                        )
-                        logger.info(f"Script result: {script_result[:200]}...")
-                        if script_result.startswith("[SUCCESS]"):
-                            # If init script, update project root to newest folder
-                            if "init" in script_name.lower():
-                                new_root = self._find_newest_dir(self.memory_manager.memory.active_folder)
-                                if new_root:
-                                    logger.info(f"Switching project root to {new_root}")
-                                    self.memory_manager.set_project_root(new_root)
-                            current_step.status = "done"
-                            self.memory_manager.update_step_status(current_step.id, "done")
-                            step_idx += 1
-                            continue
-                        else:
-                            logger.warning(f"Script step failed: {script_result}")
-                            # fall through to retry logic for human-in-the-loop via LLM
-                    
                     # 2. Execute Step (LLM)
+                    # Note: We rely on the LLM (StepExecutor) to decide whether to run a script 
+                    # via the 'skill-server' tool or perform other actions.
+                    
                     executor = StepExecutor(self.memory_manager, tool_context, self.telemetry)
                     
                     # Retry Loop (Orchestrator Level)
@@ -144,16 +119,15 @@ class Orchestrator:
                         )
                         
                         # 4. Decision Logic
-                        is_script = "script" in current_step.title.lower() or "run" in current_step.title.lower()
                         explicit_done = "[STEP_COMPLETE]" in result.output
                         
-                        if missing and not is_script:
+                        if missing:
                              logger.warning(f"Validation Failed: Missing {missing}")
                              retry_feedback = f"VALIDATION ERROR: Missing required artifacts: {json.dumps(missing)}"
-                        elif hallucinated and not verified and not is_script:
+                        elif hallucinated and not verified:
                              logger.warning("Validation Failed: Hallucinated files.")
                              retry_feedback = "VALIDATION ERROR: Files claimed but not found."
-                        elif explicit_done or (not missing and expectations) or is_script:
+                        elif explicit_done or (not missing and expectations):
                              # Success!
                              
                              # --- CRITIC PHASE ---
@@ -168,6 +142,11 @@ class Orchestrator:
                                      self.memory_manager.register_artifact(str(current_step.id), vf)
                                  
                                  logger.info(f"Step {current_step.id} Complete (Approved by Critic).")
+                                 
+                                 # Attempt to detect path shifts after successful step
+                                 # This handles cases where 'init' script was run by LLM
+                                 self._try_update_active_folder()
+                                 
                                  break # Exit Retry Loop
                              else:
                                  # Critic Rejected
@@ -212,6 +191,18 @@ class Orchestrator:
             logger.critical(f"Global Error: {e}", exc_info=True)
 
     # --- Internal Helpers ---
+    
+    def _try_update_active_folder(self):
+        """
+        Heuristic: Check if a new directory appeared and switch to it if appropriate.
+        Prevents recursive nesting by checking real paths.
+        """
+        new_root = self._find_newest_dir(self.memory_manager.memory.active_folder)
+        if new_root and new_root != self.memory_manager.memory.active_folder:
+            # Prevent switching to a parent directory or staying same
+            if new_root.startswith(self.memory_manager.memory.active_folder):
+                 logger.info(f"Switching active folder to {new_root}")
+                 self.memory_manager.update_active_folder(new_root)
 
     async def _run_critic_phase(self, worker_output: str, current_step: SkillStep, global_context: str = "") -> CriticOutput:
         """
@@ -381,86 +372,6 @@ class Orchestrator:
         
         return plan_output
 
-    def _enforce_required_scripts(self, steps: List[SkillStep], required_scripts: List[str]) -> List[SkillStep]:
-        """Ensures required scripts from SKILL.md are represented as explicit steps in order."""
-        if not required_scripts:
-            return steps
-        base_context = steps[0].skill_raw_context if steps else ""
-
-        def step_mentions_script(step: SkillStep, script: str) -> bool:
-            hay = " ".join([
-                step.title or "",
-                step.task_instruction or "",
-                step.task_query or "",
-                " ".join(step.references or [])
-            ])
-            return script in hay or f"scripts/{script}" in hay
-
-        new_steps: List[SkillStep] = []
-        i = 0
-        for script in required_scripts:
-            found_idx = None
-            for idx in range(i, len(steps)):
-                if step_mentions_script(steps[idx], script):
-                    found_idx = idx
-                    break
-            if found_idx is None:
-                new_steps.append(SkillStep(
-                    id=0,
-                    title=f"Run required script: {script}",
-                    task_instruction=f"Run required script scripts/{script}.",
-                    task_query=f"Run `bash scripts/{script}` in the project root.",
-                    references=[f"scripts/{script}"],
-                    content=f"Execute scripts/{script} as required by the skill manual.",
-                    skill_raw_context=base_context
-                ))
-            else:
-                new_steps.extend(steps[i:found_idx + 1])
-                i = found_idx + 1
-
-        if i < len(steps):
-            new_steps.extend(steps[i:])
-
-        # Re-index steps
-        for idx, step in enumerate(new_steps, start=1):
-            step.id = idx
-
-        return new_steps
-
-    def _is_script_step(self, step: SkillStep) -> bool:
-        refs = " ".join(step.references or [])
-        query = step.task_query or ""
-        return "scripts/" in refs or "scripts/" in query or "script" in step.title.lower()
-
-    def _extract_script_name(self, step: SkillStep) -> Optional[str]:
-        refs = " ".join(step.references or [])
-        match = re.search(r"scripts/([A-Za-z0-9._-]+\.(?:sh|py|js))", refs)
-        if match:
-            return match.group(1)
-        match = re.search(r"scripts/([A-Za-z0-9._-]+\.(?:sh|py|js))", step.task_query or "")
-        if match:
-            return match.group(1)
-        return None
-
-    def _extract_script_args(self, step: SkillStep, script_name: str, query: str) -> List[str]:
-        task_query = step.task_query or ""
-        # Try to parse args after script name in task_query
-        match = re.search(rf"{re.escape(script_name)}\s+([^\n`]+)", task_query)
-        if match:
-            raw = match.group(1).strip()
-            return [p for p in raw.split() if p]
-        # Default init arg if needed
-        if "init" in script_name.lower():
-            return [self._derive_project_name(query)]
-        return []
-
-    def _derive_project_name(self, query: str) -> str:
-        base = re.sub(r"[^A-Za-z0-9]+", "-", query.strip().lower())
-        base = base.strip("-")
-        if not base:
-            return "web-artifact"
-        return base[:32]
-
     def _find_newest_dir(self, base_dir: str) -> Optional[str]:
         try:
             entries = []
@@ -474,7 +385,12 @@ class Orchestrator:
             if not entries:
                 return None
             entries.sort(key=lambda p: os.path.getmtime(p), reverse=True)
+            
+            # Check duplication - if newest dir name == current dir name, it might be recursive
+            # But here base_dir IS current dir.
+            # We just return the path. Logic elsewhere handles checks.
             return entries[0]
+            
         except Exception as e:
             logger.warning(f"Failed to detect newest dir: {e}")
             return None

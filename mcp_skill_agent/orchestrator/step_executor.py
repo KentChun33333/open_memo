@@ -75,6 +75,11 @@ class StepExecutor:
         # Use specific task_query if available, else fallback to global task_input
         effective_input = current_step.task_query if current_step.task_query else task_input
         
+        # --- Context Optimization: Recent Access Policy ---
+        # Only inject files accessed in the last 2 steps
+        recent_paths = self.memory_manager.get_recent_file_paths(lookback_steps=2)
+        filtered_clipboard = self.memory_manager.get_clipboard_subset(recent_paths)
+        
         handover = StepExecutorInput(
             task_input=effective_input,
             active_folder=active_folder,
@@ -82,7 +87,7 @@ class StepExecutor:
             session_context=session_context,
             tool_definitions=self.tool_context_str,
             expectations=expectations,
-            clipboard=json.dumps(self.memory_manager.get_clipboard(), indent=2), # Inject File Cache
+            clipboard=json.dumps(filtered_clipboard, indent=2), # Inject Filtered File Cache
             step_content=current_step.content, # New: Full instruction in System Prompt
             sop_context=sop_context            # New: Full SOP Context in System Prompt
         )
@@ -211,7 +216,7 @@ User Update: Please fix the issues identified by the Tech Lead and continue.
                     
                     # --- Capture Tool Usage for Router ---
                     # We inspect the agent's recent history to find tool calls
-                    current_cycle_tools = []
+                    current_cycle_tools = [] # List of (name, args)
                     try:
                         # Inspect recent messages in worker history
                         # Assuming worker.history or llm.history is a list of messages
@@ -231,7 +236,13 @@ User Update: Please fix the issues identified by the Tech Lead and continue.
                                 if hasattr(msg, "tool_calls") and msg.tool_calls:
                                     for tc in msg.tool_calls:
                                         t_name = tc.function.name if hasattr(tc, "function") else str(tc)
-                                        current_cycle_tools.append(t_name)
+                                        t_args = {}
+                                        try:
+                                            if hasattr(tc, "function") and tc.function.arguments:
+                                                t_args = json.loads(tc.function.arguments)
+                                        except Exception:
+                                            pass
+                                        current_cycle_tools.append((t_name, t_args))
                     except Exception as e:
                         logger.warning(f"Failed to extract tool usage: {e}")
 
@@ -239,13 +250,13 @@ User Update: Please fix the issues identified by the Tech Lead and continue.
                     self._capture_read_results(history_source)
                     
                     # Log to Session Memory
-                    for t_name in current_cycle_tools:
+                    for t_name, t_args in current_cycle_tools:
                         self.memory_manager.log_tool_usage(
                             agent_name=worker_name,
                             step_id=current_step.id,
                             cycle=cycle,
                             tool_name=t_name,
-                            args={} # parsing args is complex, skipping for now
+                            args=t_args
                         )
                     
                     logger.debug(f"[{worker_name}] Cycle {cycle} Output: {response[:100]}...")
