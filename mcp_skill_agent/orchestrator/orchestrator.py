@@ -64,10 +64,7 @@ class Orchestrator:
 
                 skill_context = await self._discover_skill_context(skill_name)
                 plan_output = await self._plan_atomic_steps(skill_context, query)
-                steps = self._enforce_required_scripts(
-                    steps=plan_output.steps,
-                    required_scripts=self.skill_manager.get_required_scripts(skill_name)
-                )
+                steps = plan_output.steps
                 
                 
                 # --- PHASE 2: EXECUTION LOOP ---
@@ -111,6 +108,11 @@ class Orchestrator:
                             attempt_idx=attempt
                         )
                         
+
+                        # 2b. Attempt Folder Update (Early Detection)
+                        # If init script ran, we might be in a new directory now.
+                        self._try_update_active_folder()
+
                         # 3. Verification (The Judge)
                         expectations = getattr(current_step, "expected_artifacts", [])
                         verified, missing, hallucinated = self.verifier.verify_artifacts(

@@ -28,6 +28,7 @@ class StepExecutorInput:
     clipboard: str = "" # New: Persisted file content
     step_content: str = "" # New: Moved from User Prompt
     sop_context: str = ""  # New: Moved from User Prompt
+    skill_context: str = "" # New: Full SKILL.md Manual
 
     def to_xml(self) -> str:
         """Serializes the handover context to XML for the Worker."""
@@ -38,6 +39,9 @@ class StepExecutorInput:
 <ProjectRoadmap>
 {self.roadmap}
 </ProjectRoadmap>
+<SkillManual>
+{self.skill_context}
+</SkillManual>
 <StepContent>
 {self.step_content}
 </StepContent>

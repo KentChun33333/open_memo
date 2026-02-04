@@ -89,7 +89,8 @@ class StepExecutor:
             expectations=expectations,
             clipboard=json.dumps(filtered_clipboard, indent=2), # Inject Filtered File Cache
             step_content=current_step.content, # New: Full instruction in System Prompt
-            sop_context=sop_context            # New: Full SOP Context in System Prompt
+            sop_context=sop_context,           # New: Full SOP Context in System Prompt
+            skill_context=current_step.skill_raw_context # New: Inject SKILL.md
         )
         
         # 2b. Inject Warnings (Side-channel)

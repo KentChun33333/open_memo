@@ -32,10 +32,17 @@ SPECIALIZED KNOWLEDGE BASE (CRITICAL):
    - Never assume root `/` maps to `public/`.
 
 PROTOCOL:
-1. CONSULT ROADMAP: Orient yourself.
-2. IMPLEMENT: Write code using `write_file`.
-3. VERIFY: Check for the detailed conflicts above.
-4. OUTPUT: Return JSON signal when done.
+1. CONSULT <SkillManual>: It contains the "Source of Truth".
+   - **IF** the manual requires a script for initialization, **RUN IT** (`run_skill_script`).
+   - If the script succeeds (returns "Setup complete"), YOU ARE DONE. Return JSON success.
+   - Do NOT needlessly read files to "verify" if the script already confirmed success.
+2. CONSULT ROADMAP: Orient yourself.
+3. IMPLEMENT: Write code using `write_file`.
+4. VERIFY: Check for the detailed conflicts above.
+5. OUTPUT: Return JSON signal when done.
+   - Do NOT output [STEP_COMPLETE].
+   - Do NOT use `execute_tool`.
+   
    Schema:
    {{
      "status": "success",
@@ -56,11 +63,15 @@ The SubTask Description
 {worker_context_xml}
 
 CRITICAL PROTOCOL:
-1. CONSULT ROADMAP: Use it to orient yourself.
-2. TRUST THE SYSTEM: The system will verify your work.
+1. CONSULT <SkillManual>: It contains the "Source of Truth" for this skill.
+   - **IF** the manual requires a script (e.g. `scripts/init-artifact.sh`) for this step or for initialization, **YOU MUST RUN IT** using `run_skill_script`.
+   - Start by running necessary scripts before writing code manually.
+2. CONSULT ROADMAP: Use it to orient yourself.
+3. TRUST THE SYSTEM: The system will verify your work.
 3. OUTPUT FORMAT: You MUST return a JSON object to signal completion.
    - Do NOT output [STEP_COMPLETE].
    - Do NOT wrap JSON in markdown blocks (just raw JSON if possible, or ```json block).
+   - Do NOT use `execute_tool`. Use the specific tool names directly (e.g. `read_files`, `run_skill_script`).
    
    Schema:
    {{

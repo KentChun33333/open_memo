@@ -3,6 +3,7 @@ import glob
 import yaml
 import logging
 import re
+from config_loader import config
 from typing import Dict, List, Optional
 import sys
 import time
@@ -221,7 +222,7 @@ PATH: {skill.path}
                 cwd=cwd, 
                 capture_output=True, 
                 text=True, 
-                timeout=60 # Increased timeout for potentially long operations
+                timeout=config.get("script_execution_timeout", 300) # Default 5 minutes
             )
             
             duration = time.time() - start_time
