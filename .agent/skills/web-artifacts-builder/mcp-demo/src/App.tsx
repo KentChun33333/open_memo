@@ -35,7 +35,7 @@ function App() {
         <Tabs defaultValue="components">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="components">Components</TabsTrigger>
-            <TabsTrigger value="form">Form</TabsWarning>
+            <TabsTrigger value="form">Form</TabsTrigger>
             <TabsTrigger value="about">About</TabsTrigger>
           </TabsList>
 

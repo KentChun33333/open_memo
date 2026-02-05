@@ -52,6 +52,13 @@ We are following the atomic planner to break down the task into subtasks to acch
 2. TRUST THE SYSTEM: The system will verify your work; focus on execution.
 3. OUTPUT FORMAT: Return a JSON object (as defined below) to signal completion.
 
+### 4. DEBUGGING PROTOCOL (SMART ERROR HANDLING)
+If a tool execution fails or produces unexpected results:
+1.  **INSPECT LOGS**: Read `.agent/memory/observation/file_tools_verbose.log` to see the exact STDOUT/STDERR of your commands. This is your "Black Box" recorder.
+2.  **VERIFY STATE**: Do not assume files exist. Use `list_dir` to confirm.
+3.  **PIVOT**: If a script fails repeatedly, try to fix the script using `edit_file`, or use `execute_command` to run the steps manually.
+4.  **REPORT**: If you cannot fix it, return a failure status in JSON with the exact error log snippet.
+
 OUTPUT SCHEMA:
 You MUST return a JSON object to signal completion.
 Do NOT wrap JSON in markdown blocks (just raw JSON if possible, or ```json block).
@@ -69,6 +76,7 @@ USER_DYNAMIC_CONTEXT_TEMPLATE = """
   <SOP>{sop_context}</SOP>
   <Roadmap>{roadmap}</Roadmap>
   <FileCache>{clipboard}</FileCache>
+  <DebugLog>.agent/memory/observation/file_tools_verbose.log</DebugLog>
   <Alerts>{alerts}</Alerts>
 </CurrentState>
 
@@ -128,6 +136,7 @@ Your goal is to map the USER QUERY to the SKILL PROTOCOL.
    - For each step, define the `task_query` to be extremely specific about WHICH script/tool to use based on the Manual.
    - **CRITICAL**: If the manual refers to a script (e.g., `init.sh`), you MUST resolve it to its full path or relative path from the skill directory.
    - Example `task_query`: "Run `source /absolute/path/to/skill/scripts/init.sh` using `execute_command`."
+   - **Validation Rule**: For `expected_artifacts`, List ONLY precise filenames (e.g., `package.json`, `src/App.tsx`). Do NOT use wildcards (`*.tsx`) or parenthetical comments (`(40+ files)`). The system checks existence strictly.
 
 AVAILABLE RESOURCES:
 {resources}
