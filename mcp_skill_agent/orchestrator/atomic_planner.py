@@ -9,7 +9,6 @@ from ..logger import get_logger
 from ..telemetry import TelemetryManager
 from ..prompt import ATOMIC_PLANNER_INSTRUCTION, ATOMIC_REPLANNER_INSTRUCTION
 from .structs import AtomicPlannerInput, AtomicPlannerOutput, SkillStep
-from .cache import PlanCache
 
 logger = get_logger("atomic_planner")
 
@@ -29,7 +28,6 @@ class AtomicPlanner:
         # 0. Telemetry & Cache Check
         tm = TelemetryManager()
         tm.log_event(event_type="PLANNING_START", agent_name="AtomicPlanner", details={"query": input_data.query})
-        cache = PlanCache(os.getcwd()) # Re-instantiate for saving later
 
         # 1. Identify Steps & Expectations (Rich Metadata)
         raw_output = await self._identify_steps(input_data)
@@ -48,7 +46,10 @@ class AtomicPlanner:
         try:
             for i, s_data in enumerate(step_data):
                 if isinstance(s_data, str):
-                    steps.append(SkillStep(id=i+1, title=s_data, skill_raw_context=input_data.skill_content))
+                    step = SkillStep(id=i+1, title=s_data, skill_raw_context=input_data.skill_content)
+                    # Validate and synthesize
+                    step = self._validate_step(step)
+                    steps.append(step)
                 else:
                     title = s_data.get("title", f"Step {i+1}")
                     # Fallback support for various key names
@@ -60,7 +61,7 @@ class AtomicPlanner:
                     # Use narrative as default content if available
                     content = narrative if narrative else "(See Task Instruction)"
 
-                    steps.append(SkillStep(
+                    step = SkillStep(
                         id=i+1, 
                         title=title, 
                         expected_artifacts=artifacts,
@@ -69,7 +70,10 @@ class AtomicPlanner:
                         references=refs,
                         skill_raw_context=input_data.skill_content, # Pass full context
                         content=content
-                    ))
+                    )
+                    # Validate and synthesize
+                    step = self._validate_step(step)
+                    steps.append(step)
         except Exception as e:
             logger.error(f"Failed to parse step data: {e}")
             # Fallback
@@ -89,10 +93,7 @@ class AtomicPlanner:
                 "steps": [s.title for s in steps]
             }
         )
-        
-        # Save to Cache
-        cache.set(input_data.query, input_data.skill_content, final_output)
-        
+                
         return final_output
 
     async def replan(self, current_plan: AtomicPlannerOutput, failed_step: SkillStep, failure_reason: str, skill_content: str) -> AtomicPlannerOutput:
@@ -117,7 +118,7 @@ class AtomicPlanner:
             query="Original Goal (Implied)", # We might need to persist original query or retrieve it.
             failed_step=failed_step.title,
             failure_reason=failure_reason,
-            content=skill_content[:10000]
+            content=skill_content
         )
         
         agent = Agent(name="AtomicRepanner", instruction="Generate Recovery Plan.")
@@ -175,7 +176,7 @@ class AtomicPlanner:
         """Ask LLM to list high-level steps with rich metadata."""
         prompt = ATOMIC_PLANNER_INSTRUCTION.format(
             query=input_data.query,
-            content=input_data.skill_content[:15000],
+            content=input_data.skill_content,
             resources=input_data.resources
         )
         agent = Agent(name="AtomicPlanner", instruction="Extract steps as JSON.")
@@ -184,15 +185,27 @@ class AtomicPlanner:
             try:
                 resp = await llm.generate_str(prompt)
                 
+                # DEBUG: Log the raw LLM response
+                logger.info(f"[DEBUG] Raw LLM response length: {len(resp)} chars")
+                logger.info(f"[DEBUG] Raw LLM response (first 500 chars):\n{resp[:500]}")
+                
                 # Robust extraction
                 json_str = resp.strip()
                 match = re.search(r"```json\s*(\{.*?\})\s*```", resp, re.DOTALL)
-                if match: json_str = match.group(1)
+                if match: 
+                    json_str = match.group(1)
+                    logger.info("[DEBUG] Extracted JSON from ```json``` block")
                 elif re.search(r"(\{.*\})", resp, re.DOTALL):
-                     json_str = re.search(r"(\{.*\})", resp, re.DOTALL).group(1)
+                    json_str = re.search(r"(\{.*\})", resp, re.DOTALL).group(1)
+                    logger.info("[DEBUG] Extracted JSON from raw braces")
+                else:
+                    logger.warning("[DEBUG] No JSON structure found in response!")
                 
                 data = json.loads(json_str)
+                logger.info(f"[DEBUG] Parsed JSON keys: {list(data.keys())}")
+                logger.info(f"[DEBUG] Steps count: {len(data.get('steps', []))}")
                 return data
             except Exception as e:
                 logger.error(f"Step ID failed: {e}")
+                logger.error(f"[DEBUG] Failed json_str (first 500): {json_str[:500] if json_str else 'None'}")
                 return {}

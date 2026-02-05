@@ -218,6 +218,24 @@ class SessionMemoryManager:
             "args": args
         })
 
+    def log_agent_feedback(self, step_id: int, agent_name: str, feedback: str, feedback_type: str):
+        """
+        Logs feedback from an agent (e.g., Critic, Tech Lead) for a given step.
+        
+        Args:
+            step_id: The ID of the step this feedback relates to.
+            agent_name: Name of the agent providing feedback (e.g., "Technical-Critic").
+            feedback: The full feedback text.
+            feedback_type: Type of feedback (e.g., "APPROVED", "REJECTED").
+        """
+        self.memory.agent_feedback_history.append({
+            "step_id": step_id,
+            "agent_name": agent_name,
+            "feedback": feedback,
+            "feedback_type": feedback_type
+        })
+        logger.info(f"Agent feedback logged: {agent_name} -> {feedback_type} for step {step_id}")
+
     def get_tool_history(self, step_id: int) -> List[List[str]]:
         """Returns tool usage grouped by cycle for a step."""
         filtered = [h for h in self.memory.tool_history if h.get("step_id") == step_id]

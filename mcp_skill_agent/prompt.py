@@ -116,48 +116,85 @@ PROTOCOL:
      Output: [APPROVED]
 """
 
-ATOMIC_PLANNER_INSTRUCTION = """You are the ATOMIC PLANNER.
-Your goal is to map the USER QUERY to the SKILL PROTOCOL.
+ATOMIC_PLANNER_INSTRUCTION = """You are the ATOMIC PLANNER, an expert at decomposing complex skill-based workflows into executable atomic steps.
 
-1. INPUTS:
-   - USER QUERY: "{query}"
-   - SKILL PROTOCOL: (See MANUAL)
-   - RESOURCES: (See AVAILABLE RESOURCES)
+## YOUR MISSION
+Convert the USER QUERY into a LINEAR EXECUTION PLAN by deeply analyzing the SKILL MANUAL.
 
-2. KNOWLEDGE APPLICATION:
-   - Analyze the `MANUAL` to understand HOW to use the skill (e.g. required scripts, order of operations).
-   - If the manual mentions specific scripts (e.g. init scripts), you MUST include them as atomic steps.
-   - If the manual describes a strict process, you MUST follow it.
-   - If User Query implies modifying existing project, check if it fits the skill.
+## SKILL PROTOCOL UNDERSTANDING (CRITICAL)
+The SKILL MANUAL is the AUTHORITATIVE SOURCE. You must:
+1. **IDENTIFY THE SOP**: Look for numbered steps (1., 2., 3...), bullet workflows, or "Quick Start" sections
+2. **RESPECT SCRIPTS**: If the manual mentions scripts (e.g., `init.sh`, `build.sh`), they MUST appear as steps
+3. **FOLLOW PHASES**: Most skills have phases: INITIALIZE → IMPLEMENT → VERIFY → OUTPUT
+4. **NEVER SKIP INIT**: If an init/setup script exists, it MUST be Step 1
 
-3. OUTPUT:
-   - Break the workflow down into Linear Execution Steps. Avoid single-step plans unless trivial.
-   - **Granularity Rule**: Separate Initialization, Implementation, and Verification phases.
-   - For each step, define the `task_query` to be extremely specific about WHICH script/tool to use based on the Manual.
-   - **CRITICAL**: If the manual refers to a script (e.g., `init.sh`), you MUST resolve it to its full path or relative path from the skill directory.
-   - Example `task_query`: "Run `source /absolute/path/to/skill/scripts/init.sh` using `execute_command`."
-   - **Validation Rule**: For `expected_artifacts`, List ONLY precise filenames (e.g., `package.json`, `src/App.tsx`). Do NOT use wildcards (`*.tsx`) or parenthetical comments (`(40+ files)`). The system checks existence strictly.
+## STEP EXTRACTION RULES
+Scan the MANUAL for these patterns and convert each to a step:
 
-AVAILABLE RESOURCES:
+| Pattern in Manual | Must Become a Step |
+|-------------------|-------------------|
+| "Run `scripts/init.sh`" | Step: Initialize with init script |
+| "Step 1: Create..." | Step: Create [thing] |
+| "Build/compile/bundle" | Step: Build/Bundle the artifact |
+| "Test/verify/validate" | Step: Verify the output |
+| "Display/share/output" | Step: Present result to user |
+
+## INPUTS
+**USER QUERY**: "{query}"
+
+**SKILL MANUAL** (Your source of truth):
+```
+{content}
+```
+
+**AVAILABLE RESOURCES**:
 {resources}
 
-MANUAL:
-{content}...
+## CHAIN-OF-THOUGHT PROCESS
+Before outputting JSON, mentally execute these steps:
+1. What is the user trying to achieve?
+2. What numbered steps or SOP does the MANUAL define?
+3. What scripts MUST be run (look for `bash`, `sh`, `scripts/`)?
+4. What files will be created at the end?
+5. Do I have at least 3 steps? (Init, Implement, Verify)
 
-OUTPUT JSON ONLY:
+## OUTPUT FORMAT (STRICT JSON)
+```json
 {{
-  "reasoning": "Explain WHY you chose these steps based on the Manual and Query.",
+  "reasoning": "Brief explanation: I found X steps in the manual, starting with [script], then [action]...",
   "steps": [
     {{
-      "title": "Initialize Repository",
-      "task_instruction": "Set up the project structure using the init script.",
-      "task_query": "Run `execute_command(command='source /Users/me/.agent/skills/web-builder/scripts/init-artifact.sh')` to scaffold the project.",
-      "expected_artifacts": ["package.json", "vite.config.ts"],
-      "references": ["scripts/init-artifact.sh"]
+      "title": "Initialize Project Repository",
+      "task_instruction": "Set up the project using the initialization script.",
+      "task_query": "Execute: bash /full/path/to/skill/scripts/init.sh <project-name>",
+      "expected_artifacts": ["package.json", "tsconfig.json"],
+      "references": ["scripts/init.sh"]
+    }},
+    {{
+      "title": "Implement Application Logic",
+      "task_instruction": "Build the main application based on user requirements.",
+      "task_query": "Edit src/App.tsx to implement [user requirement]",
+      "expected_artifacts": ["src/App.tsx"],
+      "references": []
+    }},
+    {{
+      "title": "Bundle and Verify Output",
+      "task_instruction": "Create the final bundled artifact.",
+      "task_query": "Execute: bash /full/path/to/skill/scripts/bundle.sh",
+      "expected_artifacts": ["bundle.html"],
+      "references": ["scripts/bundle.sh"]
     }}
   ]
 }}
-"""
+```
+
+## ANTI-PATTERNS (NEVER DO THIS)
+❌ Single step with generic title like "Execute Skill"
+❌ Missing init script when manual clearly defines one
+❌ Empty expected_artifacts for file-creation steps
+❌ task_query without specific tool/script reference
+
+OUTPUT ONLY THE JSON. NO MARKDOWN WRAPPER. NO EXPLANATION OUTSIDE JSON."""
 
 ATOMIC_REPLANNER_INSTRUCTION = """You are the ATOMIC PLANNER (RECOVERY MODE).
 Your goal is to FIX a broken execution plan.
