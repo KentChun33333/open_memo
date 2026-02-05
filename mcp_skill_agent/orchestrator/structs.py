@@ -30,34 +30,28 @@ class StepExecutorInput:
     sop_context: str = ""  # New: Moved from User Prompt
     skill_context: str = "" # New: Full SKILL.md Manual
 
-    def to_xml(self) -> str:
-        """Serializes the handover context to XML for the Worker."""
-        return f"""
-<WorkerContext>
-<TaskInput>{self.task_input}</TaskInput>
-<ActiveFolder>{self.active_folder}</ActiveFolder>
-<ProjectRoadmap>
-{self.roadmap}
-</ProjectRoadmap>
-<SkillManual>
-{self.skill_context}
-</SkillManual>
-<StepContent>
-{self.step_content}
-</StepContent>
-<SOPContext>
-{self.sop_context}
-</SOPContext>
-<FileCache>
-{self.clipboard}
-</FileCache>
-<SessionContext>
-{self.session_context}
-</SessionContext>
+    alerts: List[str] = field(default_factory=list) # New: Structured Side-Channels (Warnings/Feedback)
 
-<ExpectedArtifacts>{", ".join(self.expectations)}</ExpectedArtifacts>
-</WorkerContext>
-""".strip()
+    def to_system_protocol_view(self) -> str:
+        """Returns the Static System Context (Skill Manual)."""
+        return f"<SkillManual>\n{self.skill_context}\n</SkillManual>"
+
+    def to_user_status_view(self, template: str, step_id: int, step_title: str) -> str:
+        """Returns the Dynamic User Context using the provided template."""
+        # Format Alerts
+        alerts_str = ""
+        if self.alerts:
+             alerts_str = "\n".join([f"- {a}" for a in self.alerts])
+
+        return template.format(
+            task_input=self.task_input,
+            sop_context=self.sop_context,
+            roadmap=self.roadmap,
+            clipboard=self.clipboard,
+            alerts=alerts_str,
+            step_id=step_id,
+            step_title=step_title
+        )
 
 @dataclass
 class StepExecutorOutput:

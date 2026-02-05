@@ -12,7 +12,7 @@ def main():
     Main Entry Point for the Production Skill Agent.
     Delegates lifecycle management to the Orchestrator.
     """
-    query = 'please build a web artifact that example the Modle context protocol'
+    query = 'please leaverage skill of web-artifact-builder to build a web artifact with example of the Modle context protocol'
     if len(sys.argv) > 1:
         query = sys.argv[1]
     

@@ -7,9 +7,8 @@ from mcp_agent.workflows.llm.augmented_llm_openai import OpenAIAugmentedLLM
 from mcp_agent.workflows.llm.augmented_llm import RequestParams
 
 from ..logger import get_logger
-from ..config_loader import config
-from ..memory.session_memory import SessionMemoryManager
-from ..prompt import INSTRUCTION_POOL, SUBAGENT_INSTRUCTION, USER_PROMPT_TEMPLATE, AUTO_WRITE_PROMPT, GENERAL_SKILL_PROTOCOL
+from ..session_memory import SessionMemoryManager
+from ..prompt import INSTRUCTION_POOL, SUBAGENT_INSTRUCTION, USER_DYNAMIC_CONTEXT_TEMPLATE, AUTO_WRITE_PROMPT, GENERAL_SKILL_PROTOCOL
 from .structs import StepExecutorInput, StepExecutorOutput, SkillStep, TechLeadInput # Explicit import
 from .structs import StepExecutorInput, StepExecutorOutput, SkillStep, TechLeadInput # Explicit import
 
@@ -27,92 +26,35 @@ class StepExecutor:
         self.memory_manager = memory_manager
         self.telemetry = telemetry
         self.max_react_steps = 15 # Configurable?
-        self.max_react_steps = 15 # Configurable?
 
     async def execute(self, 
                       current_step: SkillStep, 
                       task_input: str, 
                       skill_name: str, 
-                      # sop_context removed
                       retry_feedback: str = "",
-                      attempt_idx: int = 0,
-                      context_switch_warning: str = "") -> StepExecutorOutput:
+                      attempt_idx: int = 0) -> StepExecutorOutput:
         """
         Executes a single attempt of a step.
         """
-        # 1. Prepare Context (Snapshot)
-        active_folder = self.memory_manager.memory.active_folder
-        session_snapshot = {
-            "artifacts": self.memory_manager.memory.artifacts,
-            "env_vars": self.memory_manager.memory.env_vars
-        }
-        session_context = json.dumps(session_snapshot, indent=2)
-        expectations = getattr(current_step, "expected_artifacts", [])
-
-        # 1b. Self-Generate SOP Context from Memory
-        sop_context = "Task List:\n"
-        plan = self.memory_manager.get_plan()
-        
-        if not plan:
-             sop_context += "(No Plan Found in Memory)\n"
-        else:
-             for s in plan:
-                 # Dictionary access because plan is List[Dict]
-                 s_id = s.get("id")
-                 s_title = s.get("title")
-                 s_status = s.get("status")
-                 
-                 mark = "[ ]"
-                 if s_id < current_step.id: mark = "[x]"
-                 elif s_id == current_step.id: mark = "[/]"
-                 elif s_status == "done": mark = "[x]"
-                 
-                 sop_context += f"{mark} {s_title}\n"
-
         # 2. Build Handover Envelope (Protocol Layer)
-        # Use specific task_query if available, else fallback to global task_input
-        effective_input = current_step.task_query if current_step.task_query else task_input
-        
-        # --- Context Optimization: Recent Access Policy ---
-        # Only inject files accessed in the last 2 steps
-        recent_paths = self.memory_manager.get_recent_file_paths(lookback_steps=2)
-        filtered_clipboard = self.memory_manager.get_clipboard_subset(recent_paths)
-        
-        handover = StepExecutorInput(
-            task_input=effective_input,
-            active_folder=active_folder,
-            roadmap=self.memory_manager.get_roadmap(),
-
-            session_context=session_context,
-            expectations=expectations,
-            clipboard=json.dumps(filtered_clipboard, indent=2), # Inject Filtered File Cache
-            step_content=current_step.content, # New: Full instruction in System Prompt
-            sop_context=sop_context,           # New: Full SOP Context in System Prompt
-            skill_context=current_step.skill_raw_context # New: Inject SKILL.md
+        handover = self._build_worker_context(
+            current_step=current_step,
+            task_input=task_input,
+            retry_feedback=retry_feedback
         )
-        
-        # 2b. Inject Warnings (Side-channel)
-        if retry_feedback:
-            handover.task_input += f"\n\n[PREVIOUS FAILURE]: {retry_feedback}"
 
         # 3. Construct System Prompt (Dynamic Persona)
         
         # Default Persona
         current_persona = "DEFAULT"
-        base_instruction = INSTRUCTION_POOL["DEFAULT"]
-        subagent_instruction = base_instruction.format(
-            worker_context_xml=handover.to_xml(),
-            general_skill_protocol=GENERAL_SKILL_PROTOCOL
-        )
+        subagent_instruction = self._build_system_instruction(handover)
         
-        # Log Start
-        self.memory_manager.log_event(f"Step {current_step.id} Started: {current_step.title}")
-        if self.telemetry:
-            self.telemetry.log_event(
-                event_type="STEP_START",
-                step_id=current_step.id,
-                details={"title": current_step.title, "attempt": attempt_idx, "persona": current_persona}
-            )
+
+        self.telemetry.log_event(
+            event_type="STEP_START",
+            step_id=current_step.id,
+            details={"title": current_step.title, "attempt": attempt_idx, "persona": current_persona}
+        )
 
         # 3. Spawn Ephemeral Agent
         worker_name = f"Worker-{skill_name}-{current_step.id}-{attempt_idx}"
@@ -122,7 +64,7 @@ class StepExecutor:
             server_names=["file-tools"] 
         )
 
-        logger.info(f"Spawning Worker: {worker_name} in {active_folder}")
+        logger.info(f"Spawning Worker: {worker_name} in {handover.active_folder}")
 
 
 
@@ -133,42 +75,26 @@ class StepExecutor:
             llm = await worker.attach_llm(OpenAIAugmentedLLM)
             
             # Initial User Prompt (Simplified Trigger)
-            # The heavy lifting is now in the System Prompt (handover.to_xml())
-            user_prompt = f"ACTION: Execute Step {current_step.id}: {current_step.title}. Refer to <StepContent> for details."
+            user_prompt = self._build_initial_user_prompt(current_step, handover)
             
             # 4. ReAct Loop (Smart Loop)
             react_max_cycles = 15 
             cycle = 0
             
-            # Track tool usage (heuristic)
-            # tool_usage_history = [] # REMOVED: Managed by SessionMemory
-            
-            # Heuristic: Is this a coding step?
-            is_coding_step = any(kw in current_step.title.lower() for kw in ['code', 'implement', 'write', 'create'])
-            
             while cycle < react_max_cycles:
                 cycle += 1
                 
-                # Fetch Tool History from Memory
-                current_tool_history = self.memory_manager.get_tool_history(current_step.id)
-
-                if cycle == 1:
-                    current_prompt = user_prompt
-                else:
-                    # Simple Continuation Prompt
-                    current_prompt = "Status Update: Continue execution. If done, output JSON."
+                current_prompt = user_prompt
 
                 try:
                     # The Agent's internal generate_loop handles tool calls (up to 15 iterations)
                     response = await llm.generate_str(current_prompt, RequestParams(max_iterations=self.max_react_steps))
                     final_response = response
                     
-                    # --- Capture Tool Usage for Router ---
                     # We inspect the agent's recent history to find tool calls
                     current_cycle_tools = [] # List of (name, args)
                     try:
                         # Inspect recent messages in worker history
-                        # Assuming worker.history or llm.history is a list of messages
                         history_source = getattr(worker, "history", []) or getattr(llm, "history", [])
                         if hasattr(history_source, "messages"): 
                              history_source = history_source.messages
@@ -179,7 +105,6 @@ class StepExecutor:
                              history_source = []
                         
                         # Look at the last few messages (since we just ran generate_str)
-                        # We are looking for messages with 'tool_calls' or similar
                         for msg in history_source[-15:]: 
                             if hasattr(msg, "role") and msg.role == "assistant":
                                 if hasattr(msg, "tool_calls") and msg.tool_calls:
@@ -248,6 +173,87 @@ class StepExecutor:
         return StepExecutorOutput(
             success=success_signal, 
             output=final_response
+        )
+
+
+
+    def _build_system_instruction(self, handover: StepExecutorInput) -> str:
+        """
+        Constructs the System Prompt using the appropriate Persona.
+        """
+        # Default Persona (Future: Select based on step type)
+        base_instruction = INSTRUCTION_POOL["DEFAULT"]
+        
+        return base_instruction.format(
+            skill_manual_xml=handover.to_system_protocol_view(),
+            general_skill_protocol=GENERAL_SKILL_PROTOCOL
+        )
+
+    def _build_initial_user_prompt(self, current_step: SkillStep, handover: StepExecutorInput) -> str:
+        """
+        Constructs the initial user message trigger.
+        Reinforces task context (Recency Bias).
+        """
+        return handover.to_user_status_view(
+            USER_DYNAMIC_CONTEXT_TEMPLATE, 
+            step_id=current_step.id,
+            step_title=current_step.title
+        )
+
+    def _build_worker_context(self, current_step: SkillStep, task_input: str, retry_feedback: str) -> StepExecutorInput:
+        """
+        Factory Method: Constructs the execution context for the worker.
+        Encapsulates all logic for snapshotting, filtering, and side-channel injection.
+        """
+        # 1. Prepare Environment Snapshot (Stateless)
+        active_folder = self.memory_manager.memory.active_folder
+        session_snapshot = {
+            "artifacts": self.memory_manager.memory.artifacts,
+            "env_vars": self.memory_manager.memory.env_vars
+        }
+        session_context = json.dumps(session_snapshot, indent=2)
+        
+        # 2. Generate SOP Context (Progress Tracker)
+        sop_context = "Task List:\n"
+        plan = self.memory_manager.get_plan()
+        if not plan:
+             sop_context += "(No Plan Found in Memory)\n"
+        else:
+             for s in plan:
+                 s_id = s.get("id")
+                 s_title = s.get("title")
+                 s_status = s.get("status")
+                 mark = "[ ]"
+                 if s_id < current_step.id: mark = "[x]"
+                 elif s_id == current_step.id: mark = "[/]"
+                 elif s_status == "done": mark = "[x]"
+                 sop_context += f"{mark} {s_title}\n"
+
+        # 3. Context Optimization (Working Set Policy)
+        # Fetch only files accessed in recent history to save tokens
+        recent_paths = self.memory_manager.get_recent_file_paths(lookback_steps=2)
+        filtered_clipboard = self.memory_manager.get_clipboard_subset(recent_paths)
+
+        # 4. Prepare Alerts (Side-Channels)
+        alerts = []
+        if retry_feedback:
+            # High-priority feedback from previous attempt
+            alerts.append(f"PREVIOUS FAILURE: {retry_feedback}")
+            
+        # 5. Construct DTO
+        effective_input = current_step.task_query if current_step.task_query else task_input
+        
+        return StepExecutorInput(
+            task_input=effective_input,
+            active_folder=active_folder,
+            roadmap=self.memory_manager.get_roadmap(),
+            session_context=session_context,
+            expectations=getattr(current_step, "expected_artifacts", []),
+            clipboard=json.dumps(filtered_clipboard, indent=2),
+            step_content=current_step.content,
+            sop_context=sop_context,
+            skill_context=current_step.skill_raw_context,
+            alerts=alerts
         )
 
     def _capture_read_results(self, history_messages: List[Any]):

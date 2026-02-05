@@ -4,6 +4,72 @@ import re
 from pathlib import Path
 from typing import Any, Optional
 from mcp.server.fastmcp import FastMCP
+import logging
+import json
+import datetime
+import traceback
+
+# Setup robust logging that NEVER writes to stdout (which breaks MCP)
+def setup_file_logging():
+    try:
+        # Determine log path: ../.agent/memory/observation/file_tools.log
+        base_dir = Path(__file__).parent.parent.resolve()
+        log_dir = base_dir / ".agent" / "memory" / "observation"
+        log_dir.mkdir(parents=True, exist_ok=True)
+        log_file = log_dir / "file_tools_verbose.log"
+        
+        # Configure a specific logger for tools
+        tool_logger = logging.getLogger("mcp_tools")
+        tool_logger.setLevel(logging.DEBUG)
+        
+        # File Handler
+        fh = logging.FileHandler(log_file, encoding='utf-8')
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        fh.setFormatter(formatter)
+        
+        # Remove existing handlers to avoid duplicates
+        if tool_logger.hasHandlers():
+            tool_logger.handlers.clear()
+            
+        tool_logger.addHandler(fh)
+        tool_logger.propagate = False # Do not propagate to root (which might print to stderr/stdout)
+        
+        return tool_logger
+    except Exception as e:
+        # If logging setup fails, purely silent fallback (to protect stdout)
+        return logging.getLogger("null")
+
+tool_logger = setup_file_logging()
+
+import functools
+
+# ... (logging setup) ...
+
+def log_activity(func):
+    @functools.wraps(func)
+    async def wrapper(*args, **kwargs):
+        func_name = func.__name__
+        tool_logger.info(f"======== TOOL CALL: {func_name} ========")
+        tool_logger.info(f"INPUT Args: {args}")
+        tool_logger.info(f"INPUT Kwargs: {kwargs}")
+        
+        try:
+            result = await func(*args, **kwargs)
+            
+            # Truncate result for log if massive, but keep it generous as requested
+            log_res = str(result)
+            if len(log_res) > 20000:
+                log_res = log_res[:20000] + "... [truncated]"
+            
+            tool_logger.info(f"OUTPUT: {log_res}")
+            tool_logger.info(f"======== END TOOL: {func_name} ========\n")
+            return result
+        except Exception as e:
+            tool_logger.error(f"ERROR in {func_name}: {e}\n{traceback.format_exc()}")
+            tool_logger.info(f"======== END TOOL (ERROR): {func_name} ========\n")
+            raise e
+            
+    return wrapper
 
 # Initialize FastMCP server instance
 mcp = FastMCP("file-tools")
@@ -13,6 +79,7 @@ mcp = FastMCP("file-tools")
 #
 
 @mcp.tool()
+@log_activity
 async def read_file(path: str) -> str:
     """Read the contents of a file at the given path."""
     try:
@@ -30,6 +97,7 @@ async def read_file(path: str) -> str:
         return f"Error reading file: {str(e)}"
 
 @mcp.tool()
+@log_activity
 async def write_file(path: str, content: str) -> str:
     """Write content to a file at the given path. Creates parent directories if needed."""
     try:
@@ -43,6 +111,7 @@ async def write_file(path: str, content: str) -> str:
         return f"Error writing file: {str(e)}"
 
 @mcp.tool()
+@log_activity
 async def edit_file(path: str, old_text: str, new_text: str) -> str:
     """Edit a file by replacing old_text with new_text. The old_text must exist exactly in the file."""
     try:
@@ -70,6 +139,7 @@ async def edit_file(path: str, old_text: str, new_text: str) -> str:
         return f"Error editing file: {str(e)}"
 
 @mcp.tool()
+@log_activity
 async def list_dir(path: str) -> str:
     """List the contents of a directory."""
     try:
@@ -152,6 +222,7 @@ def _guard_command(command: str, cwd: str) -> str | None:
     return None
 
 @mcp.tool()
+@log_activity
 async def execute_command(command: str, working_dir: Optional[str] = None) -> str:
     """Execute a shell command and return its output. Use with caution."""
     # Logic from nanobot ExecTool.execute
@@ -163,6 +234,9 @@ async def execute_command(command: str, working_dir: Optional[str] = None) -> st
     try:
         timeout = 60  # Default from nanobot
         
+        # Extra logging for command execution start
+        tool_logger.info(f"EXEC SHELL: '{command}' in '{cwd}'")
+
         process = await asyncio.create_subprocess_shell(
             command,
             stdout=asyncio.subprocess.PIPE,
@@ -208,4 +282,9 @@ async def execute_command(command: str, working_dir: Optional[str] = None) -> st
         return f"Error executing command: {str(e)}"
 
 if __name__ == "__main__":
-    mcp.run()
+    try:
+        tool_logger.info("Starting file-tools MCP server...")
+        mcp.run()
+    except Exception as e:
+        tool_logger.critical(f"SERVER CRASH: {e}", exc_info=True)
+        raise e

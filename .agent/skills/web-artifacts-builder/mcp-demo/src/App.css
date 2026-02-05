@@ -1,0 +1,10 @@
+/* Minimal app-level styles - most styling done via Tailwind classes */
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  direction: ltr;
+}
+
+#root {
+  min-height: 100vh;
+}

@@ -29,14 +29,7 @@ class AtomicPlanner:
         # 0. Telemetry & Cache Check
         tm = TelemetryManager()
         tm.log_event(event_type="PLANNING_START", agent_name="AtomicPlanner", details={"query": input_data.query})
-        
-        # Cache Lookup
-        cache = PlanCache(os.getcwd())
-        cached_plan = cache.get(input_data.query, input_data.skill_content)
-        if cached_plan:
-            logger.info("AtomicPlanner: Cache Hit! Returning cached plan.")
-            tm.log_event(event_type="PLANNING_CACHE_HIT", agent_name="AtomicPlanner", details={"step_count": len(cached_plan.steps)})
-            return cached_plan
+        cache = PlanCache(os.getcwd()) # Re-instantiate for saving later
 
         # 1. Identify Steps & Expectations (Rich Metadata)
         raw_output = await self._identify_steps(input_data)

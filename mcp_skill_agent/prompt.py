@@ -15,27 +15,23 @@ INSTRUCTIONS:
 
 
 GENERAL_SKILL_PROTOCOL = """
+1. GOVERNANCE (THE SUPREME LAW):
+   - The `SKILL.md` file in the skill directory is the authoritative source of truth.
+   - You MUST follow its instructions, constraints, and workflow steps precisely.
+   - If `SKILL.md` conflicts with general knowledge, `SKILL.md` wins.
 
-1. GENERAL SKILL PROTOCOL:
+2. META-TOOL ARCHITECTURE:
+   - This skill provides specialized scripts (Meta-Tools) in the `scripts/` directory.
+   - PREFER executing these scripts over writing your own generic code or shell commands.
+   - Example: If `scripts/build.sh` exists, use it instead of trying to run `npm build` manually.
 
-Each skill is a directory with SKILL.md as the entrypoint:
-my-skill/
-├── SKILL.md           # Main instructions (required)
-├── template.md        # Template for Claude to fill in
-├── examples/
-│   └── sample.md      # Example output showing expected format
-└── scripts/
-    └── validate.sh    # Script Claude can execute
+3. LIFECYCLE & STATE:
+   - Respect the lifecycle phases defined in the skill (e.g., Initialization -> Execution -> Verification).
+   - If an `init` script is mentioned, it MUST be run before any other operations.
 
-
-2. PATHS:
+4. PATH RESOLUTON:
    - Always use ABSOLUTE PATHS for all file and command operations.
    - Resolve relative paths against the current active folder.
-
-3. Priotize to run the script mentioned in SKILL.md with full path
-   - example: bash <skill-folder>/scripts/xxxxx.sh <arguments>
-   - example: python <skill-folder>/scripts/xxxxx.py <arguments>
-   ... etc
 """
 
 SUBAGENT_INSTRUCTION = """
@@ -45,35 +41,38 @@ You help to ACTUALLY DO the works using available tools.
 The sub-task is under the context of the overall skill flow with a user major query. 
 We are following the atomic planner to break down the task into subtasks to accheive the goal.
 
-The SubTask Description
-{worker_context_xml}
+### 1. SKILL MANUAL (STATIC KNOWLEDGE)
+{skill_manual_xml}
 
+### 2. PROTOCOL (RULES OF ENGAGEMENT)
 {general_skill_protocol}
 
-1. CONSULT ROADMAP: Use it to orient yourself.
-2. TRUST THE SYSTEM: The system will verify your work.
+### 3. OPERATIONAL GUIDELINES
+1. CONSULT ROADMAP: Use it to orient yourself within the broader project.
+2. TRUST THE SYSTEM: The system will verify your work; focus on execution.
+3. OUTPUT FORMAT: Return a JSON object (as defined below) to signal completion.
 
-OUTPUT FORMAT: 
-
+OUTPUT SCHEMA:
 You MUST return a JSON object to signal completion.
 Do NOT wrap JSON in markdown blocks (just raw JSON if possible, or ```json block).
 
-   Schema:
-   {{
-     "status": "success",
-     "summary": "Brief description of work done",
-     "created_files": ["relative/path/to/file1", "relative/path/to/file2"]
-   }}
+{{
+  "status": "success",
+  "summary": "Brief description of work done",
+  "created_files": ["relative/path/to/file1", "relative/path/to/file2"]
+}}
 """
 
-USER_PROMPT_TEMPLATE = """
-STEP ID: {step_id}
-ACTION: {step_title}
-DETAILS:
-{step_content}
+USER_DYNAMIC_CONTEXT_TEMPLATE = """
+<CurrentState>
+  <Task>{task_input}</Task>
+  <SOP>{sop_context}</SOP>
+  <Roadmap>{roadmap}</Roadmap>
+  <FileCache>{clipboard}</FileCache>
+  <Alerts>{alerts}</Alerts>
+</CurrentState>
 
-CONTEXT (SOP):
-{sop_context}
+ACTION: Execute Step {step_id}: {step_title}
 """
 
 
@@ -124,7 +123,8 @@ Your goal is to map the USER QUERY to the SKILL PROTOCOL.
    - If User Query implies modifying existing project, check if it fits the skill.
 
 3. OUTPUT:
-   - Break the workflow down into Linear Execution Steps.
+   - Break the workflow down into Linear Execution Steps. Avoid single-step plans unless trivial.
+   - **Granularity Rule**: Separate Initialization, Implementation, and Verification phases.
    - For each step, define the `task_query` to be extremely specific about WHICH script/tool to use based on the Manual.
    - **CRITICAL**: If the manual refers to a script (e.g., `init.sh`), you MUST resolve it to its full path or relative path from the skill directory.
    - Example `task_query`: "Run `source /absolute/path/to/skill/scripts/init.sh` using `execute_command`."

@@ -11,9 +11,9 @@ from mcp_agent.workflows.llm.augmented_llm_openai import OpenAIAugmentedLLM
 
 from ..config_loader import config
 from ..logger import get_logger, setup_logging
-from ..memory.session_memory import SessionMemoryManager
+from ..session_memory import SessionMemoryManager
 from .step_executor import StepExecutor
-from .structs import SkillStep, CriticInput, CriticOutput, AtomicPlannerInput, AtomicPlannerOutput # Explicit import
+from .structs import SkillStep, CriticInput, CriticOutput, AtomicPlannerInput, AtomicPlannerOutput, StepExecutorOutput # Explicit import
 from ..prompt import PLANNER_INSTRUCTION
 from ..telemetry import TelemetryManager
 
@@ -65,6 +65,7 @@ class Orchestrator:
                 skill_context = await self._discover_skill_context(skill_name)
                 plan_output = await self._plan_atomic_steps(skill_context, query)
                 steps = plan_output.steps
+                logger.info(f"PLAN GENERATED: {len(steps)} atomic steps.")
                 
                 # Log/Persist Plan to File
                 self.memory_manager.persist_plan_to_file(plan_output, query)
@@ -112,7 +113,7 @@ class Orchestrator:
 
                         # 2b. Attempt Folder Update (Early Detection)
                         # If init script ran, we might be in a new directory now.
-                        self._try_update_active_folder()
+                        self._try_update_active_folder(result)
 
                         # 3. Verification (The Judge)
                         expectations = getattr(current_step, "expected_artifacts", [])
@@ -148,7 +149,7 @@ class Orchestrator:
                                  
                                  # Attempt to detect path shifts after successful step
                                  # This handles cases where 'init' script was run by LLM
-                                 self._try_update_active_folder()
+                                 self._try_update_active_folder(result)
                                  
                                  break # Exit Retry Loop
                              else:
@@ -195,17 +196,68 @@ class Orchestrator:
 
     # --- Internal Helpers ---
     
-    def _try_update_active_folder(self):
+    def _try_update_active_folder(self, step_result: 'StepExecutorOutput'):
         """
-        Heuristic: Check if a new directory appeared and switch to it if appropriate.
-        Prevents recursive nesting by checking real paths.
+        Smart Context Switching:
+        Analyzes the artifacts created by the agent to detect if a new project root was established.
+        Strategy: Look for a common new directory prefix in 'created_files'.
         """
-        new_root = self._find_newest_dir(self.memory_manager.memory.active_folder)
-        if new_root and new_root != self.memory_manager.memory.active_folder:
-            # Prevent switching to a parent directory or staying same
-            if new_root.startswith(self.memory_manager.memory.active_folder):
-                 logger.info(f"Switching active folder to {new_root}")
-                 self.memory_manager.update_active_folder(new_root)
+        try:
+             # Extract created_files from the JSON in the output
+            import re
+            json_match = re.search(r"```json\s*(\{.*?\})\s*```", step_result.output, re.DOTALL)
+            if not json_match:
+                 # Try brace match
+                 json_match = re.search(r"(\{.*\})", step_result.output, re.DOTALL)
+            
+            if not json_match:
+                return
+
+            try:
+                data = json.loads(json_match.group(1))
+                created_files = data.get("created_files", [])
+            except:
+                return
+
+            if not created_files:
+                return
+
+            # Analyze for Common Prefix that is a directory
+            # Example: created ["my-app/package.json", "my-app/README.md"] -> candidate "my-app"
+            
+            # Normalize paths to be relative to current active folder if they are not absolute
+            candidates = []
+            current_root = self.memory_manager.memory.active_folder
+            
+            for f in created_files:
+                # Resolve absolute path
+                if os.path.isabs(f):
+                    full_path = f
+                else:
+                    full_path = os.path.join(current_root, f)
+                
+                # Get the first directory component relative to current root
+                rel = os.path.relpath(full_path, current_root)
+                if rel.startswith(".."): continue # Outside current root, ignore
+                if rel == ".": continue 
+                
+                parts = rel.split(os.sep)
+                if len(parts) > 1:
+                     # It's inside a subdirectory!
+                     candidates.append(parts[0])
+            
+            if candidates:
+                # Find most common candidate
+                from collections import Counter
+                most_common = Counter(candidates).most_common(1)[0][0]
+                
+                new_root = os.path.join(current_root, most_common)
+                if os.path.isdir(new_root):
+                     logger.info(f"Detected new project structure: {most_common}. Switching Context.")
+                     self.memory_manager.update_active_folder(new_root)
+
+        except Exception as e:
+            logger.warning(f"Smart Context Switch failed: {e}")
 
     async def _run_critic_phase(self, worker_output: str, current_step: SkillStep, global_context: str = "") -> CriticOutput:
         """
@@ -375,28 +427,7 @@ class Orchestrator:
         
         return plan_output
 
-    def _find_newest_dir(self, base_dir: str) -> Optional[str]:
-        try:
-            entries = []
-            for name in os.listdir(base_dir):
-                path = os.path.join(base_dir, name)
-                if not os.path.isdir(path):
-                    continue
-                if name.startswith(".") or name in {".git", "node_modules", "__pycache__", ".agent"}:
-                    continue
-                entries.append(path)
-            if not entries:
-                return None
-            entries.sort(key=lambda p: os.path.getmtime(p), reverse=True)
-            
-            # Check duplication - if newest dir name == current dir name, it might be recursive
-            # But here base_dir IS current dir.
-            # We just return the path. Logic elsewhere handles checks.
-            return entries[0]
-            
-        except Exception as e:
-            logger.warning(f"Failed to detect newest dir: {e}")
-            return None
+
     
 if __name__ == "__main__":
     if len(sys.argv) < 2:
