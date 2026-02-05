@@ -9,9 +9,9 @@ from mcp_agent.workflows.llm.augmented_llm import RequestParams
 from ..logger import get_logger
 from ..config_loader import config
 from ..memory.session_memory import SessionMemoryManager
-from ..prompt import INSTRUCTION_POOL, SUBAGENT_INSTRUCTION, FRONTEND_SPECIALIST_INSTRUCTION, USER_PROMPT_TEMPLATE, AUTO_WRITE_PROMPT
+from ..prompt import INSTRUCTION_POOL, SUBAGENT_INSTRUCTION, USER_PROMPT_TEMPLATE, AUTO_WRITE_PROMPT, GENERAL_SKILL_PROTOCOL
 from .structs import StepExecutorInput, StepExecutorOutput, SkillStep, TechLeadInput # Explicit import
-from .router import EvaluationRouter, RouterDecision
+from .structs import StepExecutorInput, StepExecutorOutput, SkillStep, TechLeadInput # Explicit import
 
 # Initialize Logger
 logger = get_logger("step_executor")
@@ -23,12 +23,11 @@ class StepExecutor:
     - Spawns an EPHEMERAL Worker Agent.
     - Runs the ReAct loop.
     """
-    def __init__(self, memory_manager: SessionMemoryManager, tool_context_str: str, telemetry: Any = None):
+    def __init__(self, memory_manager: SessionMemoryManager, telemetry: Any = None):
         self.memory_manager = memory_manager
-        self.tool_context_str = tool_context_str
         self.telemetry = telemetry
         self.max_react_steps = 15 # Configurable?
-        self.router = EvaluationRouter()
+        self.max_react_steps = 15 # Configurable?
 
     async def execute(self, 
                       current_step: SkillStep, 
@@ -48,7 +47,6 @@ class StepExecutor:
             "env_vars": self.memory_manager.memory.env_vars
         }
         session_context = json.dumps(session_snapshot, indent=2)
-        roadmap = self.memory_manager.get_roadmap()
         expectations = getattr(current_step, "expected_artifacts", [])
 
         # 1b. Self-Generate SOP Context from Memory
@@ -83,9 +81,9 @@ class StepExecutor:
         handover = StepExecutorInput(
             task_input=effective_input,
             active_folder=active_folder,
-            roadmap=roadmap,
+            roadmap=self.memory_manager.get_roadmap(),
+
             session_context=session_context,
-            tool_definitions=self.tool_context_str,
             expectations=expectations,
             clipboard=json.dumps(filtered_clipboard, indent=2), # Inject Filtered File Cache
             step_content=current_step.content, # New: Full instruction in System Prompt
@@ -94,26 +92,18 @@ class StepExecutor:
         )
         
         # 2b. Inject Warnings (Side-channel)
-        if context_switch_warning:
-            handover.task_input += f"\n\n[WARNING]: {context_switch_warning}"
         if retry_feedback:
             handover.task_input += f"\n\n[PREVIOUS FAILURE]: {retry_feedback}"
 
         # 3. Construct System Prompt (Dynamic Persona)
         
-        # Smart Router: Initial Persona Selection
-        current_persona = await self.router.select_persona(
-            step_title=current_step.title, 
-            skill_name=skill_name, 
-            content=current_step.content
+        # Default Persona
+        current_persona = "DEFAULT"
+        base_instruction = INSTRUCTION_POOL["DEFAULT"]
+        subagent_instruction = base_instruction.format(
+            worker_context_xml=handover.to_xml(),
+            general_skill_protocol=GENERAL_SKILL_PROTOCOL
         )
-        
-        # Select Instruction from Pool
-        base_instruction = INSTRUCTION_POOL.get(current_persona, INSTRUCTION_POOL["DEFAULT"])
-        subagent_instruction = base_instruction.format(worker_context_xml=handover.to_xml())
-
-        if current_persona != "DEFAULT":
-             logger.info(f"[{current_step.title}] Activating Persona: {current_persona}")
         
         # Log Start
         self.memory_manager.log_event(f"Step {current_step.id} Started: {current_step.title}")
@@ -129,11 +119,11 @@ class StepExecutor:
         worker = Agent(
             name=worker_name,
             instruction=subagent_instruction,
-            server_names=["skill-server", "file-tools"] 
+            server_names=["file-tools"] 
         )
 
         logger.info(f"Spawning Worker: {worker_name} in {active_folder}")
-        logger.debug(f"Tool Context for Worker: {self.tool_context_str[:200]}...")
+
 
 
         final_response = ""
@@ -162,53 +152,11 @@ class StepExecutor:
                 # Fetch Tool History from Memory
                 current_tool_history = self.memory_manager.get_tool_history(current_step.id)
 
-                # Dynamic Prompting Strategy
                 if cycle == 1:
                     current_prompt = user_prompt
                 else:
-                    # Smart Analysis / Router Logic
-                    router_decision = await self.router.evaluate(response, current_tool_history, cycle, success_signal, task_title=current_step.title)
-                    
-                    if router_decision == RouterDecision.SUCCESS:
-                         break
-                    
-                    elif router_decision == RouterDecision.INTERVENTION_SWITCH_FRONTEND:
-                         if current_persona != "FRONTEND_SPECIALIST":
-                             logger.warning(f"[{worker_name}] Router Trigger: Switching to FRONTEND_SPECIALIST Persona.")
-                             current_persona = "FRONTEND_SPECIALIST"
-                             base_instruction = INSTRUCTION_POOL["FRONTEND_SPECIALIST"]
-                             # Hot-Swap Instruction
-                             worker.instruction = base_instruction.format(worker_context_xml=handover.to_xml())
-                             # Note: Agent re-init might be cleaner but instruction update should work if agent supports it.
-                             # If not, we rely on the prompt message update below.
-                             current_prompt = "SYSTEM INTERVENTION: You are now a SENIOR FRONTEND SPECIALIST. Review previous errors and fix build config (Parcel/Vite/PostCSS)."
-                         else:
-                             # Already specialist, fallback to tech lead
-                             router_decision = RouterDecision.INTERVENTION_TECH_LEAD
-                    
-                    if router_decision == RouterDecision.INTERVENTION_TECH_LEAD:
-                        logger.warning(f"[{worker_name}] Router Trigger: Tech Lead Intervention Needed.")
-                        
-                        # Call Tech Lead
-                        if not hasattr(self, 'tech_lead'):
-                             from .tech_lead import TechLead
-                             self.tech_lead = TechLead(self.memory_manager)
-
-                        advice_dto = await self.tech_lead.advise(current_step, handover, response)
-                        tech_lead_advice = advice_dto.to_prompt_format()
-                        
-                        current_prompt = f"""{tech_lead_advice}
-User Update: Please fix the issues identified by the Tech Lead and continue.
-"""
-                    elif router_decision == RouterDecision.CONTINUE and router_decision != RouterDecision.INTERVENTION_SWITCH_FRONTEND:
-                        # Standard Continuation
-                        last_action_tools = current_tool_history[-1] if current_tool_history else []
-                        has_written = any(t in last_action_tools for t in ['write_file', 'write_files'])
-                        
-                        if is_coding_step and not has_written and success_signal:
-                            current_prompt = "REJECTION: You submitted success but no code was written. Write the file."
-                        else:
-                            current_prompt = "Status Update: Continue execution. If done, output JSON."
+                    # Simple Continuation Prompt
+                    current_prompt = "Status Update: Continue execution. If done, output JSON."
 
                 try:
                     # The Agent's internal generate_loop handles tool calls (up to 15 iterations)

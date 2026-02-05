@@ -1,465 +1,211 @@
+import asyncio
 import os
-import logging
-import glob
-import ast
-import json
 import re
-import subprocess
-from mcp.server.fastmcp import FastMCP
-from typing import Literal, Optional, List, Union, Dict, Tuple
 from pathlib import Path
-# Initialize FastMCP server instance shared by all modules
+from typing import Any, Optional
+from mcp.server.fastmcp import FastMCP
+
+# Initialize FastMCP server instance
 mcp = FastMCP("file-tools")
-logger = logging.getLogger(__name__)
 
-# Constants
-SNIPPET_LINES: int = 4
-MAX_RESPONSE_LEN: int = 16000
-TRUNCATED_MESSAGE: str = (
-    "<response clipped><NOTE>To save on context only part of this file has been shown to you. "
-    "You should retry this tool after you have searched inside the file with `grep -n` "
-    "in order to find the line numbers of what you are looking for.</NOTE>"
-)
-
-# In-memory history for undo functionality
-# Dictionary mapping path -> list of previous content versions
-_file_history = {}
-
-Command = Literal[
-    "view",
-    "create",
-    "str_replace",
-    "insert",
-    "undo_edit",
-]
-
-# @mcp.tool()
-# def read_file(path: str) -> str:
-#     """Reads the content of a file at the given path."""
-#     logger.info(f"Reading file: {path}")
-#     try:
-#         if not os.path.exists(path):
-#             logger.error(f"Error: File not found at {path}")
-#             return f"Error: File not found at {path}"
-        
-#         with open(path, 'r', encoding='utf-8') as f:
-#             return f.read()
-#     except Exception as e:
-#         logger.error(f"Error reading file: {str(e)}")
-#         return f"Error reading file: {str(e)}"
-
-# @mcp.tool()
-# def write_file(path: str, content: str) -> str:
-#     """Writes content to a file or artifacts or code asset at the given path. Overwrites if exists."""
-#     logger.info(f"Writing file to: {path}")
-#     try:
-#         os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
-#         with open(path, 'w', encoding='utf-8') as f:
-#             f.write(content)
-#         return f"Successfully wrote to {path}"
-#     except Exception as e:
-#         logger.error(f"Error writing file: {str(e)}")
-#         return f"Error writing file: {str(e)}"
-
+#
+# Tools referenced from nanobot/agent/tools/filesystem.py
+#
 
 @mcp.tool()
-def read_files(paths: List[str]) -> str:
-    """Reads multiple files. Returns a formatted block with separate sections."""
-    logger.info(f"Reading {len(paths)} files")
-    output = []
-    for p in paths:
-        try:
-            if not os.path.exists(p):
-                output.append(f"--- FILE: {p} (NOT FOUND) ---")
-                continue
-            with open(p, 'r', encoding='utf-8') as f:
-                content = f.read()
-            output.append(f"--- FILE: {p} ---\n{content}\n")
-        except Exception as e:
-            output.append(f"--- FILE: {p} (ERROR: {str(e)}) ---")
-    return "\n".join(output)
-
-@mcp.tool()
-def write_files(files: Dict[str, str]) -> str:
-    """Writes multiple files or artifacts or code assets. 
-    Keys are paths, values are content. Overwrites if exists."""
-    logger.info(f"Writing {len(files)} files")
-    results = []
-    for path, content in files.items():
-        try:
-            os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
-            with open(path, 'w', encoding='utf-8') as f:
-                f.write(content)
-            results.append(f"Successfully wrote to {path}")
-        except Exception as e:
-            results.append(f"Error writing {path}: {str(e)}")
-    return "\n".join(results)
-
-@mcp.tool()
-def check_syntax(path: str) -> str:
-    """Checks syntax for Python (ast) and JS/TS (node -c)."""
-    p = Path(path).resolve()
-    if not p.exists():
-        return f"Error: File {path} not found."
-    
+async def read_file(path: str) -> str:
+    """Read the contents of a file at the given path."""
     try:
-        content = p.read_text(encoding='utf-8')
-        if p.suffix == '.py':
-            ast.parse(content)
-            return "Syntax OK (Python)"
-        elif p.suffix in ['.js', '.jsx', '.mjs', '.cjs']:
-             cmd = ["node", "--check", str(p)]
-             subprocess.run(cmd, check=True, capture_output=True)
-             return "Syntax OK (Node.js)"
-        elif p.suffix in ['.ts', '.tsx']:
-             return "Syntax Check Skipped (TypeScript: requires compile step)"
-        return f"Syntax Check Skipped (Unsupported extension {p.suffix})"
-    except SyntaxError as e:
-        return f"Syntax Error in {path}: line {e.lineno}, col {e.offset}: {e.msg}"
-    except subprocess.CalledProcessError as e:
-         return f"Syntax Error: {e.stderr.decode()}"
-    except Exception as e:
-        return f"Error checking syntax: {str(e)}"
-
-@mcp.tool()
-def validate_imports(path: str) -> str:
-    """Checks if imports in the file are present in package.json or environment."""
-    import sys
-    p = Path(path).resolve()
-    if not p.exists():
-        return f"Error: File {path} not found."
+        file_path = Path(path).expanduser()
+        if not file_path.exists():
+            return f"Error: File not found: {path}"
+        if not file_path.is_file():
+            return f"Error: Not a file: {path}"
         
-    content = p.read_text(encoding='utf-8')
-    missing = []
-    
-    if p.suffix in ['.ts', '.tsx', '.js', '.jsx']:
-        package_json = None
-        curr = p.parent
-        while curr != curr.parent:
-            pj = curr / "package.json"
-            if pj.exists():
-                package_json = pj
-                break
-            curr = curr.parent
-            
-        if not package_json:
-            return "Warning: No package.json found in parent directories."
-            
-        try:
-            deps = set()
-            pj_data = json.loads(package_json.read_text())
-            deps.update(pj_data.get('dependencies', {}).keys())
-            deps.update(pj_data.get('devDependencies', {}).keys())
-            
-            imports = re.findall(r"(?:from|import|require)\s*['\"]([^'\"]+)['\"]", content)
-            
-            for imp in imports:
-                if imp.startswith('.') or imp.startswith('/'): continue 
-                pkg = imp.split('/')[0]
-                if imp.startswith('@'): 
-                    parts = imp.split('/')
-                    if len(parts) >= 2:
-                        pkg = f"{parts[0]}/{parts[1]}"
-                
-                if pkg in ['fs', 'path', 'os', 'http', 'https', 'child_process', 'util', 'events', 'stream', 'crypto', 'buffer']: continue
-                if pkg == 'react': continue 
-                
-                if pkg not in deps:
-                    missing.append(pkg)
-                    
-        except Exception as e:
-            return f"Error reading package.json: {e}"
-            
-    elif p.suffix == '.py':
-         try:
-             tree = ast.parse(content)
-             params = []
-             for node in ast.walk(tree):
-                 if isinstance(node, ast.Import):
-                     for alias in node.names:
-                         params.append(alias.name.split('.')[0])
-                 elif isinstance(node, ast.ImportFrom):
-                     if node.module:
-                         params.append(node.module.split('.')[0])
-             
-             req_file = None
-             curr = p.parent
-             while curr != curr.parent:
-                 rf = curr / "requirements.txt"
-                 if rf.exists():
-                     req_file = rf
-                     break
-                 curr = curr.parent
-            
-             if req_file:
-                 reqs = req_file.read_text().lower()
-                 for imp in params:
-                     if hasattr(sys, 'stdlib_module_names') and imp in sys.stdlib_module_names: continue 
-                     if imp.lower() not in reqs: 
-                         missing.append(imp)
-             else:
-                 return f"Imports detected: {params}. No requirements.txt found to validate against."
-                 
-         except Exception as e:
-             return f"Error parsing Python imports: {e}"
-
-    if missing:
-        return f"MISSING DEPENDENCIES: The following packages seem to be missing from config: {missing}"
-    return "Imports validation passed."
-
-
-def maybe_truncate(
-    content: str, truncate_after: Optional[int] = MAX_RESPONSE_LEN
-) -> str:
-    """Truncate content and append a notice if content exceeds the specified length."""
-    if not truncate_after or len(content) <= truncate_after:
+        content = file_path.read_text(encoding="utf-8")
         return content
-    return content[:truncate_after] + TRUNCATED_MESSAGE
-
-def _make_output(
-    file_content: str,
-    file_descriptor: str,
-    init_line: int = 1,
-    expand_tabs: bool = True,
-) -> str:
-    """Format file content for display with line numbers."""
-    file_content = maybe_truncate(file_content)
-    if expand_tabs:
-        file_content = file_content.expandtabs()
-
-    # Add line numbers to each line
-    file_content = "\n".join(
-        [
-            f"{i + init_line:6}\t{line}"
-            for i, line in enumerate(file_content.split("\n"))
-        ]
-    )
-
-    return (
-        f"Here's the result of running `cat -n` on {file_descriptor}:\n"
-        + file_content
-        + "\n"
-    )
-
-@mcp.tool()
-def str_replace_editor(
-    command: str,
-    path: str,
-    file_text: Optional[str] = None,
-    view_range: Optional[List[int]] = None,
-    old_str: Optional[str] = None,
-    new_str: Optional[str] = None,
-    insert_line: Optional[int] = None,
-) -> str:
-    """
-    Custom editing tool for viewing, creating and editing files
-    * State is persistent across command calls and discussions with the user
-    * If `path` is a file, `view` displays the result of applying `cat -n`. If `path` is a directory, `view` lists non-hidden files and directories up to 2 levels deep
-    * The `create` command cannot be used if the specified `path` already exists as a file
-    * If a `command` generates a long output, it will be truncated and marked with `<response clipped>`
-    * The `undo_edit` command will revert the last edit made to the file at `path`
-
-    Notes for using the `str_replace` command:
-    * The `old_str` parameter should match EXACTLY one or more consecutive lines from the original file. Be mindful of whitespaces!
-    * If the `old_str` parameter is not unique in the file, the replacement will not be performed. Make sure to include enough context in `old_str` to make it unique
-    * The `new_str` parameter should contain the edited lines that should replace the `old_str`
-    """
-    global _file_history
-    
-    logger.info(f"str_replace_editor command={command} path={path}")
-    
-    # Path validation
-    p = Path(path).resolve()
-    
-    if command == "view":
-        return _view(p, view_range)
-    elif command == "create":
-        return _create(p, file_text)
-    elif command == "str_replace":
-        return _str_replace(p, old_str, new_str)
-    elif command == "insert":
-        return _insert(p, insert_line, new_str)
-    elif command == "undo_edit":
-        return _undo_edit(p)
-    else:
-        return f"Error: Unrecognized command {command}. Allowed: view, create, str_replace, insert, undo_edit"
-
-def _view(path: Path, view_range: Optional[List[int]] = None) -> str:
-    if not path.exists():
-        return f"Error: The path {path} does not exist."
-    
-    if path.is_dir():
-        if view_range:
-            return "Error: The `view_range` parameter is not allowed when `path` points to a directory."
-        
-        # Simple tree view
-        # We can reuse the list_directory logic or just implement a simple find command
-        # Let's use os.walk slightly modified for depth 2
-        root_str = str(path)
-        output = []
-        try:
-            cmd = f"find {root_str} -maxdepth 2 -not -path '*/.*'"
-            import subprocess
-            result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
-            if result.returncode != 0:
-                return f"Error listing directory: {result.stderr}"
-            return f"Files in {path}:\n{result.stdout}"
-        except Exception as e:
-            return f"Error viewing directory: {str(e)}"
-
-    # File viewing
-    try:
-        content = path.read_text(encoding="utf-8")
-        init_line = 1
-        
-        if view_range:
-            if len(view_range) != 2:
-                return "Error: Invalid `view_range`. It should be a list of two integers."
-            
-            lines = content.split("\n")
-            n_lines = len(lines)
-            start, end = view_range
-            
-            if start < 1 or start > n_lines:
-                return f"Error: Invalid `view_range`. Start line {start} out of bounds [1, {n_lines}]"
-            
-            if end != -1 and end < start:
-                return f"Error: Invalid `view_range`. End line {end} < Start line {start}"
-                
-            init_line = start
-            if end == -1:
-                content = "\n".join(lines[start-1:])
-            else:
-                content = "\n".join(lines[start-1:end])
-                
-        return _make_output(content, str(path), init_line)
-        
+    except PermissionError:
+        return f"Error: Permission denied: {path}"
     except Exception as e:
         return f"Error reading file: {str(e)}"
 
-def _create(path: Path, file_text: Optional[str]) -> str:
-    if file_text is None:
-        return "Error: Parameter `file_text` is required for command: create"
+@mcp.tool()
+async def write_file(path: str, content: str) -> str:
+    """Write content to a file at the given path. Creates parent directories if needed."""
+    try:
+        file_path = Path(path).expanduser()
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        file_path.write_text(content, encoding="utf-8")
+        return f"Successfully wrote {len(content)} bytes to {path}"
+    except PermissionError:
+        return f"Error: Permission denied: {path}"
+    except Exception as e:
+        return f"Error writing file: {str(e)}"
+
+@mcp.tool()
+async def edit_file(path: str, old_text: str, new_text: str) -> str:
+    """Edit a file by replacing old_text with new_text. The old_text must exist exactly in the file."""
+    try:
+        file_path = Path(path).expanduser()
+        if not file_path.exists():
+            return f"Error: File not found: {path}"
+        
+        content = file_path.read_text(encoding="utf-8")
+        
+        if old_text not in content:
+            return f"Error: old_text not found in file. Make sure it matches exactly."
+        
+        # Count occurrences
+        count = content.count(old_text)
+        if count > 1:
+            return f"Warning: old_text appears {count} times. Please provide more context to make it unique."
+        
+        new_content = content.replace(old_text, new_text, 1)
+        file_path.write_text(new_content, encoding="utf-8")
+        
+        return f"Successfully edited {path}"
+    except PermissionError:
+        return f"Error: Permission denied: {path}"
+    except Exception as e:
+        return f"Error editing file: {str(e)}"
+
+@mcp.tool()
+async def list_dir(path: str) -> str:
+    """List the contents of a directory."""
+    try:
+        dir_path = Path(path).expanduser()
+        if not dir_path.exists():
+            return f"Error: Directory not found: {path}"
+        if not dir_path.is_dir():
+            return f"Error: Not a directory: {path}"
+        
+        items = []
+        for item in sorted(dir_path.iterdir()):
+            prefix = "📁 " if item.is_dir() else "📄 "
+            items.append(f"{prefix}{item.name}")
+        
+        if not items:
+            return f"Directory {path} is empty"
+        
+        return "\n".join(items)
+    except PermissionError:
+        return f"Error: Permission denied: {path}"
+    except Exception as e:
+        return f"Error listing directory: {str(e)}"
+
+#
+# Tools referenced from nanobot/agent/tools/shell.py
+#
+
+def _guard_command(command: str, cwd: str) -> str | None:
+    """Best-effort safety guard for potentially destructive commands."""
     
-    if path.exists():
-        # OpenManus prevents overwrite on create.
-        return f"Error: File already exists at: {path}. Cannot overwrite files using command `create`."
-        
-    try:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(file_text, encoding="utf-8")
-        
-        # Init history
-        if path not in _file_history:
-            _file_history[path] = []
-        _file_history[path].append(file_text)
-        
-        return f"File created successfully at: {path}"
-    except Exception as e:
-        return f"Error creating file: {str(e)}"
+    # Constants from nanobot/agent/tools/shell.py
+    deny_patterns = [
+        r"\brm\s+-[rf]{1,2}\b",          # rm -r, rm -rf, rm -fr
+        r"\bdel\s+/[fq]\b",              # del /f, del /q
+        r"\brmdir\s+/s\b",               # rmdir /s
+        r"\b(format|mkfs|diskpart)\b",   # disk operations
+        r"\bdd\s+if=",                   # dd
+        r">\s*/dev/sd",                  # write to disk
+        r"\b(shutdown|reboot|poweroff)\b",  # system power
+        r":\(\)\s*\{.*\};\s*:",          # fork bomb
+    ]
+    # In nanobot, allow_patterns defaults to [] and restrict_to_workspace to False (by default config)
+    # enforcing restrict_to_workspace = False as per default unless we want to enforce it.
+    # The nanobot implementation passed these into __init__. 
+    # Here we hardcode the defaults or "safe" values. 
+    # Let's stick to the default ExecTool behavior:
+    # timeout=60, restrict_to_workspace=False (unless we want to be safer)
+    
+    allow_patterns = []
+    restrict_to_workspace = False
 
-def _str_replace(path: Path, old_str: Optional[str], new_str: Optional[str]) -> str:
-    if old_str is None:
-        return "Error: Parameter `old_str` is required for command: str_replace"
-    if not path.exists():
-        return f"Error: Path {path} does not exist"
-        
-    try:
-        content = path.read_text(encoding="utf-8").expandtabs()
-        old_str = old_str.expandtabs()
-        new_str = new_str.expandtabs() if new_str is not None else ""
-        
-        occurrences = content.count(old_str)
-        if occurrences == 0:
-            return f"Error: old_str `{old_str}` did not appear verbatim in {path}."
-        if occurrences > 1:
-            return f"Error: Multiple occurrences ({occurrences}) of old_str found. Please ensure it is unique."
-            
-        new_content = content.replace(old_str, new_str)
-        
-        # Save history
-        if path not in _file_history:
-            _file_history[path] = []
-        _file_history[path].append(content)
-        
-        path.write_text(new_content, encoding="utf-8")
-        
-        # Create snippet
-        # Logic to show context around change
-        replacement_line = content.split(old_str)[0].count("\n")
-        start_line = max(0, replacement_line - SNIPPET_LINES)
-        end_line = replacement_line + SNIPPET_LINES + new_str.count("\n")
-        snippet = "\n".join(new_content.split("\n")[start_line : end_line + 1])
+    cmd = command.strip()
+    lower = cmd.lower()
 
-        success_msg = f"The file {path} has been edited. "
-        success_msg += _make_output(
-            snippet, f"a snippet of {path}", start_line + 1
+    for pattern in deny_patterns:
+        if re.search(pattern, lower):
+            return "Error: Command blocked by safety guard (dangerous pattern detected)"
+
+    if allow_patterns:
+        if not any(re.search(p, lower) for p in allow_patterns):
+            return "Error: Command blocked by safety guard (not in allowlist)"
+
+    if restrict_to_workspace:
+        if "..\\" in cmd or "../" in cmd:
+            return "Error: Command blocked by safety guard (path traversal detected)"
+
+        cwd_path = Path(cwd).resolve()
+
+        win_paths = re.findall(r"[A-Za-z]:\\[^\\\"']+", cmd)
+        posix_paths = re.findall(r"/[^\s\"']+", cmd)
+
+        for raw in win_paths + posix_paths:
+            try:
+                p = Path(raw).resolve()
+            except Exception:
+                continue
+            if cwd_path not in p.parents and p != cwd_path:
+                return "Error: Command blocked by safety guard (path outside working dir)"
+
+    return None
+
+@mcp.tool()
+async def execute_command(command: str, working_dir: Optional[str] = None) -> str:
+    """Execute a shell command and return its output. Use with caution."""
+    # Logic from nanobot ExecTool.execute
+    cwd = working_dir or os.getcwd()
+    guard_error = _guard_command(command, cwd)
+    if guard_error:
+        return guard_error
+    
+    try:
+        timeout = 60  # Default from nanobot
+        
+        process = await asyncio.create_subprocess_shell(
+            command,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+            cwd=cwd,
         )
-        success_msg += "Review the changes and make sure they are as expected."
-        return success_msg
+        
+        try:
+            stdout, stderr = await asyncio.wait_for(
+                process.communicate(),
+                timeout=timeout
+            )
+        except asyncio.TimeoutError:
+            try:
+                process.kill()
+            except ProcessLookupError:
+                pass
+            return f"Error: Command timed out after {timeout} seconds"
+        
+        output_parts = []
+        
+        if stdout:
+            output_parts.append(stdout.decode("utf-8", errors="replace"))
+        
+        if stderr:
+            stderr_text = stderr.decode("utf-8", errors="replace")
+            if stderr_text.strip():
+                output_parts.append(f"STDERR:\n{stderr_text}")
+        
+        if process.returncode != 0:
+            output_parts.append(f"\nExit code: {process.returncode}")
+        
+        result = "\n".join(output_parts) if output_parts else "(no output)"
+        
+        # Truncate very long output
+        max_len = 10000
+        if len(result) > max_len:
+            result = result[:max_len] + f"\n... (truncated, {len(result) - max_len} more chars)"
+        
+        return result
         
     except Exception as e:
-        return f"Error modifying file: {str(e)}"
-
-def _insert(path: Path, insert_line: Optional[int], new_str: Optional[str]) -> str:
-    if insert_line is None:
-        return "Error: Parameter `insert_line` is required for command: insert"
-    if new_str is None:
-        return "Error: Parameter `new_str` is required for command: insert"
-    if not path.exists():
-        return f"Error: Path {path} does not exist"
-
-    try:
-        content = path.read_text(encoding="utf-8").expandtabs()
-        new_str = new_str.expandtabs()
-        lines = content.split("\n")
-        n_lines = len(lines)
-        
-        if insert_line < 0 or insert_line > n_lines:
-            return f"Error: Invalid `insert_line` {insert_line}. Range: [0, {n_lines}]"
-            
-        new_lines = new_str.split("\n")
-        final_lines = lines[:insert_line] + new_lines + lines[insert_line:]
-        
-        # Save history
-        if path not in _file_history:
-            _file_history[path] = []
-        _file_history[path].append(content)
-        
-        new_content = "\n".join(final_lines)
-        path.write_text(new_content, encoding="utf-8")
-        
-        # Snippet
-        snippet_lines = (
-            lines[max(0, insert_line - SNIPPET_LINES) : insert_line]
-            + new_lines
-            + lines[insert_line : insert_line + SNIPPET_LINES]
-        )
-        snippet = "\n".join(snippet_lines)
-        
-        success_msg = f"The file {path} has been edited. "
-        success_msg += _make_output(
-            snippet,
-            "a snippet of the edited file",
-            max(1, insert_line - SNIPPET_LINES + 1),
-        )
-        return success_msg
-        
-    except Exception as e:
-        return f"Error inserting into file: {str(e)}"
-
-def _undo_edit(path: Path) -> str:
-    if path not in _file_history or not _file_history[path]:
-        return f"Error: No edit history found for {path}."
-        
-    try:
-        old_text = _file_history[path].pop()
-        path.write_text(old_text, encoding="utf-8")
-        
-        return f"Last edit to {path} undone successfully.\n{_make_output(old_text, str(path))}"
-    except Exception as e:
-        return f"Error undoing edit: {str(e)}"
-
+        return f"Error executing command: {str(e)}"
 
 if __name__ == "__main__":
     mcp.run()

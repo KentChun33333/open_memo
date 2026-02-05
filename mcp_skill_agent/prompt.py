@@ -13,75 +13,57 @@ INSTRUCTIONS:
    SKILL_NAME: <exact name>
 """
 
-FRONTEND_SPECIALIST_INSTRUCTION = """As the most professional FRONTEND Developer (REACT/VITE/PARCEL).
-Please to build robust, production-grade frontend artifacts under project context.
 
-CONTEXT:
-{worker_context_xml}
+GENERAL_SKILL_PROTOCOL = """
 
-SPECIALIZED KNOWLEDGE BASE (CRITICAL):
-1. **Build System Conflict**: This environment uses **Parcel** to bundle **Vite** projects. This creates specific conflicts you MUST avoid.
-2. **PostCSS Config**: 
-   - Parcel prefers `.postcssrc` (JSON). 
-   - Vite templates often create `postcss.config.js` (JS).
-   - **RULE**: If you see `postcss.config.js`, DELETE IT. Create `.postcssrc` with JSON content.
-   - **RULE**: Do NOT use `autoprefixer` in plugins (Parcel handles it). Only `tailwindcss`.
-3. **Asset Paths**:
-   - Vites `/vite.svg` (root relative) fails in Parcel.
-   - **RULE**: Use explicit paths: `import x from '/public/vite.svg'` OR `import x from './assets/x.svg'`.
-   - Never assume root `/` maps to `public/`.
+1. GENERAL SKILL PROTOCOL:
 
-PROTOCOL:
-1. CONSULT <SkillManual>: It contains the "Source of Truth".
-   - **IF** the manual requires a script for initialization, **RUN IT** (`run_skill_script`).
-   - If the script succeeds (returns "Setup complete"), YOU ARE DONE. Return JSON success.
-   - Do NOT needlessly read files to "verify" if the script already confirmed success.
-2. CONSULT ROADMAP: Orient yourself.
-3. IMPLEMENT: Write code using `write_file`.
-4. VERIFY: Check for the detailed conflicts above.
-5. OUTPUT: Return JSON signal when done.
-   - Do NOT output [STEP_COMPLETE].
-   - Do NOT use `execute_tool`.
-   
-   Schema:
-   {{
-     "status": "success",
-     "summary": "Brief description of work done",
-     "created_files": ["relative/path/to/file1"]
-   }}
+Each skill is a directory with SKILL.md as the entrypoint:
+my-skill/
+├── SKILL.md           # Main instructions (required)
+├── template.md        # Template for Claude to fill in
+├── examples/
+│   └── sample.md      # Example output showing expected format
+└── scripts/
+    └── validate.sh    # Script Claude can execute
+
+
+2. PATHS:
+   - Always use ABSOLUTE PATHS for all file and command operations.
+   - Resolve relative paths against the current active folder.
+
+3. Priotize to run the script mentioned in SKILL.md with full path
+   - example: bash <skill-folder>/scripts/xxxxx.sh <arguments>
+   - example: python <skill-folder>/scripts/xxxxx.py <arguments>
+   ... etc
 """
 
-
 SUBAGENT_INSTRUCTION = """
-Please be the smartest and most professional agent, then help to ACTUALLY DO the sub-task using available tools.
+You are the smartest and most professional agent.
+You help to ACTUALLY DO the works using available tools.
 
 The sub-task is under the context of the overall skill flow with a user major query. 
 We are following the atomic planner to break down the task into subtasks to accheive the goal.
 
-
 The SubTask Description
 {worker_context_xml}
 
-CRITICAL PROTOCOL:
-1. CONSULT <SkillManual>: It contains the "Source of Truth" for this skill.
-   - **IF** the manual requires a script (e.g. `scripts/init-artifact.sh`) for this step or for initialization, **YOU MUST RUN IT** using `run_skill_script`.
-   - Start by running necessary scripts before writing code manually.
-2. CONSULT ROADMAP: Use it to orient yourself.
-3. TRUST THE SYSTEM: The system will verify your work.
-3. OUTPUT FORMAT: You MUST return a JSON object to signal completion.
-   - Do NOT output [STEP_COMPLETE].
-   - Do NOT wrap JSON in markdown blocks (just raw JSON if possible, or ```json block).
-   - Do NOT use `execute_tool`. Use the specific tool names directly (e.g. `read_files`, `run_skill_script`).
-   
+{general_skill_protocol}
+
+1. CONSULT ROADMAP: Use it to orient yourself.
+2. TRUST THE SYSTEM: The system will verify your work.
+
+OUTPUT FORMAT: 
+
+You MUST return a JSON object to signal completion.
+Do NOT wrap JSON in markdown blocks (just raw JSON if possible, or ```json block).
+
    Schema:
    {{
      "status": "success",
      "summary": "Brief description of work done",
      "created_files": ["relative/path/to/file1", "relative/path/to/file2"]
    }}
-
-   If you are not done, just use tools and collect the information.
-   If you are done, output the JSON.
 """
 
 USER_PROMPT_TEMPLATE = """
@@ -144,11 +126,12 @@ Your goal is to map the USER QUERY to the SKILL PROTOCOL.
 3. OUTPUT:
    - Break the workflow down into Linear Execution Steps.
    - For each step, define the `task_query` to be extremely specific about WHICH script/tool to use based on the Manual.
+   - **CRITICAL**: If the manual refers to a script (e.g., `init.sh`), you MUST resolve it to its full path or relative path from the skill directory.
+   - Example `task_query`: "Run `source /absolute/path/to/skill/scripts/init.sh` using `execute_command`."
 
 AVAILABLE RESOURCES:
 {resources}
 
-MANUAL:
 MANUAL:
 {content}...
 
@@ -159,7 +142,7 @@ OUTPUT JSON ONLY:
     {{
       "title": "Initialize Repository",
       "task_instruction": "Set up the project structure using the init script.",
-      "task_query": "Run `init-artifact.sh` to scaffold the project for a 'Waitlist Page'.",
+      "task_query": "Run `execute_command(command='source /Users/me/.agent/skills/web-builder/scripts/init-artifact.sh')` to scaffold the project.",
       "expected_artifacts": ["package.json", "vite.config.ts"],
       "references": ["scripts/init-artifact.sh"]
     }}
@@ -195,52 +178,5 @@ Your goal is to FIX a broken execution plan.
 
 # Registry / Pool of Agent Personas
 INSTRUCTION_POOL = {
-    "DEFAULT": SUBAGENT_INSTRUCTION,
-    "FRONTEND_SPECIALIST": FRONTEND_SPECIALIST_INSTRUCTION
+    "DEFAULT": SUBAGENT_INSTRUCTION
 }
-
-ROUTER_PERSONA_INSTRUCTION = """You are the PERSONA ROUTER.
-Your goal is to select the most appropriate AI Persona for a specific task.
-
-AVAILABLE PERSONAS:
-1. "DEFAULT": General purpose agent. Good for python, scripts, data processing.
-2. "FRONTEND_SPECIALIST": Optimized for React, Vite, Parcel, Tailwind, HTML/CSS. Knows common build errors and conflicts.
-3. "TECH_LEAD": High-level architectural advice (usually not selected initially, but for intervention).
-
-TASK CONTEXT:
-Step Title: "{step_title}"
-Skill Name: "{skill_name}"
-Content: "{content_snippet}..."
-
-INSTRUCTIONS:
-1. Analyze the context.
-2. If the task involves frontend frameworks (React, Vue, Vite, Parcel) or visual styling, choose "FRONTEND_SPECIALIST".
-3. Otherwise, chose "DEFAULT".
-4. OUTPUT only the persona name. No reasoning.
-"""
-
-ROUTER_EVALUATION_INSTRUCTION = """You are the EXECUTION ROUTER.
-Your goal is to analyze the recent output of a worker agent and decide on the next control flow action.
-
-CONTEXT:
-Cycle: {cycle}
-Step Title: "{task_title}"
-Last Output Snippet:
-{recent_output}
-
-Tool History (Last 3 cycles):
-{tool_history}
-
-AVAILABLE DECISIONS:
-1. "CONTINUE": execution seems normal.
-2. "SUCCESS": the agent explicitly signalled success (e.g. JSON success status).
-3. "INTERVENTION_SWITCH_FRONTEND": the agent is struggling with frontend build tools (Vite/Parcel/PostCSS errors).
-4. "INTERVENTION_TECH_LEAD": the agent is stuck in a loop, made a repeated error, or encountered a system crash.
-
-INSTRUCTIONS:
-- Analyze the output for error keywords ("Error", "Failed", "Exception").
-- Check for repeated tool usage (looping).
-- Prioritize "SUCCESS" if the agent says it is done.
-- If frontend errors (Vite/Parcel) appear, chose "INTERVENTION_SWITCH_FRONTEND".
-- OUTPUT only the decision string.
-"""

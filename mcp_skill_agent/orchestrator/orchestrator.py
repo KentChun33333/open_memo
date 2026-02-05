@@ -66,7 +66,8 @@ class Orchestrator:
                 plan_output = await self._plan_atomic_steps(skill_context, query)
                 steps = plan_output.steps
                 
-                
+                # Log/Persist Plan to File
+                self.memory_manager.persist_plan_to_file(plan_output, query)
                 # --- PHASE 2: EXECUTION LOOP ---
                 tool_context = skill_context.tool_definitions
                 print("\n========== PHASE 2: EXECUTION (SOP GUIDED) ==========")
@@ -82,13 +83,13 @@ class Orchestrator:
                     # Persist plan and step context
                     self.memory_manager.save_plan(steps)
                     self.memory_manager.memory.current_step_id = current_step.id
-                    self.memory_manager.save_state()
+
                     
                     # 2. Execute Step (LLM)
                     # Note: We rely on the LLM (StepExecutor) to decide whether to run a script 
                     # via the 'skill-server' tool or perform other actions.
                     
-                    executor = StepExecutor(self.memory_manager, tool_context, self.telemetry)
+                    executor = StepExecutor(self.memory_manager, self.telemetry)
                     
                     # Retry Loop (Orchestrator Level)
                     max_retries = 2
@@ -184,7 +185,7 @@ class Orchestrator:
 
                     # Advance
                     current_step.status = "done"
-                    self.memory_manager.save_state()
+
                     step_idx += 1
 
                 print("\n========== MISSION COMPLETE ==========")
@@ -253,7 +254,7 @@ class Orchestrator:
             context_xml=critic_xml_context
         )
 
-        critic = Agent(name="Technical-Critic", instruction=instruction, server_names=["file-tools", "skill-server"])
+        critic = Agent(name="Technical-Critic", instruction=instruction, server_names=["file-tools"])
         
         async with critic:
             llm_critic = await critic.attach_llm(OpenAIAugmentedLLM)
@@ -291,7 +292,7 @@ class Orchestrator:
             available_skills_info=discovery_info,
             query=query
         )
-        skii_man = Agent(name="skill_discovery", instruction=instruction, server_names=["skill-server"])
+        skii_man = Agent(name="skill_discovery", instruction=instruction, server_names=[])
         async with skii_man:
             llm = await skii_man.attach_llm(OpenAIAugmentedLLM)
             output = await llm.generate_str(f"Check for: {query}")
@@ -337,7 +338,7 @@ class Orchestrator:
 
     async def _run_discovery(self) -> str:
         """Lists available tools."""
-        agent = Agent(name="discovery", server_names=["skill-server", "file-tools"])
+        agent = Agent(name="discovery", server_names=["file-tools"])
         context = "AVAILABLE TOOLS:\n"
         async with agent:
             try:

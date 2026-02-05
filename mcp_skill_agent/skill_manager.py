@@ -3,11 +3,16 @@ import glob
 import yaml
 import logging
 import re
-from config_loader import config
+try:
+    from .config_loader import config
+    from .skill_discovery import SkillDiscovery, SkillMetadata
+except ImportError:
+    from config_loader import config
+    from skill_discovery import SkillDiscovery, SkillMetadata
+
 from typing import Dict, List, Optional
 import sys
 import time
-from skill_discovery import SkillDiscovery, SkillMetadata
 
 logger = logging.getLogger(__name__)
 
@@ -322,7 +327,9 @@ SKILL CONTEXT:
 INSTRUCTIONS:
 1. Understand the user's task.
 2. Refer to `[INSTRUCTIONS]` and `[DIRECTORY STRUCTURE]` in the Context above.
-3. You have access to `run_skill_script` to execute scripts found in the `<skill_name>/scripts/` directory.
+3. You have access to `execute_command` to execute scripts.
+   - **CRITICAL**: usage: `execute_command(command="source /abs/path/to/script.sh args")`. 
+   - You MUST construct the FULL ABSOLUTE PATH by combining the `PATH` from context with the script name.
 4. DEVELOPER PROTOCOL (CRITICAL):
    - YOU MUST NOT STOP at the template. You MUST customize the code.
    - Continue editing to match the user's request.

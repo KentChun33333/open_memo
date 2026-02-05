@@ -23,7 +23,7 @@ class StepExecutorInput:
     active_folder: str
     roadmap: str
     session_context: str
-    tool_definitions: str = ""
+    session_context: str
     expectations: List[str] = field(default_factory=list)
     clipboard: str = "" # New: Persisted file content
     step_content: str = "" # New: Moved from User Prompt
@@ -54,9 +54,7 @@ class StepExecutorInput:
 <SessionContext>
 {self.session_context}
 </SessionContext>
-<ToolDefinitions>
-{self.tool_definitions}
-</ToolDefinitions>
+
 <ExpectedArtifacts>{", ".join(self.expectations)}</ExpectedArtifacts>
 </WorkerContext>
 """.strip()

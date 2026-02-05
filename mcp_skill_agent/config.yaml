@@ -1,9 +1,6 @@
 mcp:
   servers:
-    skill-server:
-      command: /opt/anaconda3/bin/python3
-      args:
-        - /Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent/skill_server.py
+
     file-tools:
       command: /opt/anaconda3/bin/python3
       args:
@@ -11,7 +8,8 @@ mcp:
 openai:
   api_key: ollama
   base_url: http://localhost:11434/v1
-  default_model: Nemotron-3-nano
+  default_model: qwen3-coder-next
+  # qwen3-coder-next
   #GLM-4.7-Flash
-  #gemma3:27b - not support tools 
+  #gemma3:27b - not support tools
   #Nemotron-3-nano
