@@ -1,3 +1,12 @@
+# =============================================================================
+# WORKSPACE CONFIGURATION
+# =============================================================================
+workspace:
+  # Root directory for all agent operations. All paths must be within this.
+  root: /Users/kentchiu/Documents/Github/open_memo
+  # Whether to restrict operations to workspace_root (safety feature)
+  restrict_to_workspace: true
+
 mcp:
   servers:
 

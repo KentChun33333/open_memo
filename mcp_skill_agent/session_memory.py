@@ -31,11 +31,26 @@ class SessionMemory:
 
     @active_folder.setter
     def active_folder(self, value: str):
-        """Setter to update cwd_rel from an absolute or relative path."""
+        """
+        Setter to update cwd_rel from an absolute or relative path.
+        Validates that the path stays within workspace_root.
+        """
         if os.path.isabs(value):
-            self.cwd_rel = os.path.relpath(value, self.workspace_root)
+            abs_path = os.path.abspath(value)
         else:
-            self.cwd_rel = value
+            abs_path = os.path.abspath(os.path.join(self.workspace_root, value))
+        
+        # Validate: path must be within workspace_root
+        workspace_resolved = os.path.abspath(self.workspace_root)
+        if not abs_path.startswith(workspace_resolved):
+            logger.warning(
+                f"SessionMemory: Blocked attempt to set active_folder outside workspace. "
+                f"Requested: {abs_path}, Workspace: {workspace_resolved}"
+            )
+            return  # Silently reject - don't update
+        
+        # Update cwd_rel
+        self.cwd_rel = os.path.relpath(abs_path, self.workspace_root)
 
 class SessionMemoryManager:
     """

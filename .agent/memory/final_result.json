@@ -1,7 +1,0 @@
-{
-  "status": "success",
-  "summary": "Completed Recovery Step 1: Successfully created the MCP demo web artifact. Fixed .parcelrc configuration to resolve Parcel config validation error, then ran bundle-artifact.sh to create bundle.html (260KB). The artifact implements a Model Context Protocol demo with three tabs: Chat interface, Context Flow visualization, and Document management using React, Tailwind CSS, and shadcn/ui components.",
-  "created_files": [
-    ".agent/skills/web-artifacts-builder/mcp-demo/bundle.html"
-  ]
-}

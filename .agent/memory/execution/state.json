@@ -1,9 +1,0 @@
-{
-  "current_step": "Recovery Step 2",
-  "completed_steps": ["Recovery Step 1"],
-  "bundle_status": "success",
-  "bundle_file": "/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent/mcp-demo/bundle.html",
-  "bundle_size": "247K",
-  "last_bundle_command": "bash /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/bundle-artifact.sh",
-  "last_bundle_output": "✅ Bundle complete! Output: bundle.html (247K)"
-}

@@ -1,7 +1,0 @@
-{
-  "status": "success",
-  "summary": "Successfully built the Model Context Protocol web artifact using the web-artifacts-builder skill. The bundle.html file (247K) has been created in the mcp-demo directory, containing all React components, Tailwind CSS, and dependencies inlined into a single HTML file. The artifact demonstrates the Model Context Protocol with an interactive UI showing context processing flow, visualizers, and technical details.",
-  "created_files": [
-    "mcp-demo/bundle.html"
-  ]
-}

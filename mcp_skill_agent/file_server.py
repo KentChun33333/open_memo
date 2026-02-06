@@ -11,12 +11,32 @@ import traceback
 
 # =============================================================================
 # WORKSPACE ROOT - Single source of truth for default working directory
-# Prevents CWD chaos across MCP server restarts (see trajectory_analysis_report.md)
+# Priority: config.yaml → MCP_WORKSPACE env var → parent directory
 # =============================================================================
-WORKSPACE_ROOT = os.getenv(
-    "MCP_WORKSPACE",
-    str(Path(__file__).parent.parent.resolve())  # Default: open_memo root
-)
+def _load_workspace_root() -> str:
+    """Load workspace root from config.yaml, env var, or default."""
+    # Try config.yaml first
+    try:
+        config_path = Path(__file__).parent / "config.yaml"
+        if config_path.exists():
+            import yaml
+            with open(config_path) as f:
+                cfg = yaml.safe_load(f) or {}
+            workspace_root = cfg.get("workspace", {}).get("root")
+            if workspace_root and os.path.isdir(workspace_root):
+                return str(Path(workspace_root).resolve())
+    except Exception:
+        pass
+    
+    # Try env var
+    env_root = os.getenv("MCP_WORKSPACE")
+    if env_root and os.path.isdir(env_root):
+        return str(Path(env_root).resolve())
+    
+    # Default: parent of this file's directory
+    return str(Path(__file__).parent.parent.resolve())
+
+WORKSPACE_ROOT = _load_workspace_root()
 
 # Setup robust logging that NEVER writes to stdout (which breaks MCP)
 def setup_file_logging():
@@ -219,8 +239,8 @@ def _guard_command(command: str, cwd: str) -> str | None:
 
 @mcp.tool()
 async def execute_command(command: str, working_dir: Optional[str] = None) -> str:
-    """Execute a shell command and return its output. Defaults to WORKSPACE_ROOT."""
-    cwd = working_dir or WORKSPACE_ROOT  # Use fixed workspace, not unpredictable os.getcwd()
+    f"""Execute a shell command and return its output. Defaults to {WORKSPACE_ROOT}."""
+    cwd = working_dir if working_dir else WORKSPACE_ROOT  
     log_tool_call("execute_command", {"command": command, "cwd": cwd})
     guard_error = _guard_command(command, cwd)
     if guard_error:
