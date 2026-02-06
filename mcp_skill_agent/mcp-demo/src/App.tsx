@@ -1,244 +1,297 @@
-import { BrainCircuit, Database, Server, Layout, Zap, Menu, X } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Badge } from '@/components/ui/badge'
+import { useState } from 'react'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator"
+import { Terminal, Database, Cpu, Activity, ArrowRight, Layers, MessageSquare } from 'lucide-react'
+
+// Mock MCP response types
+type ContextData = {
+  source: string;
+  content: string;
+  relevance: number;
+}
 
 function App() {
+  const [userInput, setUserInput] = useState('')
+  const [contextHistory, setContextHistory] = useState<ContextData[]>([])
+  const [activeTab, setActiveTab] = useState('build')
+  const [isProcessing, setIsProcessing] = useState(false)
+
+  const handleAddContext = () => {
+    if (!userInput.trim()) return
+    
+    setIsProcessing(true)
+    
+    // Simulate MCP processing
+    setTimeout(() => {
+      const newContext: ContextData = {
+        source: 'user-input',
+        content: userInput,
+        relevance: Math.floor(Math.random() * 30) + 70
+      }
+      setContextHistory([...contextHistory, newContext])
+      setUserInput('')
+      setIsProcessing(false)
+    }, 1500)
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      {/* Header */}
-      <header className="border-b bg-white/80 backdrop-blur-md sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <BrainCircuit className="h-8 w-8 text-indigo-600" />
-            <h1 className="text-xl font-bold text-slate-900">Model Context Protocol</h1>
-          </div>
-          <div className="flex items-center gap-4">
-            <Button variant="outline" size="sm">Documentation</Button>
-            <Button size="sm">Get Started</Button>
-          </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="mb-8 text-center">
+          <h1 className="text-4xl font-bold text-slate-900 mb-2">Model Context Protocol</h1>
+          <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+            Interactive demonstration of how models understand and process context through structured data flow
+          </p>
         </div>
-      </header>
 
-      {/* Hero Section */}
-      <section className="container mx-auto px-4 py-16 text-center">
-        <Badge className="mb-6 bg-indigo-100 text-indigo-700 hover:bg-indigo-200">
-          Open Standard for AI Context
-        </Badge>
-        <h1 className="text-4xl md:text-6xl font-bold text-slate-900 mb-6">
-          Connect Your AI Models to Real-World Data
-        </h1>
-        <p className="text-xl text-slate-600 max-w-2xl mx-auto mb-8">
-          The Model Context Protocol (MCP) enables seamless integration between AI models and your data sources, tools, and systems.
-        </p>
-        <div className="flex flex-wrap justify-center gap-4">
-          <Button size="lg" className="bg-indigo-600 hover:bg-indigo-700">
-            <Zap className="mr-2 h-5 w-5" />
-            Start Building
-          </Button>
-          <Button size="lg" variant="outline">
-            <Database className="mr-2 h-5 w-5" />
-            Explore Servers
-          </Button>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section className="container mx-auto px-4 py-16">
-        <h2 className="text-3xl font-bold text-center mb-12">Key Features</h2>
-        <div className="grid md:grid-cols-3 gap-8">
-          <Card>
+        {/* Main Demo Area */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          {/* Left Column: Context Builder */}
+          <Card className="border-slate-200 shadow-lg">
             <CardHeader>
-              <BrainCircuit className="h-10 w-10 text-indigo-500 mb-4" />
-              <CardTitle>Context Enrichment</CardTitle>
-              <CardDescription>Provide rich context to your AI models with real-time data integration</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-slate-600">Access databases, APIs, and files directly from your AI prompts.</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <Server className="h-10 w-10 text-indigo-500 mb-4" />
-              <CardTitle>Server Ecosystem</CardTitle>
-              <CardDescription>Connect with a growing ecosystem of MCP-compatible servers</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-slate-600">Pre-built connectors for popular services and custom integrations.</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <Layout className="h-10 w-10 text-indigo-500 mb-4" />
-              <CardTitle>Unified Interface</CardTitle>
-              <CardDescription>Consistent protocol across all AI applications</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-slate-600">Standardized communication format for predictable integration.</p>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-
-      {/* Quick Example Tabs */}
-      <section className="container mx-auto px-4 py-16">
-        <h2 className="text-3xl font-bold text-center mb-12">How It Works</h2>
-        <Tabs defaultValue="example" className="max-w-2xl mx-auto">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="example">Example</TabsTrigger>
-            <TabsTrigger value="protocol">Protocol</TabsTrigger>
-            <TabsTrigger value="integration">Integration</TabsTrigger>
-          </TabsList>
-          <TabsContent value="example" className="mt-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Hello World Example</CardTitle>
-                <CardDescription>A simple MCP connection example</CardDescription>
-              </CardHeader>
-              <CardContent className="bg-slate-900 text-slate-50 p-4 rounded-lg font-mono text-sm">
-                <div className="mb-2">
-                  <span className="text-purple-400">import</span> {{'{'}} MCPClient {'}}{' '}
-                  <span className="text-purple-400">from</span> <span className="text-green-400">'@modelcontextprotocol/sdk'</span>;
+              <CardTitle className="flex items-center gap-2">
+                <div className="p-2 bg-indigo-100 rounded-lg">
+                  <Activity className="w-6 h-6 text-indigo-600" />
                 </div>
+                <span>Context Builder</span>
+              </CardTitle>
+              <CardDescription>
+                Enter your input to simulate how context is processed through the model
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
                 <div>
-                  <span className="text-blue-400">const</span> client = <span className="text-purple-400">new</span> MCPClient(
-                    <span className="text-green-400">'https://api.example.com/mcp'</span>
-                  );
-                  {'\n'}
-                  <span className="text-blue-400">await</span> client.initialize();
+                  <Label htmlFor="context-input">Enter context or query</Label>
+                  <div className="flex gap-2 mt-1">
+                    <Input
+                      id="context-input"
+                      placeholder="e.g., analyze the performance of our recent campaign..."
+                      value={userInput}
+                      onChange={(e) => setUserInput(e.target.value)}
+                      className="flex-1"
+                    />
+                    <Button 
+                      onClick={handleAddContext}
+                      disabled={!userInput.trim() || isProcessing}
+                      className={isProcessing ? "animate-pulse" : ""}
+                    >
+                      {isProcessing ? "Processing..." : "Add Context"}
+                    </Button>
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          <TabsContent value="protocol" className="mt-4">
+
+                {/* Context Visualization */}
+                <div className="mt-6">
+                  <h3 className="text-sm font-medium mb-3">Context Layers</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3 text-sm">
+                      <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center">
+                        <Layers className="w-4 h-4 text-slate-500" />
+                      </div>
+                      <div>
+                        <div className="font-medium">Input Processing</div>
+                        <div className="text-xs text-slate-500">Tokenization and encoding</div>
+                      </div>
+                    </div>
+                    
+                    {contextHistory.length > 0 && (
+                      <>
+                        <div className="flex items-center gap-3 text-sm">
+                          <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center">
+                            <Database className="w-4 h-4 text-slate-500" />
+                          </div>
+                          <div>
+                            <div className="font-medium">Context Storage</div>
+                            <div className="text-xs text-slate-500">Retrieval augmented generation</div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-3 text-sm">
+                          <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center">
+                            <Cpu className="w-4 h-4 text-slate-500" />
+                          </div>
+                          <div>
+                            <div className="font-medium">Model Processing</div>
+                            <div className="text-xs text-slate-500">Attention mechanisms active</div>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Right Column: Context Visualizer */}
+          <Card className="border-slate-200 shadow-lg h-full">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <div className="p-2 bg-emerald-100 rounded-lg">
+                  <Terminal className="w-6 h-6 text-emerald-600" />
+                </div>
+                <span>Context Flow Visualizer</span>
+              </CardTitle>
+              <CardDescription>
+                Real-time visualization of context processing through the protocol layers
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="bg-slate-900 rounded-lg p-4 font-mono text-sm h-[400px] overflow-auto">
+                {contextHistory.length === 0 ? (
+                  <div className="text-slate-400 flex flex-col items-center justify-center h-full">
+                    <MessageSquare className="w-12 h-12 mb-2 opacity-50" />
+                    <p>Enter context to begin processing</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="text-emerald-400">[MCP] Initializing context pipeline...</div>
+                    <div className="text-emerald-400">[MCP] Received user input: "{contextHistory[0]?.content.substring(0, 50)}..."</div>
+                    
+                    {contextHistory.map((context, idx) => (
+                      <div key={idx} className="mt-4 border-l-2 border-indigo-500 pl-2">
+                        <div className="text-slate-300">Context #{idx + 1}:</div>
+                        <div className="text-indigo-300 mt-1">
+                          <span className="font-bold">Source:</span> {context.source}
+                        </div>
+                        <div className="text-indigo-300">
+                          <span className="font-bold">Content:</span> {context.content}
+                        </div>
+                        <div className="flex items-center gap-2 mt-2">
+                          <span className="text-slate-400 font-bold">Relevance Score:</span>
+                          <Badge variant="secondary" className="bg-slate-800 text-emerald-400">
+                            {context.relevance}%
+                          </Badge>
+                        </div>
+                        <div className="text-sm text-emerald-400 mt-2">
+                          [MCP] Context embedded in vector space
+                        </div>
+                      </div>
+                    ))}
+                    
+                    <div className="animate-pulse mt-2 text-emerald-400">[MCP] Generating response...</div>
+                  </div>
+                )}
+              </div>
+              
+              <div className="mt-4 pt-4 border-t border-slate-100">
+                <h3 className="text-sm font-medium mb-2">Protocol Flow</h3>
+                <div className="flex justify-between items-center text-xs text-slate-500">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-slate-300 rounded-full"></div>
+                    Input
+                  </div>
+                  <ArrowRight className="w-3 h-3" />
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-indigo-300 rounded-full"></div>
+                    Processing
+                  </div>
+                  <ArrowRight className="w-3 h-3" />
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-emerald-300 rounded-full"></div>
+                    Output
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Detailed Protocol Info */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold mb-4">How the Model Context Protocol Works</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card>
               <CardHeader>
-                <CardTitle>MCP Protocol Flow</CardTitle>
-                <CardDescription>How data flows between models and sources</CardDescription>
+                <div className="p-2 bg-blue-100 rounded-lg w-fit mb-2">
+                  <Layers className="w-5 h-5 text-blue-600" />
+                </div>
+                <CardTitle className="text-lg">Context Layers</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center">1</div>
-                    <span className="text-slate-700">AI model sends context request</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center">2</div>
-                    <span className="text-slate-700">MCP server fetches relevant data</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center">3</div>
-                    <span className="text-slate-700">Data is formatted and sent back</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center">4</div>
-                    <span className="text-slate-700">Model uses context to respond</span>
-                  </div>
-                </div>
+                <p className="text-sm text-slate-600">
+                  MCP uses layered context processing with semantic memory, working memory, and procedural memory
+                  to understand and maintain conversation context across interactions.
+                </p>
               </CardContent>
             </Card>
-          </TabsContent>
-          <TabsContent value="integration" className="mt-4">
+
             <Card>
               <CardHeader>
-                <CardTitle>Getting Started</CardTitle>
-                <CardDescription>Three simple steps to integrate MCP</CardDescription>
+                <div className="p-2 bg-purple-100 rounded-lg w-fit mb-2">
+                  <Database className="w-5 h-5 text-purple-600" />
+                </div>
+                <CardTitle className="text-lg">Retrieval Augmentation</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex gap-3">
-                  <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-700 shrink-0">1</div>
-                  <div>
-                    <h4 className="font-medium text-slate-900">Install SDK</h4>
-                    <p className="text-sm text-slate-600">npm install @modelcontextprotocol/sdk</p>
-                  </div>
-                </div>
-                <div className="flex gap-3">
-                  <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-700 shrink-0">2</div>
-                  <div>
-                    <h4 className="font-medium text-slate-900">Configure Server</h4>
-                    <p className="text-sm text-slate-600">Set up your data sources in server.json</p>
-                  </div>
-                </div>
-                <div className="flex gap-3">
-                  <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-700 shrink-0">3</div>
-                  <div>
-                    <h4 className="font-medium text-slate-900">Connect Client</h4>
-                    <p className="text-sm text-slate-600">Initialize client and start requesting context</p>
-                  </div>
-                </div>
+              <CardContent>
+                <p className="text-sm text-slate-600">
+                  Relevant external context is retrieved and injected into the model's context window,
+                  enhancing responses with up-to-date information and domain-specific knowledge.
+                </p>
               </CardContent>
             </Card>
-          </TabsContent>
-        </Tabs>
-      </section>
 
-      {/* CTA Section */}
-      <section className="container mx-auto px-4 py-16">
-        <div className="bg-indigo-600 rounded-2xl p-8 md:p-12 text-center text-white">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6">
-            Ready to Build with Model Context Protocol?
-          </h2>
-          <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
-            Join thousands of developers delivering context-aware AI experiences with MCP.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button className="bg-white text-indigo-600 hover:bg-slate-100 font-semibold py-4 px-8">
-              Get Started Now
-            </Button>
-            <Button className="bg-transparent border-2 border-white text-white hover:bg-white/10 font-semibold py-4 px-8">
-              View Documentation
-            </Button>
+            <Card>
+              <CardHeader>
+                <div className="p-2 bg-amber-100 rounded-lg w-fit mb-2">
+                  <Cpu className="w-5 h-5 text-amber-600" />
+                </div>
+                <CardTitle className="text-lg">Attention Mechanisms</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-slate-600">
+                  The model's attention mechanisms weigh different parts of the context differently,
+                  focusing on the most relevant information for generation while maintaining coherence.
+                </p>
+              </CardContent>
+            </Card>
           </div>
         </div>
-      </section>
 
-      {/* Footer */}
-      <footer className="bg-slate-900 text-slate-300 py-12">
-        <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-4 gap-8">
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <BrainCircuit className="h-6 w-6 text-indigo-500" />
-                <h3 className="text-lg font-semibold text-white">Model Context Protocol</h3>
-              </div>
-              <p className="text-sm text-slate-400">Open standard for AI context integration.</p>
-            </div>
-            <div>
-              <h4 className="font-semibold text-white mb-4">Resources</h4>
-              <ul className="space-y-2 text-sm">
-                <li><a href="#" className="hover:text-indigo-400">Documentation</a></li>
-                <li><a href="#" className="hover:text-indigo-400">API Reference</a></li>
-                <li><a href="#" className="hover:text-indigo-400">Example Servers</a></li>
-                <li><a href="#" className="hover:text-indigo-400">Community</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold text-white mb-4">Protocol</h4>
-              <ul className="space-y-2 text-sm">
-                <li><a href="#" className="hover:text-indigo-400">Overview</a></li>
-                <li><a href="#" className="hover:text-indigo-400">Specification</a></li>
-                <li><a href="#" className="hover:text-indigo-400">Servers</a></li>
-                <li><a href="#" className="hover:text-indigo-400">Clients</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold text-white mb-4">Connect</h4>
-              <ul className="space-y-2 text-sm">
-                <li><a href="#" className="hover:text-indigo-400">GitHub</a></li>
-                <li><a href="#" className="hover:text-indigo-400">Discord</a></li>
-                <li><a href="#" className="hover:text-indigo-400">Twitter</a></li>
-                <li><a href="#" className="hover:text-indigo-400">Email</a></li>
-              </ul>
-            </div>
-          </div>
-          <div className="border-t border-slate-800 mt-8 pt-8 text-center text-sm text-slate-500">
-            <p> © 2025 Model Context Protocol. Open source under the MIT License.</p>
-          </div>
-        </div>
-      </footer>
+        {/* Interactive Accordion */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Technical Details</CardTitle>
+            <CardDescription>Explore the implementation details of the Model Context Protocol</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Accordion type="multiple" className="w-full">
+              <AccordionItem value="item-1">
+                <AccordionTrigger className="font-medium">Context Window Management</AccordionTrigger>
+                <AccordionContent className="text-sm text-slate-600">
+                  MCP implements sophisticated context window management, including sliding windows, 
+                  summary compression, and selective retention to maximize effective context length.
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="item-2">
+                <AccordionTrigger className="font-medium">Context Embedding</AccordionTrigger>
+                <AccordionContent className="text-sm text-slate-600">
+                  All context is embedded into vector spaces for semantic retrieval and comparison, 
+                  allowing the model to understand relationships between different pieces of information.
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="item-3">
+                <AccordionTrigger className="font-medium">State Persistence</AccordionTrigger>
+                <AccordionContent className="text-sm text-slate-600">
+                  Conversation state is persisted between interactions, allowing for long-term 
+                  context retention and multi-turn dialogues that build understanding over time.
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }

@@ -13,7 +13,7 @@ import traceback
 def setup_file_logging():
     try:
         # Determine log path: ../.agent/memory/observation/file_tools.log
-        base_dir = Path(__file__).parent.parent.resolve()
+        base_dir = Path(__file__).parent.resolve()
         log_dir = base_dir / ".agent" / "memory" / "observation"
         log_dir.mkdir(parents=True, exist_ok=True)
         log_file = log_dir / "file_tools_verbose.log"
@@ -45,31 +45,14 @@ import functools
 
 # ... (logging setup) ...
 
-def log_activity(func):
-    @functools.wraps(func)
-    async def wrapper(*args, **kwargs):
-        func_name = func.__name__
-        tool_logger.info(f"======== TOOL CALL: {func_name} ========")
-        tool_logger.info(f"INPUT Args: {args}")
-        tool_logger.info(f"INPUT Kwargs: {kwargs}")
-        
-        try:
-            result = await func(*args, **kwargs)
-            
-            # Truncate result for log if massive, but keep it generous as requested
-            log_res = str(result)
-            if len(log_res) > 20000:
-                log_res = log_res[:20000] + "... [truncated]"
-            
-            tool_logger.info(f"OUTPUT: {log_res}")
-            tool_logger.info(f"======== END TOOL: {func_name} ========\n")
-            return result
-        except Exception as e:
-            tool_logger.error(f"ERROR in {func_name}: {e}\n{traceback.format_exc()}")
-            tool_logger.info(f"======== END TOOL (ERROR): {func_name} ========\n")
-            raise e
-            
-    return wrapper
+def log_tool_call(func_name: str, args: dict, result: str = None, error: str = None):
+    """Simple logging function for tool calls."""
+    tool_logger.info(f"TOOL: {func_name} | Args: {args}")
+    if result:
+        log_res = result[:2000] + "..." if len(result) > 2000 else result
+        tool_logger.info(f"RESULT: {log_res}")
+    if error:
+        tool_logger.error(f"ERROR: {error}")
 
 # Initialize FastMCP server instance
 mcp = FastMCP("file-tools")
@@ -79,9 +62,9 @@ mcp = FastMCP("file-tools")
 #
 
 @mcp.tool()
-@log_activity
 async def read_file(path: str) -> str:
     """Read the contents of a file at the given path."""
+    log_tool_call("read_file", {"path": path})
     try:
         file_path = Path(path).expanduser()
         if not file_path.exists():
@@ -97,9 +80,9 @@ async def read_file(path: str) -> str:
         return f"Error reading file: {str(e)}"
 
 @mcp.tool()
-@log_activity
 async def write_file(path: str, content: str) -> str:
     """Write content to a file at the given path. Creates parent directories if needed."""
+    log_tool_call("write_file", {"path": path, "content_len": len(content)})
     try:
         file_path = Path(path).expanduser()
         file_path.parent.mkdir(parents=True, exist_ok=True)
@@ -111,9 +94,9 @@ async def write_file(path: str, content: str) -> str:
         return f"Error writing file: {str(e)}"
 
 @mcp.tool()
-@log_activity
 async def edit_file(path: str, old_text: str, new_text: str) -> str:
     """Edit a file by replacing old_text with new_text. The old_text must exist exactly in the file."""
+    log_tool_call("edit_file", {"path": path, "old_len": len(old_text), "new_len": len(new_text)})
     try:
         file_path = Path(path).expanduser()
         if not file_path.exists():
@@ -139,9 +122,9 @@ async def edit_file(path: str, old_text: str, new_text: str) -> str:
         return f"Error editing file: {str(e)}"
 
 @mcp.tool()
-@log_activity
 async def list_dir(path: str) -> str:
     """List the contents of a directory."""
+    log_tool_call("list_dir", {"path": path})
     try:
         dir_path = Path(path).expanduser()
         if not dir_path.exists():
@@ -222,11 +205,10 @@ def _guard_command(command: str, cwd: str) -> str | None:
     return None
 
 @mcp.tool()
-@log_activity
 async def execute_command(command: str, working_dir: Optional[str] = None) -> str:
     """Execute a shell command and return its output. Use with caution."""
-    # Logic from nanobot ExecTool.execute
     cwd = working_dir or os.getcwd()
+    log_tool_call("execute_command", {"command": command, "cwd": cwd})
     guard_error = _guard_command(command, cwd)
     if guard_error:
         return guard_error
