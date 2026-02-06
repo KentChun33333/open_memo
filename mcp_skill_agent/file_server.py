@@ -9,6 +9,15 @@ import json
 import datetime
 import traceback
 
+# =============================================================================
+# WORKSPACE ROOT - Single source of truth for default working directory
+# Prevents CWD chaos across MCP server restarts (see trajectory_analysis_report.md)
+# =============================================================================
+WORKSPACE_ROOT = os.getenv(
+    "MCP_WORKSPACE",
+    str(Path(__file__).parent.parent.resolve())  # Default: open_memo root
+)
+
 # Setup robust logging that NEVER writes to stdout (which breaks MCP)
 def setup_file_logging():
     try:
@@ -56,6 +65,10 @@ def log_tool_call(func_name: str, args: dict, result: str = None, error: str = N
 
 # Initialize FastMCP server instance
 mcp = FastMCP("file-tools")
+
+# Log startup with WORKSPACE_ROOT for debugging CWD issues
+tool_logger.info(f"Starting file-tools MCP server...")
+tool_logger.info(f"WORKSPACE_ROOT: {WORKSPACE_ROOT}")
 
 #
 # Tools referenced from nanobot/agent/tools/filesystem.py
@@ -206,8 +219,8 @@ def _guard_command(command: str, cwd: str) -> str | None:
 
 @mcp.tool()
 async def execute_command(command: str, working_dir: Optional[str] = None) -> str:
-    """Execute a shell command and return its output. Use with caution."""
-    cwd = working_dir or os.getcwd()
+    """Execute a shell command and return its output. Defaults to WORKSPACE_ROOT."""
+    cwd = working_dir or WORKSPACE_ROOT  # Use fixed workspace, not unpredictable os.getcwd()
     log_tool_call("execute_command", {"command": command, "cwd": cwd})
     guard_error = _guard_command(command, cwd)
     if guard_error:
