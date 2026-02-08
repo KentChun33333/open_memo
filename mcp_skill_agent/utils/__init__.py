@@ -1,3 +1,2 @@
-# Utils module
-from .logger import setup_logging
-from .telemetry import Telemetry
+# Utils module - Unified Telemetry
+from .telemetry import get_telemetry, TelemetryManager

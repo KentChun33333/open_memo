@@ -2,10 +2,10 @@ import json
 from typing import List, Dict, Optional
 from mcp_agent.agents.agent import Agent
 from mcp_agent.workflows.llm.augmented_llm_openai import OpenAIAugmentedLLM
-from ..logger import get_logger
+from ..utils.telemetry import get_telemetry
 from .structs import TechLeadOutput, StepExecutorInput, SkillStep, TechLeadInput
 
-logger = get_logger("tech_lead")
+logger = get_telemetry("tech_lead")
 
 TECH_LEAD_INSTRUCTION = """You are a SENIOR TECHNICAL LEAD (The "Active Debugger").
 Your Junior Engineer (The Worker) is STUCK or failing.

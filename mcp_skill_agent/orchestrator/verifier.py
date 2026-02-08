@@ -2,9 +2,9 @@ import os
 import re
 import json
 from typing import List, Dict, Tuple, Optional
-from ..logger import get_logger
+from ..utils.telemetry import get_telemetry
 
-logger = get_logger("verifier")
+logger = get_telemetry("verifier")
 
 class Verifier:
     """

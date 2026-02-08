@@ -5,13 +5,12 @@ from typing import Optional, List, Dict
 from mcp_agent.agents.agent import Agent
 from mcp_agent.workflows.llm.augmented_llm_openai import OpenAIAugmentedLLM
 
-from ..logger import get_logger
-from ..telemetry import TelemetryManager
+from ..utils.telemetry import get_telemetry, TelemetryManager
 from ..prompt import ATOMIC_PLANNER_INSTRUCTION, ATOMIC_REPLANNER_INSTRUCTION
 from .structs import AtomicPlannerInput, AtomicPlannerOutput, SkillStep
 from .completion_checker import CompletionCriteria
 
-logger = get_logger("atomic_planner")
+logger = get_telemetry("atomic_planner")
 
 class AtomicPlanner:
     def __init__(self):

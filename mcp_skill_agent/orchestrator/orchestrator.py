@@ -10,17 +10,17 @@ from mcp_agent.agents.agent import Agent
 from mcp_agent.workflows.llm.augmented_llm_openai import OpenAIAugmentedLLM
 
 from ..config_loader import config
-from ..logger import get_logger, setup_logging
-from ..session_memory import SessionMemoryManager
+from ..utils.telemetry import get_telemetry, TelemetryManager
+from ..handler.memory_handler import SessionMemoryManager
 from .step_executor import StepExecutor
 from .structs import SkillStep, CriticInput, CriticOutput, AtomicPlannerInput, AtomicPlannerOutput, StepExecutorOutput # Explicit import
 from ..prompt import PLANNER_INSTRUCTION
-from ..telemetry import TelemetryManager
+from ..utils.telemetry import TelemetryManager
 from .completion_checker import CompletionChecker, derive_completion_criteria
 
 # Setup Logger
-logger = get_logger("orchestrator")
-from ..skill_manager import SkillManager
+logger = get_telemetry("orchestrator")
+from ..handler.skill_manager import SkillManager
 from .atomic_planner import AtomicPlanner
 from .verifier import Verifier
 
@@ -32,7 +32,7 @@ class Orchestrator:
     """
     def __init__(self):
         # 1. Initialize Infrastructure
-        setup_logging(level=config.get("logging.level", "INFO"))
+        # Logging is handled by TelemetryManager (structlog) - no setup needed
         
         self.base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         

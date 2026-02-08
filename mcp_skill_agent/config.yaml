@@ -10,7 +10,7 @@ mcp:
     file-tools:
       command: /opt/anaconda3/bin/python3
       args:
-        - /Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent/file_server.py
+        - /Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent/tools/file_server.py
 openai:
   api_key: ollama
   base_url: http://localhost:11434/v1

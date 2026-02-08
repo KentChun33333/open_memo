@@ -10,9 +10,9 @@ import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Tuple, Optional, Any
-from ..logger import get_logger
+from ..utils.telemetry import get_telemetry
 
-logger = get_logger("completion_checker")
+logger = get_telemetry("completion_checker")
 
 
 @dataclass

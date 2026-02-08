@@ -6,14 +6,13 @@ from mcp_agent.agents.agent import Agent
 from mcp_agent.workflows.llm.augmented_llm_openai import OpenAIAugmentedLLM
 from mcp_agent.workflows.llm.augmented_llm import RequestParams
 
-from ..logger import get_logger
-from ..session_memory import SessionMemoryManager
+from ..utils.telemetry import get_telemetry
+from ..handler.memory_handler import SessionMemoryManager
 from ..prompt import INSTRUCTION_POOL, SUBAGENT_INSTRUCTION, USER_DYNAMIC_CONTEXT_TEMPLATE, AUTO_WRITE_PROMPT, GENERAL_SKILL_PROTOCOL
-from .structs import StepExecutorInput, StepExecutorOutput, SkillStep, TechLeadInput # Explicit import
 from .structs import StepExecutorInput, StepExecutorOutput, SkillStep, TechLeadInput # Explicit import
 
 # Initialize Logger
-logger = get_logger("step_executor")
+logger = get_telemetry("step_executor")
 
 class StepExecutor:
     """
