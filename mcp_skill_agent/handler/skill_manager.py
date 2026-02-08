@@ -4,7 +4,7 @@ import yaml
 import logging
 import re
 try:
-    from .config_loader import config
+    from ..config_loader import config
     from .skill_discovery import SkillDiscovery, SkillMetadata
 except ImportError:
     from config_loader import config

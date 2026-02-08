@@ -4,53 +4,12 @@ import json
 import logging
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass, field, asdict
+try:
+    from ..orchestrator.structs import SessionMemory
+except ImportError:
+    from orchestrator.structs import SessionMemory
 
 logger = logging.getLogger(__name__)
-
-@dataclass
-class SessionMemory:
-    workspace_root: str
-    cwd_rel: str = "." # Stores relative path from workspace_root
-    project_root: str = "" # Absolute path to current project root (if any)
-    artifacts: Dict[str, List[str]] = field(default_factory=dict)
-
-    # directory_tree removed (redundant)
-    env_vars: Dict[str, str] = field(default_factory=dict)     # New: Environment Variables
-    step_outputs: Dict[int, str] = field(default_factory=dict) # New: Step Outputs
-    tool_history: List[Dict[str, Any]] = field(default_factory=list) # New: Tool Execution History
-    clipboard: Dict[str, str] = field(default_factory=dict) # New: Cross-step file cache
-    plan: List[Dict[str, Any]] = field(default_factory=list) # New: Persisted Execution Plan
-    agent_feedback_history: List[Dict[str, Any]] = field(default_factory=list) # New: Generic Feedback History
-    current_step_id: int = 0
-    current_step_id: int = 0
-
-    @property
-    def active_folder(self) -> str:
-        """Dynamic property to get absolute active folder path."""
-        return os.path.abspath(os.path.join(self.workspace_root, self.cwd_rel))
-
-    @active_folder.setter
-    def active_folder(self, value: str):
-        """
-        Setter to update cwd_rel from an absolute or relative path.
-        Validates that the path stays within workspace_root.
-        """
-        if os.path.isabs(value):
-            abs_path = os.path.abspath(value)
-        else:
-            abs_path = os.path.abspath(os.path.join(self.workspace_root, value))
-        
-        # Validate: path must be within workspace_root
-        workspace_resolved = os.path.abspath(self.workspace_root)
-        if not abs_path.startswith(workspace_resolved):
-            logger.warning(
-                f"SessionMemory: Blocked attempt to set active_folder outside workspace. "
-                f"Requested: {abs_path}, Workspace: {workspace_resolved}"
-            )
-            return  # Silently reject - don't update
-        
-        # Update cwd_rel
-        self.cwd_rel = os.path.relpath(abs_path, self.workspace_root)
 
 class SessionMemoryManager:
     """
