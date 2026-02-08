@@ -1,6 +1,10 @@
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import List, Optional, TYPE_CHECKING
 import xml.etree.ElementTree as ET
+
+# Avoid circular import
+if TYPE_CHECKING:
+    from .completion_checker import CompletionCriteria
 
 @dataclass
 class SkillContextDTO:
@@ -182,4 +186,5 @@ class AtomicPlannerOutput:
     Output from AtomicPlanner Phase (The Plan).
     """
     steps: List[SkillStep]
-    reasoning: str = "" # Explanation of the plan logic
+    reasoning: str = ""  # Explanation of the plan logic
+    completion_criteria: Optional['CompletionCriteria'] = None  # Auto-derived or custom

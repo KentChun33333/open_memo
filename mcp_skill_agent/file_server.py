@@ -38,6 +38,48 @@ def _load_workspace_root() -> str:
 
 WORKSPACE_ROOT = _load_workspace_root()
 
+# =============================================================================
+# TIMEOUT CONFIGURATION - Extended timeouts for long-running operations
+# =============================================================================
+DEFAULT_TIMEOUT = 60  # Default timeout for normal commands
+
+EXTENDED_TIMEOUT = 300  # 5 minutes for long-running operations
+
+# Patterns that trigger extended timeout (case-insensitive matching)
+LONG_RUNNING_PATTERNS = [
+    'init-artifact.sh',
+    'bundle-artifact.sh',
+    'npm install',
+    'npm run build',
+    'npm run dev',
+    'pnpm install',
+    'pnpm build',
+    'parcel build',
+    'yarn install',
+    'yarn build',
+    'pip install',
+    'pip3 install',
+    'poetry install',
+    'cargo build',
+    'go build',
+    'mvn install',
+    'gradle build',
+]
+
+
+def _get_command_timeout(command: str) -> int:
+    """Select appropriate timeout based on command pattern.
+    
+    Returns EXTENDED_TIMEOUT for known long-running operations,
+    DEFAULT_TIMEOUT otherwise.
+    """
+    cmd_lower = command.lower()
+    for pattern in LONG_RUNNING_PATTERNS:
+        if pattern in cmd_lower:
+            tool_logger.info(f"Extended timeout ({EXTENDED_TIMEOUT}s) for pattern: {pattern}")
+            return EXTENDED_TIMEOUT
+    return DEFAULT_TIMEOUT
+
 # Setup robust logging that NEVER writes to stdout (which breaks MCP)
 def setup_file_logging():
     try:
@@ -247,10 +289,11 @@ async def execute_command(command: str, working_dir: Optional[str] = None) -> st
         return guard_error
     
     try:
-        timeout = 60  # Default from nanobot
+        # Use smart timeout based on command pattern
+        timeout = _get_command_timeout(command)
         
         # Extra logging for command execution start
-        tool_logger.info(f"EXEC SHELL: '{command}' in '{cwd}'")
+        tool_logger.info(f"EXEC SHELL: '{command}' in '{cwd}' (timeout={timeout}s)")
 
         process = await asyncio.create_subprocess_shell(
             command,
@@ -265,11 +308,12 @@ async def execute_command(command: str, working_dir: Optional[str] = None) -> st
                 timeout=timeout
             )
         except asyncio.TimeoutError:
+            tool_logger.warning(f"TIMEOUT after {timeout}s: {command}")
             try:
                 process.kill()
             except ProcessLookupError:
                 pass
-            return f"Error: Command timed out after {timeout} seconds"
+            return f"Error: Command timed out after {timeout} seconds. For long-running operations, this may indicate the command is still running in background."
         
         output_parts = []
         

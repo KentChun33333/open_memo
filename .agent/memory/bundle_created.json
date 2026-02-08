@@ -1,0 +1,7 @@
+{
+  "status": "success",
+  "summary": "Successfully bundled the React app into a single HTML file (bundle.html). The artifact is ready for sharing in Claude conversations.",
+  "created_files": [
+    "demo-test-123/bundle.html"
+  ]
+}

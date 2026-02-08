@@ -9,6 +9,7 @@ from ..logger import get_logger
 from ..telemetry import TelemetryManager
 from ..prompt import ATOMIC_PLANNER_INSTRUCTION, ATOMIC_REPLANNER_INSTRUCTION
 from .structs import AtomicPlannerInput, AtomicPlannerOutput, SkillStep
+from .completion_checker import CompletionCriteria
 
 logger = get_logger("atomic_planner")
 
@@ -81,7 +82,14 @@ class AtomicPlanner:
         
         logger.info(f"AtomicPlanner: Parsed {len(steps)} steps.")
         
-        final_output = AtomicPlannerOutput(steps=steps, reasoning=reasoning)
+        # Derive completion criteria from the plan
+        completion_criteria = self._derive_completion_criteria(steps)
+        
+        final_output = AtomicPlannerOutput(
+            steps=steps, 
+            reasoning=reasoning,
+            completion_criteria=completion_criteria
+        )
 
         # Telemetry: Log the full plan
         tm.log_event(
@@ -90,7 +98,8 @@ class AtomicPlanner:
             details={
                 "step_count": len(steps), 
                 "reasoning": reasoning,
-                "steps": [s.title for s in steps]
+                "steps": [s.title for s in steps],
+                "completion_artifacts": completion_criteria.required_artifacts
             }
         )
                 
@@ -209,3 +218,61 @@ class AtomicPlanner:
                 logger.error(f"Step ID failed: {e}")
                 logger.error(f"[DEBUG] Failed json_str (first 500): {json_str[:500] if json_str else 'None'}")
                 return {}
+
+    def _derive_completion_criteria(self, steps: List[SkillStep]) -> CompletionCriteria:
+        """
+        Derive completion criteria from the plan's steps.
+        
+        Strategy:
+        1. Collect all expected_artifacts from ALL steps (not just final)
+        2. Prioritize the final step's artifacts as primary completion check
+        3. Add default success signals
+        
+        Args:
+            steps: List of SkillStep objects from the plan
+            
+        Returns:
+            CompletionCriteria with required_artifacts and success_signals
+        """
+        if not steps:
+            return CompletionCriteria()
+        
+        # Collect final step artifacts (primary completion check)
+        final_step = steps[-1]
+        final_artifacts = list(getattr(final_step, "expected_artifacts", []))
+        
+        # Also collect ALL artifacts from all steps for comprehensive check
+        all_artifacts = []
+        for step in steps:
+            step_artifacts = getattr(step, "expected_artifacts", [])
+            all_artifacts.extend(step_artifacts)
+        
+        # Remove duplicates while preserving order
+        seen = set()
+        unique_all = []
+        for a in all_artifacts:
+            if a not in seen:
+                seen.add(a)
+                unique_all.append(a)
+        
+        # Use final step artifacts as primary (for early exit)
+        # If no final artifacts, use all collected artifacts
+        required = final_artifacts if final_artifacts else unique_all
+        
+        # Default success signals
+        signals = [
+            "MISSION_COMPLETE",
+            "TASK_DONE",
+            "BUNDLE_SUCCESS",
+            "[STEP_COMPLETE]"
+        ]
+        
+        criteria = CompletionCriteria(
+            required_artifacts=required,
+            success_signals=signals,
+            completion_message=f"Plan has {len(steps)} steps, final: {getattr(final_step, 'title', 'N/A')}"
+        )
+        
+        logger.info(f"Derived completion criteria: {len(required)} artifacts, {len(signals)} signals")
+        return criteria
+

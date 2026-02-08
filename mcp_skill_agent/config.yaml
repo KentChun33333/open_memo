@@ -18,4 +18,4 @@ openai:
   # qwen3-coder-next
   #GLM-4.7-Flash
   #gemma3:27b - not support tools
-  #Nemotron-3-nano
+  #Nemotron-3-nano # not good enough for coding

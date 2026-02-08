@@ -16,6 +16,7 @@ from .step_executor import StepExecutor
 from .structs import SkillStep, CriticInput, CriticOutput, AtomicPlannerInput, AtomicPlannerOutput, StepExecutorOutput # Explicit import
 from ..prompt import PLANNER_INSTRUCTION
 from ..telemetry import TelemetryManager
+from .completion_checker import CompletionChecker, derive_completion_criteria
 
 # Setup Logger
 logger = get_logger("orchestrator")
@@ -76,7 +77,22 @@ class Orchestrator:
                 step_idx = 0
                 sop = AtomicPlanner() # Helper for replanning
 
+                # --- COMPLETION GUARD: Setup ---
+                workspace_root = config.get("workspace.root", self.base_dir)
+                completion_checker = CompletionChecker(self.memory_manager, workspace_root)
+                
+                # Derive completion criteria from plan (use last step's expected_artifacts)
+                completion_criteria = plan_output.completion_criteria or derive_completion_criteria(steps)
+                logger.info(f"Completion criteria: {completion_criteria.to_dict()}")
+
                 while step_idx < len(steps):
+                    # --- COMPLETION GUARD: Early Exit Check ---
+                    is_complete, completion_reason = completion_checker.is_complete(completion_criteria)
+                    if is_complete:
+                        logger.info(f"🎉 EARLY EXIT: Task already complete - {completion_reason}")
+                        print(f"\n✅ TASK COMPLETE: {completion_reason}")
+                        break
+                    
                     current_step = steps[step_idx]
                     current_step.status = "active"
                     print(f"\n--- EXECUTION: Step {current_step.id} [{current_step.title}] ---")
