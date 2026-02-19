@@ -1,0 +1,92 @@
+# Gap Analysis: StepExecutor & Orchestrator vs. Production Standards
+
+## Executive Summary
+
+The current implementation of `StepExecutor` and `Orchestrator` relies heavily on **Prompt Engineering** and **Reactive Interventions** (e.g., regex-based auto-write checks). A "Production Grade" system relies on **Structured Engineering**, **Deterministic Constraints**, and **Stateful Context Management**.
+
+The primary failure mode ("not generating code" or "ignoring skill instructions") stems from three root causes:
+
+1. **Loose Control Loop**: The ReAct loop pushes the model to "continue" without validating if the previous action was effective.
+2. **Context Dilution**: The rich instructions in `SKILL.md` are potentially lost or fragmented when broken down into individual steps.
+3. **Lack of Structured Enforcement**: The agent is permitted to output free-form text when it *should* be forced to use tools.
+
+---
+
+## 1. StepExecutor Analysis (`step_executor.py`)
+
+### Gap 1: The "Chatty" Agent Problem (Tool Usage)
+
+* **Current Implementation**: The `StepExecutor` initializes an agent with prompts that *ask* it to use tools (`SUBAGENT_INSTRUCTION`). It relies on the LLM's training to prefer tool calls over text.
+* **Production Standard**: Use **Tool Choice Enforcing** (e.g., `tool_choice: "required"` in OpenAI API) or **Structured Outputs** (JSON Schema).
+* **Impact**: The model often "hallucinates" action by writing Markdown code blocks (` ```python ... ``` `) instead of invoking `write_file`. The current "Auto-Write Intervention" (lines 137-140) is a brittle regex patch that fails if the model uses slightly different formatting.
+
+### Gap 2: The "Blind" ReAct Loop
+
+* **Current Implementation**:
+
+    ```python
+    current_prompt = user_prompt if cycle == 1 else "Status Update: Continue execution..."
+    ```
+
+    This loop is agnostic to the *result* of the previous cycle. It assumes the model knows what to do next.
+* **Production Standard**: The Controller should inspect the **Tool Output History**.
+  * If `write_file` returned "Success", the prompt should be: "File written. Now verify X."
+  * If `write_file` returned "Error", the prompt should be: "Write failed due to X. Fix and retry."
+* **Impact**: The agent can get stuck in loops or exit prematurely because the "Continue" prompt is too vague.
+
+### Gap 3: Missing Context Injection
+
+* **Current Implementation**:
+  * `SUBAGENT_INSTRUCTION` gets `{task_input}`, `{roadmap}`, `{session_context}`.
+  * **MISSING**: The *Global Skill Instructions* from `SKILL.md`.
+  * While `orchestrator.py` parses the skill into steps, the *nuanced guidelines* (e.g., "Use Tailwind", "Don't use external images") often live in the preamble of the `SKILL.md`, not inside the specific step description.
+* **Production Standard**: **Hierarchical Context Injection**. The Step Worker must receive:
+    1. **Global Constraints** (from Skill Preamble).
+    2. **Step Objectives** (from SOP).
+    3. **Dynamic State** (File contents).
+* **Impact**: The agent builds the "What" (Step Goal) but ignores the "How" (Skill Guidelines).
+
+---
+
+## 2. Orchestrator Analysis (`orchestrator.py`)
+
+### Gap 4: SOP Parsing vs. Execution
+
+* **Current Implementation**:
+  * `_initialize_sop` loads content.
+  * `SOPAgent` presumably parses this into `SkillStep` objects.
+  * **Risk**: If the parser is naive (regex splits by headers), it might drop the "contextual glue" between steps.
+* **Production Standard**: The SOP Runtime should maintain a **Shared State** that persists across steps. If Step 1 says "Use this variable," Step 2 must know that variable. currently, `SessionMemory` tracks files, but not *architectural decisions*.
+
+### Gap 5: The "One-Shot" Planner
+
+* **Current Implementation**: The Planner runs once at the beginning.
+* **Production Standard**: **Dynamic Replanning**. If Step 2 fails (e.g., "npm install failed"), the system should pause and ask the Planner to adjust the remaining steps, rather than forcing the Worker to retry the same doomed action.
+
+---
+
+## 3. Structs & Data Flow (`structs.py`)
+
+### Gap 6: Structured Inputs vs. Outputs
+
+* **Current Implementation**: `CriticHandover` ensures structured *Output* to the Critic.
+* **Missing**: Structured *Input* to the Worker.
+* **Production Standard**: The `StepExecutor` should not just feed a string `task_input`. It should feed a `StepContext` object ensuring consistency:
+
+    ```python
+    @dataclass
+    class WorkerInput:
+        global_constraints: str  # From Skill.md
+        step_goal: str           # From SOP
+        required_tools: List[str]
+        file_context_paths: List[str] # Files to pre-read
+    ```
+
+---
+
+## Recommendations for Remediation
+
+1. **Enforce Tools**: in `StepExecutor`, modify the agent configuration to **REQUIRE** tool calls when "coding" type steps are active.
+2. **Inject Global Context**: Update `orchestrator.py` to pass the full `SKILL.md` preamble to `StepExecutor`, which then appends it to `SUBAGENT_INSTRUCTION`.
+3. **Smart Loop**: Update `StepExecutor`'s loop to parse the previous tool result. If `write_file` wasn't called in a coding step, **reject the turn** and prompt specifically for it.
+4. **Replace Regex Intervention**: Instead of `if "```" in response`, use a deterministic check: `if step.type == 'coding' and not tool_calls: raise ActionRequiredError`.

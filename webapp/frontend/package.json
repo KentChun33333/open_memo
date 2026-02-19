@@ -9,12 +9,16 @@
         "preview": "vite preview"
     },
     "dependencies": {
-        "@xyflow/react": "^12.4.0",
+        "d3": "^7.9.0",
+        "markmap-common": "^0.18.9",
+        "markmap-lib": "^0.18.12",
+        "markmap-view": "^0.18.12",
         "react": "^19.0.0",
         "react-dom": "^19.0.0",
         "react-markdown": "^9.0.3",
         "react-router-dom": "^7.1.0",
-        "react-syntax-highlighter": "^15.6.1"
+        "react-syntax-highlighter": "^15.6.1",
+        "recharts": "^3.7.0"
     },
     "devDependencies": {
         "@types/react": "^19.0.0",
