@@ -5,6 +5,7 @@ import {
     PolarAngleAxis, PolarRadiusAxis, XAxis, YAxis, CartesianGrid,
     Tooltip, ResponsiveContainer, Cell, PieChart, Pie
 } from 'recharts'
+import ReflectionAgent from '../components/ReflectionAgent'
 
 /* ──────── color palette ──────── */
 
@@ -210,6 +211,9 @@ export default function Home() {
                     </p>
                 </div>
             </div>
+
+            {/* Reflection Agent */}
+            <ReflectionAgent />
 
             {/* Stat Cards */}
             <div className="stat-grid">
