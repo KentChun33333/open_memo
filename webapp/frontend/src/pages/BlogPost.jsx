@@ -4,6 +4,7 @@ import ReactMarkdown from 'react-markdown'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import Breadcrumb from '../components/Breadcrumb'
+import GiscusComments from '../components/GiscusComments'
 
 export default function BlogPost() {
     const { slug } = useParams()
@@ -64,6 +65,8 @@ export default function BlogPost() {
                     {post.raw}
                 </ReactMarkdown>
             </div>
+
+            <GiscusComments term={slug} />
         </div>
     )
 }

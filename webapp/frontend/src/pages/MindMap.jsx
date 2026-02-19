@@ -1,198 +1,151 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import {
-    ReactFlow,
-    Background,
-    Controls,
-    useNodesState,
-    useEdgesState,
-} from '@xyflow/react'
-import '@xyflow/react/dist/style.css'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { useParams, useNavigate, Link } from 'react-router-dom'
+import { Markmap } from 'markmap-view'
+import { Transformer } from 'markmap-lib'
 import Breadcrumb from '../components/Breadcrumb'
 
-/* ---- Custom Node ---- */
-function MindMapNode({ data }) {
-    const borderColor = data.style?.color || 'var(--accent)'
-    return (
-        <div
-            className="mindmap-node"
-            style={{ borderLeftColor: borderColor, borderLeftWidth: 3 }}
-        >
-            <div className="node-label">{data.label}</div>
-            {data.description && <div className="node-desc">{data.description}</div>}
-            {data.targetFile && (
-                <div style={{ marginTop: 4, fontSize: '0.7rem', color: 'var(--accent)' }}>
-                    🔗 Click to open
-                </div>
-            )}
-        </div>
-    )
-}
+const transformer = new Transformer()
 
-const nodeTypes = { mindmap: MindMapNode }
+/* ---- Convert our JSON tree → Markdown string for Markmap ---- */
+function jsonToMarkdown(node, depth = 0) {
+    const indent = '  '.repeat(depth)
+    const prefix = depth === 0 ? '# ' : '- '
+    let md = ''
 
-/* ---- Layout: simple tree positioning ---- */
-function layoutNodes(nodes, edges) {
-    const children = {}
-    const nodeMap = {}
-    nodes.forEach(n => { nodeMap[n.id] = n; children[n.id] = [] })
-    edges.forEach(e => {
-        if (children[e.source]) children[e.source].push(e.target)
-    })
-
-    // Find roots (nodes that are not a target of any edge)
-    const targets = new Set(edges.map(e => e.target))
-    const roots = nodes.filter(n => !targets.has(n.id))
-    if (roots.length === 0 && nodes.length > 0) roots.push(nodes[0])
-
-    const positioned = new Set()
-    const result = []
-
-    function layout(nodeId, x, y, level) {
-        if (positioned.has(nodeId)) return { width: 0 }
-        positioned.add(nodeId)
-
-        const node = nodeMap[nodeId]
-        if (!node) return { width: 0 }
-
-        const kids = children[nodeId] || []
-        const childWidth = 220
-        const childHeight = 120
-
-        if (kids.length === 0) {
-            result.push({ ...node, position: { x, y } })
-            return { width: childWidth }
-        }
-
-        let totalWidth = 0
-        const childInfos = []
-        for (const kid of kids) {
-            const info = layout(kid, x + totalWidth, y + childHeight, level + 1)
-            childInfos.push({ ...info, startX: x + totalWidth })
-            totalWidth += info.width + 30
-        }
-        totalWidth -= 30
-
-        const myX = childInfos.length > 0
-            ? childInfos[0].startX + (totalWidth - childWidth) / 2
-            : x
-
-        result.push({ ...node, position: { x: myX, y } })
-        return { width: Math.max(totalWidth, childWidth) }
+    // Build the label — add emoji for nodes with links
+    let label = node.label
+    if (node.targetFile) {
+        label = `🔗 ${label}`
     }
 
-    let xOffset = 0
-    for (const root of roots) {
-        const info = layout(root.id, xOffset, 0, 0)
-        xOffset += info.width + 60
+    md += `${indent}${prefix}${label}\n`
+
+    // Add description as sub-item if exists (only for deeper nodes)
+    if (node.description && depth > 0) {
+        md += `${indent}  - _${node.description}_\n`
     }
 
-    return result
-}
-
-/* ---- Flatten recursive JSON → flat nodes + edges ---- */
-function flattenMindMap(data) {
-    const nodes = []
-    const edges = []
-
-    function walk(node) {
-        nodes.push({
-            id: node.id,
-            type: 'mindmap',
-            data: {
-                label: node.label,
-                description: node.description || '',
-                targetFile: node.target_file || node.targetFile,
-                style: node.style || {},
-            },
-            position: { x: 0, y: 0 },
-        })
-
-        if (node.children) {
-            node.children.forEach(child => {
-                edges.push({
-                    id: `${node.id}-${child.id}`,
-                    source: node.id,
-                    target: child.id,
-                    animated: !!child.targetFile || !!child.target_file,
-                })
-                walk(child)
-            })
-        }
-    }
-
-    if (data.nodes) data.nodes.forEach(walk)
-
-    // Add explicit edges from the data
-    if (data.edges) {
-        data.edges.forEach(e => {
-            const id = `edge-${e.source}-${e.target}`
-            if (!edges.find(ex => ex.source === e.source && ex.target === e.target)) {
-                edges.push({
-                    id,
-                    source: e.source,
-                    target: e.target,
-                    label: e.label || '',
-                    animated: true,
-                    style: { stroke: 'var(--accent)' },
-                })
-            }
+    // Recurse into children
+    if (node.children) {
+        node.children.forEach(child => {
+            md += jsonToMarkdown(child, depth + 1)
         })
     }
 
-    return { nodes, edges }
+    return md
+}
+
+/* ---- Build a lookup map: label → node data (for click handling) ---- */
+function buildNodeLookup(node, lookup = {}) {
+    lookup[node.label] = node
+    if (node.children) {
+        node.children.forEach(child => buildNodeLookup(child, lookup))
+    }
+    return lookup
 }
 
 /* ---- Page Component ---- */
 export default function MindMapPage() {
     const { id } = useParams()
     const navigate = useNavigate()
+    const svgRef = useRef(null)
+    const markmapRef = useRef(null)
     const [mapData, setMapData] = useState(null)
     const [loading, setLoading] = useState(true)
     const [history, setHistory] = useState([])
-    const [panel, setPanel] = useState(null)
+    const [selectedNode, setSelectedNode] = useState(null)
+    const nodeLookupRef = useRef({})
 
-    const [nodes, setNodes, onNodesChange] = useNodesState([])
-    const [edges, setEdges, onEdgesChange] = useEdgesState([])
-
+    // Load mind map data
     const loadMap = useCallback((mapId) => {
         setLoading(true)
+        setSelectedNode(null)
         fetch(`/api/mindmaps/${mapId}`)
             .then(r => { if (!r.ok) throw new Error(); return r.json() })
             .then(data => {
                 setMapData(data)
-                const { nodes: flatNodes, edges: flatEdges } = flattenMindMap(data)
-                const positioned = layoutNodes(flatNodes, flatEdges)
-                setNodes(positioned)
-                setEdges(flatEdges)
                 setLoading(false)
             })
             .catch(() => setLoading(false))
-    }, [setNodes, setEdges])
+    }, [])
 
     useEffect(() => {
         loadMap(id)
         setHistory([{ id, title: id }])
     }, [id, loadMap])
 
-    const onNodeClick = useCallback((_, node) => {
-        const targetFile = node.data.targetFile
-        if (!targetFile) {
-            // Show description panel
-            setPanel({
-                title: node.data.label,
-                description: node.data.description,
-            })
-            return
-        }
+    // Render markmap when data changes
+    useEffect(() => {
+        if (!mapData || !svgRef.current) return
 
-        // Navigate to linked mind map
-        if (targetFile.endsWith('.json')) {
-            const newId = targetFile.replace('.json', '')
-            setHistory(prev => [...prev, { id: newId, title: node.data.label }])
-            navigate(`/mindmaps/${newId}`)
+        // Convert JSON → Markdown → Markmap tree
+        const rootNode = mapData.nodes?.[0]
+        if (!rootNode) return
+
+        // Build lookup for click handling
+        nodeLookupRef.current = buildNodeLookup(rootNode)
+
+        const markdown = jsonToMarkdown(rootNode)
+        const { root } = transformer.transform(markdown)
+
+        // Clear previous SVG content
+        svgRef.current.innerHTML = ''
+
+        // Create markmap instance
+        const mm = Markmap.create(svgRef.current, {
+            colorFreezeLevel: 2,
+            duration: 500,
+            maxWidth: 300,
+            paddingX: 16,
+            spacingHorizontal: 80,
+            spacingVertical: 10,
+            autoFit: true,
+            zoom: true,
+            pan: true,
+            initialExpandLevel: 3,
+        }, root)
+
+        markmapRef.current = mm
+
+        // Fit to view after a brief delay
+        setTimeout(() => mm.fit(), 100)
+
+        // Add click handler for navigation
+        svgRef.current.addEventListener('click', (e) => {
+            const textEl = e.target.closest('text, foreignObject')
+            if (!textEl) return
+
+            const content = textEl.textContent?.trim()
+            if (!content) return
+
+            // Remove emoji prefix for lookup
+            const cleanLabel = content.replace(/^🔗\s*/, '')
+            const nodeData = nodeLookupRef.current[cleanLabel]
+
+            if (nodeData?.targetFile) {
+                const newId = nodeData.targetFile.replace('.json', '')
+                setHistory(prev => [...prev, { id: newId, title: cleanLabel }])
+                navigate(`/mindmaps/${newId}`)
+            } else if (nodeData) {
+                setSelectedNode(nodeData)
+            }
+        })
+
+        return () => {
+            mm.destroy()
         }
-    }, [navigate])
+    }, [mapData, navigate])
+
+    // Handle window resize
+    useEffect(() => {
+        const handleResize = () => {
+            if (markmapRef.current) {
+                markmapRef.current.fit()
+            }
+        }
+        window.addEventListener('resize', handleResize)
+        return () => window.removeEventListener('resize', handleResize)
+    }, [])
 
     const breadcrumbItems = useMemo(() => [
         { label: 'Home', to: '/' },
@@ -212,30 +165,91 @@ export default function MindMapPage() {
         <>
             <Breadcrumb items={breadcrumbItems} />
             <div className="mindmap-container">
-                <ReactFlow
-                    nodes={nodes}
-                    edges={edges}
-                    onNodesChange={onNodesChange}
-                    onEdgesChange={onEdgesChange}
-                    onNodeClick={onNodeClick}
-                    nodeTypes={nodeTypes}
-                    fitView
-                    fitViewOptions={{ padding: 0.2 }}
-                    style={{ background: 'var(--bg-primary)' }}
-                >
-                    <Background color="var(--border)" gap={20} />
-                    <Controls />
-                </ReactFlow>
+                {/* Markmap info bar */}
+                <div className="mindmap-toolbar">
+                    <h2 className="mindmap-title">{mapData.title}</h2>
+                    <div className="mindmap-actions">
+                        <button
+                            className="btn btn-sm"
+                            onClick={() => markmapRef.current?.fit()}
+                            title="Fit to view"
+                        >
+                            🔍 Fit
+                        </button>
+                        <button
+                            className="btn btn-sm"
+                            onClick={() => {
+                                if (markmapRef.current) {
+                                    markmapRef.current.rescale(1.3)
+                                }
+                            }}
+                            title="Zoom in"
+                        >
+                            ➕
+                        </button>
+                        <button
+                            className="btn btn-sm"
+                            onClick={() => {
+                                if (markmapRef.current) {
+                                    markmapRef.current.rescale(0.7)
+                                }
+                            }}
+                            title="Zoom out"
+                        >
+                            ➖
+                        </button>
+                    </div>
+                </div>
 
-                {/* Side panel for node details */}
-                <div className={`mindmap-panel ${panel ? 'open' : ''}`}>
-                    {panel && (
+                {/* Markmap SVG container */}
+                <svg
+                    ref={svgRef}
+                    className="mindmap-svg"
+                />
+
+                {/* Linked maps legend */}
+                {mapData.nodes?.[0]?.children?.some(c => c.targetFile) && (
+                    <div className="mindmap-legend">
+                        <span className="legend-icon">🔗</span>
+                        <span>Click linked nodes to drill down</span>
+                    </div>
+                )}
+
+                {/* Selected node detail panel */}
+                <div className={`mindmap-panel ${selectedNode ? 'open' : ''}`}>
+                    {selectedNode && (
                         <>
-                            <button className="close-btn" onClick={() => setPanel(null)}>×</button>
-                            <h3>{panel.title}</h3>
-                            <p style={{ color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-                                {panel.description}
+                            <button className="close-btn" onClick={() => setSelectedNode(null)}>×</button>
+                            <h3>{selectedNode.label}</h3>
+                            <p style={{ color: 'var(--text-secondary)', lineHeight: 1.6, marginTop: '0.5rem' }}>
+                                {selectedNode.description || 'No description available.'}
                             </p>
+                            {selectedNode.targetFile && (
+                                <Link
+                                    to={`/mindmaps/${selectedNode.targetFile.replace('.json', '')}`}
+                                    className="btn btn-primary"
+                                    style={{ marginTop: '1rem', display: 'inline-flex' }}
+                                    onClick={() => {
+                                        const newId = selectedNode.targetFile.replace('.json', '')
+                                        setHistory(prev => [...prev, { id: newId, title: selectedNode.label }])
+                                    }}
+                                >
+                                    Open linked map →
+                                </Link>
+                            )}
+                            {selectedNode.children && (
+                                <div style={{ marginTop: '1rem' }}>
+                                    <h4 style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
+                                        Children ({selectedNode.children.length})
+                                    </h4>
+                                    {selectedNode.children.map(c => (
+                                        <div key={c.id} className="panel-child-item">
+                                            <strong>{c.label}</strong>
+                                            {c.description && <span> — {c.description}</span>}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </>
                     )}
                 </div>
