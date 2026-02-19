@@ -1,0 +1,128 @@
+{
+    "title": "AI Agent Learning Path",
+    "description": "A roadmap for understanding AI agent architectures and patterns",
+    "nodes": [
+        {
+            "id": "root",
+            "label": "AI Agent Design",
+            "description": "Core concepts for building AI agents",
+            "children": [
+                {
+                    "id": "patterns",
+                    "label": "Agent Patterns",
+                    "description": "Common architectural patterns for AI agents",
+                    "targetFile": "agent-patterns.json",
+                    "style": {
+                        "color": "#6366f1"
+                    }
+                },
+                {
+                    "id": "tools",
+                    "label": "Tool Systems",
+                    "description": "How agents interact with external tools",
+                    "style": {
+                        "color": "#f59e0b"
+                    },
+                    "children": [
+                        {
+                            "id": "tool-registry",
+                            "label": "Tool Registry",
+                            "description": "Dynamic registration and discovery of tools"
+                        },
+                        {
+                            "id": "mcp",
+                            "label": "MCP Protocol",
+                            "description": "Model Context Protocol for tool integration"
+                        },
+                        {
+                            "id": "safety",
+                            "label": "Safety Guards",
+                            "description": "Preventing dangerous tool executions"
+                        }
+                    ]
+                },
+                {
+                    "id": "memory",
+                    "label": "Memory & State",
+                    "description": "How agents maintain context and memory",
+                    "targetFile": "memory-systems.json",
+                    "style": {
+                        "color": "#10b981"
+                    }
+                },
+                {
+                    "id": "skills",
+                    "label": "Skill Systems",
+                    "description": "Progressive skill loading and discovery",
+                    "style": {
+                        "color": "#ec4899"
+                    },
+                    "children": [
+                        {
+                            "id": "skill-l1",
+                            "label": "L1: Awareness",
+                            "description": "Metadata discovery (name, description)"
+                        },
+                        {
+                            "id": "skill-l2",
+                            "label": "L2: Activation",
+                            "description": "Full instructions loaded on demand"
+                        },
+                        {
+                            "id": "skill-l3",
+                            "label": "L3: Execution",
+                            "description": "Scripts, resources, and runtime"
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "edges": [
+        {
+            "source": "root",
+            "target": "patterns"
+        },
+        {
+            "source": "root",
+            "target": "tools"
+        },
+        {
+            "source": "root",
+            "target": "memory"
+        },
+        {
+            "source": "root",
+            "target": "skills"
+        },
+        {
+            "source": "tools",
+            "target": "tool-registry"
+        },
+        {
+            "source": "tools",
+            "target": "mcp"
+        },
+        {
+            "source": "tools",
+            "target": "safety"
+        },
+        {
+            "source": "skills",
+            "target": "skill-l1"
+        },
+        {
+            "source": "skills",
+            "target": "skill-l2"
+        },
+        {
+            "source": "skills",
+            "target": "skill-l3"
+        },
+        {
+            "source": "mcp",
+            "target": "skill-l3",
+            "label": "enables"
+        }
+    ]
+}

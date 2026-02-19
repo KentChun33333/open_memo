@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "my-local-tools": {
+      "command": "/opt/anaconda3/bin/python3",
+      "args": [
+        "/Users/kentchiu/Documents/Github/new-openc/mcp-server/my_custom_tools.py"
+      ]
+    }
+  }
+}
