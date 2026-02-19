@@ -161,12 +161,12 @@ export default function NanobotStatus() {
 
     useEffect(() => {
         Promise.all([
-            fetch('/nanobot-status/cron-jobs.json').then(r => {
-                if (!r.ok) throw new Error(`cron-jobs: HTTP ${r.status}`)
+            fetch('/nanobot-status/cron/jobs.json').then(r => {
+                if (!r.ok) throw new Error(`cron/jobs: HTTP ${r.status}`)
                 return r.json()
             }),
-            fetch('/nanobot-status/memory.md').then(r => {
-                if (!r.ok) throw new Error(`memory: HTTP ${r.status}`)
+            fetch('/nanobot-status/workspace/memory/MEMORY.md').then(r => {
+                if (!r.ok) throw new Error(`workspace/memory: HTTP ${r.status}`)
                 return r.text()
             }),
         ])

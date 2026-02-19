@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "jobs": [
+    {
+      "id": "bfd4c3bf",
+      "name": "Summarize AI news from Reuters",
+      "enabled": true,
+      "schedule": {
+        "kind": "cron",
+        "atMs": null,
+        "everyMs": null,
+        "expr": "30 8 * * *",
+        "tz": "America/Vancouver"
+      },
+      "payload": {
+        "kind": "agent_turn",
+        "message": "Summarize AI news from Reuters: https://www.reuters.com/search/news?blob=artificial+intelligence",
+        "deliver": true,
+        "channel": "telegram",
+        "to": "6291416524"
+      },
+      "state": {
+        "nextRunAtMs": 1771518600000,
+        "lastRunAtMs": null,
+        "lastStatus": null,
+        "lastError": null
+      },
+      "createdAtMs": 1771499786134,
+      "updatedAtMs": 1771499786134,
+      "deleteAfterRun": false
+    }
+  ]
+}
