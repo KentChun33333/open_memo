@@ -1,14 +1,14 @@
 # OpenMemo Web App
 
-A production-level knowledge management platform with blogs and interactive mind maps.
+A production-level knowledge management platform with blogs, interactive mind maps, and nanobot agent monitoring.
 
 - **Backend**: FastAPI (Python) — serves API and static files
 - **Frontend**: React 19 + Vite — with React Flow for mind maps
-- **Content**: Git-managed Markdown blogs and JSON mind maps
+- **Content**: Git-managed Markdown blogs, JSON mind maps, and nanobot status data
 - **Auth**: Simple JWT login (default: `admin` / `openmemo`)
 - **Deployment**: Docker multi-stage build for GCP Cloud Run
 
-## Quick Start (Development)
+## Quick Start (Local Development)
 
 ### 1. Backend
 
@@ -26,7 +26,16 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173) — Vite proxies `/api/*` to the backend.
+### 3. Open in Browser
+
+Open [http://localhost:5173](http://localhost:5173) — Vite proxies `/api/*` and `/nanobot-status/*` to the backend.
+
+| Page | URL |
+| --- | --- |
+| Dashboard | [http://localhost:5173/](http://localhost:5173/) |
+| Blogs | [http://localhost:5173/blogs](http://localhost:5173/blogs) |
+| Mind Maps | [http://localhost:5173/mindmaps](http://localhost:5173/mindmaps) |
+| Nanobot Status | [http://localhost:5173/nanobot](http://localhost:5173/nanobot) |
 
 ## Production (Docker)
 
@@ -77,10 +86,29 @@ Create `.json` files in `content/mind-maps/` with this structure:
 
 Use `targetFile` to link between mind maps for drill-down navigation.
 
+### Nanobot Status
+
+The nanobot dashboard displays cron job schedules and agent memory. Data lives in `content/nanobot-status/`:
+
+| File | Source | Description |
+| --- | --- | --- |
+| `cron-jobs.json` | `~/.nanobot/cron/jobs.json` | Scheduled job configurations |
+| `memory.md` | `~/.nanobot/workspace/memory/MEMORY.md` | Agent persistent memory |
+
+**Syncing data:** The `open_memo-git-update.sh` script automatically copies the latest nanobot data before each git push. You can also sync manually:
+
+```bash
+mkdir -p webapp/content/nanobot-status
+cp ~/.nanobot/cron/jobs.json webapp/content/nanobot-status/cron-jobs.json
+cp ~/.nanobot/workspace/memory/MEMORY.md webapp/content/nanobot-status/memory.md
+```
+
+The frontend fetches these files directly as static assets (no backend API needed) and parses them client-side.
+
 ## API Endpoints
 
 | Endpoint | Description |
-|----------|-------------|
+| --- | --- |
 | `GET /api/health` | Health check |
 | `GET /api/blogs` | List all blog posts |
 | `GET /api/blogs/{slug}` | Get full blog post |
@@ -89,6 +117,8 @@ Use `targetFile` to link between mind maps for drill-down navigation.
 | `GET /api/mindmaps/{id}/resolve?target=file.json` | Resolve node link |
 | `POST /api/auth/login` | Login (form data) |
 | `GET /api/auth/me` | Current user |
+| `GET /nanobot-status/cron-jobs.json` | Nanobot cron jobs (static) |
+| `GET /nanobot-status/memory.md` | Nanobot memory (static) |
 
 ## Deploy to GCP Cloud Run
 

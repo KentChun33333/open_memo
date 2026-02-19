@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import logo from '../assets/logo.jpeg'
 
 const navItems = [
     {
@@ -39,6 +40,21 @@ const navItems = [
         ),
         matchPrefix: true,
     },
+    {
+        label: 'Nanobot',
+        to: '/nanobot',
+        icon: (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 5c-1.5-2-4-2-6 0" />
+                <path d="M18 5c-1.5-2-4-2-6 0" />
+                <path d="M5 11c-1 0-2 .5-2 2s1 2 2 2" />
+                <path d="M19 11c1 0 2 .5 2 2s-1 2-2 2" />
+                <path d="M6 8a6 6 0 0 0 12 0c0 8-3 13-6 13S6 16 6 8z" />
+                <circle cx="10" cy="10" r="1" fill="currentColor" />
+                <circle cx="14" cy="10" r="1" fill="currentColor" />
+            </svg>
+        ),
+    },
 ]
 
 const bottomItems = [
@@ -69,7 +85,7 @@ export default function Sidebar({ collapsed, onToggle }) {
             {/* Brand */}
             <div className="sidebar-brand">
                 <Link to="/">
-                    <span className="sidebar-logo">📝</span>
+                    <img src={logo} alt="Logo" className="sidebar-logo-img" />
                     {!collapsed && (
                         <span className="sidebar-title">
                             <span className="accent">Open</span>Memo

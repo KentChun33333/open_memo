@@ -42,8 +42,17 @@ assets_dir = settings.content_dir / "assets"
 if assets_dir.exists():
     app.mount(
         "/content-assets",
-        StaticFiles(directory=str(assets_dir)),
+        StaticFiles(directory=str(assets_dir), html=False),
         name="content-assets",
+    )
+
+# Mount nanobot-status data (cron jobs, memory) as static files
+nanobot_dir = settings.content_dir / "nanobot-status"
+if nanobot_dir.exists():
+    app.mount(
+        "/nanobot-status",
+        StaticFiles(directory=str(nanobot_dir), html=False),
+        name="nanobot-status",
     )
 
 # Serve React frontend (production only — when dist/ exists)

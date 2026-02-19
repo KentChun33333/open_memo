@@ -1,10 +1,37 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import mermaid from 'mermaid'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import Breadcrumb from '../components/Breadcrumb'
 import GiscusComments from '../components/GiscusComments'
+
+// Mermaid renderer component
+function Mermaid({ chart }) {
+    const ref = useRef(null)
+
+    useEffect(() => {
+        if (ref.current && chart) {
+            mermaid.initialize({
+                startOnLoad: true,
+                theme: 'dark',
+                securityLevel: 'loose',
+                fontFamily: 'var(--font-family)',
+            })
+            mermaid.contentLoaded()
+        }
+    }, [chart])
+
+    return (
+        <div className="mermaid-container">
+            <div className="mermaid" ref={ref}>
+                {chart}
+            </div>
+        </div>
+    )
+}
 
 export default function BlogPost() {
     const { slug } = useParams()
@@ -42,13 +69,20 @@ export default function BlogPost() {
 
             <div className="blog-content">
                 <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
                     components={{
                         code({ node, inline, className, children, ...props }) {
                             const match = /language-(\w+)/.exec(className || '')
+                            const lang = match ? match[1] : ''
+
+                            if (!inline && lang === 'mermaid') {
+                                return <Mermaid chart={String(children).replace(/\n$/, '')} />
+                            }
+
                             return !inline && match ? (
                                 <SyntaxHighlighter
                                     style={oneDark}
-                                    language={match[1]}
+                                    language={lang}
                                     PreTag="div"
                                     {...props}
                                 >

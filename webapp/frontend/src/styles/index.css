@@ -128,9 +128,18 @@ img {
   white-space: nowrap;
 }
 
-.sidebar-logo {
-  font-size: 1.4rem;
-  flex-shrink: 0;
+.sidebar-logo-img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--accent);
+  transition: all var(--transition-normal);
+}
+
+.sidebar.collapsed .sidebar-logo-img {
+  width: 40px;
+  height: 40px;
 }
 
 .sidebar-title .accent {
@@ -696,20 +705,36 @@ img {
 .blog-content table {
   width: 100%;
   border-collapse: collapse;
-  margin: var(--space-lg) 0;
-  font-size: 0.9rem;
+  margin: var(--space-xl) 0;
+  font-size: 0.95rem;
 }
 
 .blog-content th,
 .blog-content td {
-  padding: var(--space-sm) var(--space-md);
+  padding: var(--space-md) var(--space-lg);
   border: 1px solid var(--border);
   text-align: left;
 }
 
 .blog-content th {
-  background: var(--bg-secondary);
+  background: var(--bg-hover);
   font-weight: 600;
+  color: var(--accent);
+}
+
+.mermaid-container {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-xl);
+  margin: var(--space-xl) 0;
+  display: flex;
+  justify-content: center;
+  overflow-x: auto;
+}
+
+.mermaid {
+  background: transparent !important;
 }
 
 .blog-content blockquote {
@@ -1065,5 +1090,291 @@ img {
 
   .navbar-links {
     gap: var(--space-md);
+  }
+}
+
+/* ===== Nanobot Dashboard ===== */
+
+.nanobot-dashboard {
+  max-width: 1400px;
+}
+
+.nanobot-header-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+}
+
+.nanobot-avatar {
+  font-size: 2.8rem;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2));
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  flex-shrink: 0;
+}
+
+.nanobot-stat-grid {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+/* Widget */
+
+.nanobot-widget {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-xl);
+  margin-bottom: var(--space-xl);
+}
+
+.nanobot-widget-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-lg);
+}
+
+.nanobot-widget-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.nanobot-widget-header .nanobot-widget-title {
+  margin-bottom: 0;
+}
+
+.nanobot-widget>.nanobot-widget-title {
+  margin-bottom: var(--space-lg);
+}
+
+.nanobot-widget-count {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+}
+
+/* Status Badge */
+
+.nanobot-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+}
+
+.badge-active {
+  color: #34d399;
+  background: rgba(16, 185, 129, 0.12);
+}
+
+.badge-inactive {
+  color: #9ca3af;
+  background: rgba(156, 163, 175, 0.12);
+}
+
+.badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.badge-active .badge-dot {
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.5);
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.4;
+  }
+}
+
+/* Cron Table */
+
+.nanobot-table-wrap {
+  overflow-x: auto;
+}
+
+.nanobot-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.nanobot-table th {
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.nanobot-table td {
+  padding: var(--space-md);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  color: var(--text-secondary);
+  vertical-align: middle;
+}
+
+.nanobot-table tr:last-child td {
+  border-bottom: none;
+}
+
+.nanobot-table tr:hover td {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.nanobot-job-name {
+  color: var(--text-primary);
+  font-weight: 500;
+  max-width: 300px;
+}
+
+.nanobot-cron-expr {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: var(--accent);
+  background: rgba(99, 102, 241, 0.1);
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-bottom: 2px;
+  width: fit-content;
+}
+
+.nanobot-cron-human {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.nanobot-channel {
+  text-transform: capitalize;
+}
+
+.nanobot-next-run {
+  font-size: 0.82rem;
+  white-space: nowrap;
+  color: var(--text-muted);
+}
+
+/* Memory Widget */
+
+.nanobot-memory-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-md);
+}
+
+.nanobot-memory-section {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+  position: relative;
+  overflow: hidden;
+}
+
+.nanobot-memory-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 100%;
+  background: var(--section-accent, var(--accent));
+  border-radius: 0 2px 2px 0;
+}
+
+.nanobot-memory-section-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-md);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.nanobot-memory-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.nanobot-memory-list li {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  padding: var(--space-xs) 0;
+  padding-left: var(--space-md);
+  position: relative;
+  line-height: 1.5;
+}
+
+.nanobot-memory-list li::before {
+  content: '›';
+  position: absolute;
+  left: 0;
+  color: var(--section-accent, var(--accent));
+  font-weight: 700;
+}
+
+.nanobot-memory-list li+li {
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+/* Empty & Error States */
+
+.nanobot-empty {
+  text-align: center;
+  padding: var(--space-2xl);
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.nanobot-error {
+  text-align: center;
+  padding: var(--space-3xl);
+  color: var(--danger);
+  font-size: 0.95rem;
+}
+
+/* Responsive */
+
+@media (max-width: 1024px) {
+  .nanobot-stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .nanobot-memory-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .nanobot-stat-grid {
+    grid-template-columns: 1fr;
   }
 }

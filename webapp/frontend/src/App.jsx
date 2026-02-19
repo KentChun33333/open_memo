@@ -6,6 +6,7 @@ import BlogList from './pages/BlogList'
 import BlogPost from './pages/BlogPost'
 import MindMapList from './pages/MindMapList'
 import MindMap from './pages/MindMap'
+import NanobotStatus from './pages/NanobotStatus'
 import Login from './pages/Login'
 
 export default function App() {
@@ -27,6 +28,7 @@ export default function App() {
                     <Route path="/blogs/:slug" element={<BlogPost />} />
                     <Route path="/mindmaps" element={<MindMapList />} />
                     <Route path="/mindmaps/:id" element={<MindMap />} />
+                    <Route path="/nanobot" element={<NanobotStatus />} />
                     <Route path="/login" element={<Login />} />
                 </Routes>
             </main>
