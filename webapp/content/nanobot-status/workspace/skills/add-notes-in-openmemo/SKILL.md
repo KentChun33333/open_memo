@@ -1,6 +1,6 @@
 ---
 name: add-notes-in-openmemo
-description: "Take quick notes, meeting minutes, or record life events and save them directly to OpenMemo."
+description: "Take quick notes, meeting minutes, or record life events and save them directly to OpenMemo (open_memo). The Repo must be located at `/Users/kentchiu/Documents/Github/open_memo`"
 ---
 
 # add-notes-in-openmemo
@@ -26,7 +26,7 @@ When the user wants to add a note, save a meeting minute, or record an event:
 The primary script for writing the note to the filesystem.
 
 - **Path**: `scripts/write_openmemo_notes.py`
-- **Arguments**: `[repo_path] [note_content]`
+- **Arguments**: `[note_content]`
 - **Runtime**: `python3`
 
 ## Implementation Details
@@ -35,4 +35,4 @@ The script will:
 
 - Automatically generate a slug-based filename with a timestamp.
 - Add frontmatter (title, date, tags).
-- Save the file to `webapp/content/notes/`.
+- Save the file to `/Users/kentchiu/Documents/Github/open_memo/webapp/content/notes/`.

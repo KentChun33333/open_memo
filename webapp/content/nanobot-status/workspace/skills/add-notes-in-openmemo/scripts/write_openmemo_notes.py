@@ -50,12 +50,19 @@ summary: "{clean_title[:100]}..."
     return f"Successfully created note: {filename} in {notes_dir}"
 
 if __name__ == "__main__":
-    if len(sys.argv) < 3:
-        print("Usage: python write_openmemo_notes.py <repo_path> <note_content>")
+    # Enforced full path from SKILL.md
+    DEFAULT_REPO_PATH = "/Users/kentchiu/Documents/Github/open_memo"
+    
+    if len(sys.argv) < 2:
+        print("Usage: python write_openmemo_notes.py <note_content>")
         sys.exit(1)
         
-    repo_path = sys.argv[1]
-    note_content = " ".join(sys.argv[2:])
+    # Validating repository presence
+    if not os.path.exists(DEFAULT_REPO_PATH):
+        print(f"Error: OpenMemo repository not found at {DEFAULT_REPO_PATH}")
+        sys.exit(1)
+        
+    note_content = " ".join(sys.argv[1:])
     
-    result = create_note(note_content, repo_path)
+    result = create_note(note_content, DEFAULT_REPO_PATH)
     print(result)
