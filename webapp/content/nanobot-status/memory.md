@@ -20,3 +20,7 @@
 
 - Web search tools require API keys (Brave Search / Google Custom Search)
 - Some skill manifests missing `SKILL.md` files (e.g., `tmux` disabled due to missing `tmux` CLI)
+
+## Key Knowledge
+
+- when user asking to git update the open_memo repo, alway run the script directly in workspace. (open_memo-git-update.sh)
