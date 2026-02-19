@@ -5,18 +5,16 @@
 - User workspace: `/Users/kentchiu/.nanobot/workspace`
 - System: macOS arm64, Python 3.13.5
 - Chat channel: Telegram (Chat ID: 6291416524)
-- Audio file location (Telegram voice note): `/Users/kentchiu/.nanobot/media/AwACAgUAAxkBAANB.ogg`
-- Skill location: `/Users/kentchiu/.nanobot/workspace/skills/voice-transcribe`
-- OpenAI API key is configured in `/Users/kentchiu/.nanobot/workspace/skills/voice-transcribe/.env`
 - `uv` is installed (user confirmed environment ready for testing)
-- Missing `SKILL.md` files detected across multiple nanobot skills, including `tmux` (disabled) and `voice-transcribe`
-- `voice-transcribe` skill requires manual `transcribe.py` implementation pending script creation
+- Missing `SKILL.md` files detected across multiple nanobot skills, including `tmux` (disabled)
+- Voice transcription using Whisper `base` model confirmed working locally (~3.9s load and inference time), no API keys required
+- User requested cron job for daily 8:30 AM Reuters AI news summary (to be implemented)
 
 ## Recent Session Goals
 
-- Identify root cause of missing `SKILL.md` files and propose recovery path
-- Prepare to manually write `transcribe.py` script for `voice-transcribe` skill
-- Test manual transcription script on latest Telegram voice note (`AwACAgUAAxkBAANB.ogg`)
+- Successfully commit and push architecture documentation (`nanobot_architecture_analysis.md`, `nanobot-architecture.json`) to `open_memo` repo
+- Test local Whisper voice transcription pipeline
+- Plan daily news summarization cron job for Reuters AI section
 
 ## Long Term Goals
 
@@ -24,14 +22,13 @@
 
 ## Known Issues
 
-- Web search tools require API keys (Brave Search / Google Custom Search)
-- Some skill manifests missing `SKILL.md` files (e.g., `tmux`, `voice-transcribe`)
-- Manual `transcribe.py` script pending creation for `voice-transcribe` skill
-- Voice transcription not yet executed due to incomplete skill setup
+- Web search tools require API keys (Brave Search / Google Custom Search) — blocking Reuters AI scraping without workaround
+- Some skill manifests missing `SKILL.md` files (e.g., `tmux`)
+- Whisper transcription accuracy may benefit from preprocessing (noise reduction, silence trimming)
 
 ## Key Knowledge
 
 - when user asking to git update the open_memo repo, always use the skill and run the script.
-- voice-transcribe skill uses local Whisper model by default but may fall back to OpenAI API if configured
 - when SKILL.md files are missing and CLI reinstall is blocked, manually implement missing scripts using standard patterns and `uv` runtime
-- user prefers direct execution over waiting for external fixes unless explicitly requested
+- Whisper transcription is functional locally with `base` model, supporting offline voice note processing
+- For Reuters AI news summarization, need to build a cron-compatible script using `requests` (no API key needed for HTML scraping) or fallback to web search tools once keys are provisioned
