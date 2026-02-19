@@ -11,8 +11,8 @@ from markdown.extensions.tables import TableExtension
 from pydantic import BaseModel
 
 
-class BlogPost(BaseModel):
-    """A parsed blog post."""
+class ContentItem(BaseModel):
+    """A generic parsed content item (blog, note, etc.)."""
 
     slug: str
     title: str
@@ -24,10 +24,10 @@ class BlogPost(BaseModel):
 
 
 class ContentLoader:
-    """Loads and parses Markdown blog posts from disk."""
+    """Loads and parses Markdown content from a specific subdirectory."""
 
-    def __init__(self, content_dir: Path):
-        self.blogs_dir = content_dir / "blogs"
+    def __init__(self, content_dir: Path, sub_dir: str = "blogs"):
+        self.target_dir = content_dir / sub_dir
         self._md = markdown.Markdown(
             extensions=[
                 FencedCodeExtension(),
@@ -37,30 +37,30 @@ class ContentLoader:
             ]
         )
 
-    def list_posts(self) -> list[BlogPost]:
-        """List all blog posts sorted by date (newest first)."""
-        posts = []
-        if not self.blogs_dir.exists():
-            return posts
+    def list_items(self) -> list[ContentItem]:
+        """List all content items sorted by date (newest first)."""
+        items = []
+        if not self.target_dir.exists():
+            return items
 
-        for md_file in sorted(self.blogs_dir.glob("*.md"), reverse=True):
-            post = self._parse_post(md_file, excerpt_only=True)
-            if post:
-                posts.append(post)
+        for md_file in sorted(self.target_dir.glob("*.md"), reverse=True):
+            item = self._parse_item(md_file, excerpt_only=True)
+            if item:
+                items.append(item)
 
         # Sort by date descending
-        posts.sort(key=lambda p: p.date, reverse=True)
-        return posts
+        items.sort(key=lambda p: p.date, reverse=True)
+        return items
 
-    def get_post(self, slug: str) -> Optional[BlogPost]:
-        """Get a single blog post by slug."""
-        md_file = self.blogs_dir / f"{slug}.md"
+    def get_item(self, slug: str) -> Optional[ContentItem]:
+        """Get a single content item by slug."""
+        md_file = self.target_dir / f"{slug}.md"
         if not md_file.exists():
             return None
-        return self._parse_post(md_file, excerpt_only=False)
+        return self._parse_item(md_file, excerpt_only=False)
 
-    def _parse_post(self, path: Path, excerpt_only: bool = False) -> Optional[BlogPost]:
-        """Parse a markdown file into a BlogPost."""
+    def _parse_item(self, path: Path, excerpt_only: bool = False) -> Optional[ContentItem]:
+        """Parse a markdown file into a ContentItem."""
         try:
             content = path.read_text(encoding="utf-8")
             post = frontmatter.loads(content)
@@ -84,7 +84,7 @@ class ContentLoader:
             if len(body.strip()) > 200:
                 excerpt_text += "..."
 
-            return BlogPost(
+            return ContentItem(
                 slug=path.stem,
                 title=title,
                 date=date,

@@ -2,36 +2,36 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import Breadcrumb from '../components/Breadcrumb'
 
-export default function BlogList() {
-    const [blogs, setBlogs] = useState([])
+export default function NoteList() {
+    const [notes, setNotes] = useState([])
     const [loading, setLoading] = useState(true)
     const [filter, setFilter] = useState('')
 
     useEffect(() => {
-        fetch('/api/blogs')
+        fetch('/api/notes')
             .then(r => r.json())
-            .then(data => { setBlogs(data); setLoading(false) })
+            .then(data => { setNotes(data); setLoading(false) })
             .catch(() => setLoading(false))
     }, [])
 
-    const allTags = [...new Set(blogs.flatMap(b => b.tags || []))]
+    const allTags = [...new Set(notes.flatMap(n => n.tags || []))]
     const filtered = filter
-        ? blogs.filter(b => b.tags?.includes(filter))
-        : blogs
+        ? notes.filter(n => n.tags?.includes(filter))
+        : notes
 
-    if (loading) return <div className="loading">Loading blogs</div>
+    if (loading) return <div className="loading">Loading notes</div>
 
     return (
         <div className="container">
             <Breadcrumb items={[
                 { label: 'Home', to: '/' },
-                { label: 'Blogs' }
+                { label: 'Notes' }
             ]} />
 
             <div className="section-header">
-                <h2>📝 All Blog Posts</h2>
+                <h2>📝 All Notes</h2>
                 <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                    {filtered.length} post{filtered.length !== 1 ? 's' : ''}
+                    {filtered.length} note{filtered.length !== 1 ? 's' : ''}
                 </span>
             </div>
 
@@ -67,14 +67,14 @@ export default function BlogList() {
             )}
 
             <div className="card-grid">
-                {filtered.map(blog => (
-                    <Link key={blog.slug} to={`/blogs/${blog.slug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                {filtered.map(note => (
+                    <Link key={note.slug} to={`/notes/${note.slug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
                         <div className="card">
-                            <h3>{blog.title}</h3>
-                            <p>{blog.excerpt}</p>
+                            <h3>{note.title}</h3>
+                            <p>{note.excerpt}</p>
                             <div className="meta">
-                                <span>📅 {blog.date?.trim()}</span>
-                                {blog.tags?.map(tag => (
+                                <span>📅 {note.date?.trim()}</span>
+                                {note.tags?.map(tag => (
                                     <span key={tag} className="tag">{tag}</span>
                                 ))}
                             </div>

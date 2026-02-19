@@ -40,6 +40,19 @@ const navItems = [
         ),
     },
     {
+        label: 'Notes',
+        to: '/notes',
+        icon: (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M15.5 2H8.6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h6.8c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
+                <path d="M8 18h8" />
+                <path d="M8 14h8" />
+                <path d="M8 10h8" />
+                <path d="M8 6h8" />
+            </svg>
+        ),
+    },
+    {
         label: 'Mind Maps',
         to: '/mindmaps',
         icon: (

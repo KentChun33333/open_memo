@@ -8,6 +8,7 @@ from backend.auth import router as auth_router
 from backend.config import settings
 from backend.routers.blogs import router as blogs_router
 from backend.routers.mindmaps import router as mindmaps_router
+from backend.routers.notes import router as notes_router
 
 app = FastAPI(
     title=settings.app_name,
@@ -28,6 +29,7 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(blogs_router)
 app.include_router(mindmaps_router)
+app.include_router(notes_router)
 
 
 # Health check

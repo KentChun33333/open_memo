@@ -4,6 +4,8 @@ import Sidebar from './components/Sidebar'
 import Home from './pages/Home'
 import BlogList from './pages/BlogList'
 import BlogPost from './pages/BlogPost'
+import NoteList from './pages/NoteList'
+import NotePost from './pages/NotePost'
 import MindMapList from './pages/MindMapList'
 import MindMap from './pages/MindMap'
 import NanobotStatus from './pages/NanobotStatus'
@@ -28,6 +30,8 @@ export default function App() {
                     <Route path="/" element={<Home />} />
                     <Route path="/blogs" element={<BlogList />} />
                     <Route path="/blogs/:slug" element={<BlogPost />} />
+                    <Route path="/notes" element={<NoteList />} />
+                    <Route path="/notes/:slug" element={<NotePost />} />
                     <Route path="/mindmaps" element={<MindMapList />} />
                     <Route path="/mindmaps/:id" element={<MindMap />} />
                     <Route path="/nanobot" element={<NanobotStatus />} />
