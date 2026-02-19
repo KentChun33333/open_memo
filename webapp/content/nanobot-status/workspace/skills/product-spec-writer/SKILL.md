@@ -1,9 +1,10 @@
-# Product Spec Writer Skill
-
-## Purpose
-Create comprehensive product specifications for web, mobile, and desktop applications with user requirements, functional specs, technical architecture, UI/UX guidance, and success metrics.
+---
+name: Product Spec Writer Skill
+description: Create comprehensive product specifications for web, mobile, and desktop applications with user requirements, functional specs, technical architecture, UI/UX guidance, and success metrics.
+---
 
 ## Overview
+
 This skill helps you create detailed product specifications following industry best practices. It supports multiple output formats and includes templates for different app types.
 
 ## How to Use
