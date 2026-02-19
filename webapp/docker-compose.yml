@@ -1,0 +1,16 @@
+version: "3.8"
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - OPENMEMO_SECRET_KEY=dev-secret-key
+      - OPENMEMO_ADMIN_USERNAME=admin
+      - OPENMEMO_ADMIN_PASSWORD=openmemo
+      - OPENMEMO_DEBUG=true
+    volumes:
+      - ./content:/app/content

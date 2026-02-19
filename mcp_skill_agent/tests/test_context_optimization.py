@@ -9,7 +9,7 @@ import sys
 # We want to add open_memo/ to sys.path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from mcp_skill_agent.session_memory import SessionMemoryManager
+from mcp_skill_agent.handler.memory_handler import SessionMemoryManager
 
 class TestContextOptimization(unittest.TestCase):
     def setUp(self):

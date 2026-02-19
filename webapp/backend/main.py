@@ -1,0 +1,56 @@
+"""FastAPI application entry point."""
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+
+from backend.auth import router as auth_router
+from backend.config import settings
+from backend.routers.blogs import router as blogs_router
+from backend.routers.mindmaps import router as mindmaps_router
+
+app = FastAPI(
+    title=settings.app_name,
+    description="OpenMemo — Knowledge management with blogs and mind maps",
+    version="0.1.0",
+)
+
+# CORS for development (Vite runs on :5173)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# API routes
+app.include_router(auth_router)
+app.include_router(blogs_router)
+app.include_router(mindmaps_router)
+
+
+# Health check
+@app.get("/api/health")
+async def health():
+    return {"status": "ok", "app": settings.app_name}
+
+
+# Mount assets from content directory
+assets_dir = settings.content_dir / "assets"
+if assets_dir.exists():
+    app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="assets")
+
+# Serve React frontend (production only — when dist/ exists)
+if settings.frontend_dist.exists():
+    # SPA fallback: serve index.html for all non-API routes
+    from fastapi.responses import FileResponse
+
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str):
+        # Try to serve static file first
+        static_file = settings.frontend_dist / full_path
+        if full_path and static_file.exists() and static_file.is_file():
+            return FileResponse(static_file)
+        # Fallback to index.html for SPA routing
+        return FileResponse(settings.frontend_dist / "index.html")
