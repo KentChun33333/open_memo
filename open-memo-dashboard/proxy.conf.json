@@ -1,0 +1,10 @@
+{
+  "/open_memo": {
+    "target": "http://localhost:3000",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/open_memo": "./open_memo"
+    }
+  }
+}
