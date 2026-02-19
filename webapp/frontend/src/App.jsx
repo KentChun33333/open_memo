@@ -8,6 +8,7 @@ import MindMapList from './pages/MindMapList'
 import MindMap from './pages/MindMap'
 import NanobotStatus from './pages/NanobotStatus'
 import WisdomGraph from './pages/WisdomGraph'
+import Consciousness from './pages/Consciousness'
 import Login from './pages/Login'
 
 export default function App() {
@@ -31,6 +32,7 @@ export default function App() {
                     <Route path="/mindmaps/:id" element={<MindMap />} />
                     <Route path="/nanobot" element={<NanobotStatus />} />
                     <Route path="/wisdom-graph" element={<WisdomGraph />} />
+                    <Route path="/consciousness" element={<Consciousness />} />
                     <Route path="/login" element={<Login />} />
                 </Routes>
             </main>

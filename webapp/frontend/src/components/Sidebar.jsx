@@ -66,6 +66,19 @@ const navItems = [
             </svg>
         ),
     },
+    {
+        label: 'Consciousness',
+        to: '/consciousness',
+        icon: (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2v8" />
+                <path d="m16 4-4 4-4-4" />
+                <path d="m7 12 5 5 5-5" />
+                <path d="M12 22v-5" />
+                <circle cx="12" cy="12" r="10" />
+            </svg>
+        ),
+    },
 ]
 
 const bottomItems = [

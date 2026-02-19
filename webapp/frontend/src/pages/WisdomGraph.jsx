@@ -103,14 +103,19 @@ export default function WisdomGraph() {
             .attr('filter', 'drop-shadow(0 0 8px rgba(99, 102, 241, 0.4))')
 
         node.append('text')
+            .attr('class', 'graph-text')
             .text(d => d.label)
-            .attr('x', d => d.radius + 5)
+            .attr('x', d => d.radius + 8)
             .attr('y', 4)
-            .attr('fill', 'var(--text-primary)')
-            .attr('font-size', d => d.type === 'blog' ? '10px' : '14px')
-            .attr('font-weight', d => d.type === 'blog' ? 'normal' : 'bold')
+            .attr('fill', '#ffffff') // Force high contrast white
+            .attr('font-size', d => d.type === 'blog' ? '12px' : '15px')
+            .attr('font-weight', d => d.type === 'blog' ? '400' : '600')
             .style('pointer-events', 'none')
-            .style('text-shadow', '0 2px 4px rgba(0,0,0,0.5)')
+            .style('paint-order', 'stroke')
+            .style('stroke', 'rgba(10, 11, 30, 0.8)')
+            .style('stroke-width', '3px')
+            .style('stroke-linecap', 'round')
+            .style('stroke-linejoin', 'round')
 
         simulation.on('tick', () => {
             link

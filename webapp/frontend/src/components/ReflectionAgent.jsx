@@ -48,7 +48,14 @@ export default function ReflectionAgent() {
                             <ul className="reflection-list">
                                 {reflections?.proactive_questions?.map((q, i) => (
                                     <li key={i} className="reflection-item question">
-                                        <span className="icon">❓</span> {q}
+                                        <a
+                                            href={`https://t.me/Clawdbot?text=${encodeURIComponent(q)}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="reflection-link"
+                                        >
+                                            <span className="icon">❓</span> {q}
+                                        </a>
                                     </li>
                                 ))}
                             </ul>
@@ -58,9 +65,15 @@ export default function ReflectionAgent() {
                             <h4>🚀 Recommended Actions</h4>
                             <div className="action-item-grid">
                                 {reflections?.action_items?.map((a, i) => (
-                                    <div key={i} className="action-pill">
+                                    <a
+                                        key={i}
+                                        href={`https://t.me/Clawdbot?text=${encodeURIComponent(a)}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="action-pill clickable"
+                                    >
                                         <span className="icon">⚡</span> {a}
-                                    </div>
+                                    </a>
                                 ))}
                             </div>
                         </div>
