@@ -17,9 +17,10 @@ class Settings(BaseSettings):
     admin_password: str = "openmemo"  # Change in .env
     access_token_expire_minutes: int = 60 * 24 * 7  # 7 days
 
-    # Paths
-    content_dir: Path = Path(__file__).parent.parent / "content"
-    frontend_dist: Path = Path(__file__).parent.parent / "frontend" / "dist"
+    # Paths — defaults match Docker layout (/app/content, /app/frontend/dist)
+    # For local dev, override with OPENMEMO_CONTENT_DIR=./content
+    content_dir: Path = Path("./content")
+    frontend_dist: Path = Path("./frontend/dist")
 
     # Server
     port: int = 8080

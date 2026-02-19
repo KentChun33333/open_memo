@@ -1,20 +1,21 @@
-"""Simple authentication with username/password + JWT tokens."""
+"""Simple authentication with username/password + JWT tokens.
 
+Uses direct string comparison for the single admin user case.
+This avoids passlib/bcrypt version incompatibility issues in containers.
+"""
+
+import hmac
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 from pydantic import BaseModel
 
 from backend.config import settings
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
-
-# Password hashing
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # OAuth2 scheme
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login", auto_error=False)
@@ -29,8 +30,9 @@ class User(BaseModel):
     username: str
 
 
-def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)
+def verify_password(plain: str, expected: str) -> bool:
+    """Constant-time comparison to prevent timing attacks."""
+    return hmac.compare_digest(plain.encode(), expected.encode())
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
@@ -67,15 +69,14 @@ async def require_auth(user: Optional[User] = Depends(get_current_user)) -> User
     return user
 
 
-# Hash the admin password at startup
-_admin_hash = pwd_context.hash(settings.admin_password)
+
 
 
 @router.post("/login", response_model=Token)
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     """Login with username and password, returns JWT token."""
     if form_data.username != settings.admin_username or not verify_password(
-        form_data.password, _admin_hash
+        form_data.password, settings.admin_password
     ):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
