@@ -36,21 +36,33 @@ async def health():
     return {"status": "ok", "app": settings.app_name}
 
 
-# Mount assets from content directory
+# Mount content assets (images, etc.) at /content-assets/
+# to avoid conflicting with Vite's /assets/ path
 assets_dir = settings.content_dir / "assets"
 if assets_dir.exists():
-    app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="assets")
+    app.mount(
+        "/content-assets",
+        StaticFiles(directory=str(assets_dir)),
+        name="content-assets",
+    )
 
 # Serve React frontend (production only — when dist/ exists)
-if settings.frontend_dist.exists():
-    # SPA fallback: serve index.html for all non-API routes
+frontend_dir = settings.frontend_dist
+if frontend_dir.exists():
     from fastapi.responses import FileResponse
 
+    # Mount the entire dist/ as static files first — this serves
+    # Vite's built JS/CSS/images in /assets/ with correct MIME types
+    app.mount(
+        "/assets",
+        StaticFiles(directory=str(frontend_dir / "assets")),
+        name="frontend-assets",
+    )
+
+    # SPA fallback: all other routes → index.html for client-side routing
     @app.get("/{full_path:path}")
     async def serve_spa(full_path: str):
-        # Try to serve static file first
-        static_file = settings.frontend_dist / full_path
+        static_file = frontend_dir / full_path
         if full_path and static_file.exists() and static_file.is_file():
             return FileResponse(static_file)
-        # Fallback to index.html for SPA routing
-        return FileResponse(settings.frontend_dist / "index.html")
+        return FileResponse(frontend_dir / "index.html")
