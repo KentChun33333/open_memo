@@ -1,0 +1,604 @@
+{
+    "title": "Nanobot Architecture",
+    "description": "Architecture overview of Nanobot — Ultra-lightweight AI assistant (~3,700 LOC)",
+    "nodes": [
+        {
+            "id": "nb-root",
+            "label": "🐈 Nanobot",
+            "description": "Ultra-lightweight personal AI assistant. ~3,700 lines of code, 99% smaller than Clawdbot.",
+            "children": [
+                {
+                    "id": "channels",
+                    "label": "📡 Channels",
+                    "description": "9 chat platform integrations. ChannelManager routes messages via event-driven bus.",
+                    "style": {
+                        "color": "#f59e0b"
+                    },
+                    "children": [
+                        {
+                            "id": "ch-tg",
+                            "label": "Telegram",
+                            "description": "Bot token from @BotFather. Supports voice messages (OGG) with Groq Whisper transcription."
+                        },
+                        {
+                            "id": "ch-dc",
+                            "label": "Discord",
+                            "description": "Bot token + Message Content intent. WebSocket gateway."
+                        },
+                        {
+                            "id": "ch-wa",
+                            "label": "WhatsApp",
+                            "description": "QR code scan via bridge (ws://localhost:3001)."
+                        },
+                        {
+                            "id": "ch-fs",
+                            "label": "Feishu/Lark",
+                            "description": "App ID + Secret. WebSocket long connection."
+                        },
+                        {
+                            "id": "ch-sl",
+                            "label": "Slack",
+                            "description": "Bot + App-level tokens. Socket mode."
+                        },
+                        {
+                            "id": "ch-dt",
+                            "label": "DingTalk",
+                            "description": "AppKey + AppSecret. Stream mode."
+                        },
+                        {
+                            "id": "ch-em",
+                            "label": "Email",
+                            "description": "IMAP inbound + SMTP outbound. Poll-based."
+                        },
+                        {
+                            "id": "ch-qq",
+                            "label": "QQ",
+                            "description": "botpy SDK integration."
+                        },
+                        {
+                            "id": "ch-mc",
+                            "label": "Mochat",
+                            "description": "Claw token. Socket.IO connection."
+                        }
+                    ]
+                },
+                {
+                    "id": "memory",
+                    "label": "💾 Memory System",
+                    "description": "Three-layer file-based memory with LLM auto-consolidation. Only ~115 lines of code.",
+                    "style": {
+                        "color": "#6366f1"
+                    },
+                    "children": [
+                        {
+                            "id": "mem-lt",
+                            "label": "MEMORY.md",
+                            "description": "Long-term facts: user preferences, project context, relationships. Always injected into system prompt.",
+                            "style": {
+                                "color": "#818cf8"
+                            },
+                            "children": [
+                                {
+                                    "id": "mem-lt-1",
+                                    "label": "Always in Prompt",
+                                    "description": "Loaded via MemoryStore.get_memory_context() and injected by ContextBuilder.build_system_prompt()."
+                                },
+                                {
+                                    "id": "mem-lt-2",
+                                    "label": "LLM-Updated",
+                                    "description": "Auto-consolidation extracts new facts and overwrites MEMORY.md with updated content."
+                                }
+                            ]
+                        },
+                        {
+                            "id": "mem-hi",
+                            "label": "HISTORY.md",
+                            "description": "Append-only event log. NOT loaded into context — retrieved on-demand via grep.",
+                            "style": {
+                                "color": "#a78bfa"
+                            },
+                            "children": [
+                                {
+                                    "id": "mem-hi-1",
+                                    "label": "Grep-Searchable",
+                                    "description": "Agent uses exec tool: grep -i 'keyword' memory/HISTORY.md"
+                                },
+                                {
+                                    "id": "mem-hi-2",
+                                    "label": "Timestamped",
+                                    "description": "Each entry starts with [YYYY-MM-DD HH:MM] for chronological search."
+                                }
+                            ]
+                        },
+                        {
+                            "id": "mem-se",
+                            "label": "Sessions (JSONL)",
+                            "description": "Raw message history per channel:chat_id. Append-only for LLM cache efficiency.",
+                            "style": {
+                                "color": "#c4b5fd"
+                            },
+                            "children": [
+                                {
+                                    "id": "mem-se-1",
+                                    "label": "Per-Chat Files",
+                                    "description": "sessions/telegram_6291416524.jsonl — one file per conversation."
+                                },
+                                {
+                                    "id": "mem-se-2",
+                                    "label": "Metadata Header",
+                                    "description": "First line is {_type:'metadata', created_at, last_consolidated} for quick reads."
+                                }
+                            ]
+                        },
+                        {
+                            "id": "mem-co",
+                            "label": "🔄 Auto-Consolidation",
+                            "description": "When session grows beyond memory_window, LLM processes old messages → extracts facts to MEMORY.md + summarizes to HISTORY.md.",
+                            "style": {
+                                "color": "#7c3aed"
+                            },
+                            "children": [
+                                {
+                                    "id": "mem-co-1",
+                                    "label": "Sliding Window",
+                                    "description": "Keeps recent half of messages (memory_window/2), processes the rest."
+                                },
+                                {
+                                    "id": "mem-co-2",
+                                    "label": "LLM-Powered",
+                                    "description": "Sends old messages to LLM with prompt: 'Return JSON with history_entry + memory_update'."
+                                },
+                                {
+                                    "id": "mem-co-3",
+                                    "label": "Watermark Tracking",
+                                    "description": "last_consolidated field prevents re-processing same messages."
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "agent",
+                    "label": "🧠 Agent Core",
+                    "description": "AgentLoop (477 LOC) + ContextBuilder (243 LOC). ReAct-style loop with tool execution.",
+                    "style": {
+                        "color": "#10b981"
+                    },
+                    "children": [
+                        {
+                            "id": "ag-loop",
+                            "label": "AgentLoop",
+                            "description": "Core loop: receive message → build context → call LLM → execute tools → respond. Max 20 iterations."
+                        },
+                        {
+                            "id": "ag-ctx",
+                            "label": "ContextBuilder",
+                            "description": "Assembles system prompt from: identity + bootstrap files + MEMORY.md + skills + session info."
+                        },
+                        {
+                            "id": "ag-sub",
+                            "label": "SubagentManager",
+                            "description": "Spawn background agents for parallel/long-running tasks. Results routed back via bus."
+                        }
+                    ]
+                },
+                {
+                    "id": "tools",
+                    "label": "🔧 Tools",
+                    "description": "7 built-in tool categories + MCP server support for external integrations.",
+                    "style": {
+                        "color": "#ec4899"
+                    },
+                    "children": [
+                        {
+                            "id": "tl-file",
+                            "label": "File Tools",
+                            "description": "read_file, write_file, edit_file, list_dir, search_files. Workspace-restricted option."
+                        },
+                        {
+                            "id": "tl-exec",
+                            "label": "Exec Tool",
+                            "description": "Shell command execution with configurable timeout (default 60s)."
+                        },
+                        {
+                            "id": "tl-web",
+                            "label": "Web Tools",
+                            "description": "Brave Search + page fetching. Requires API key."
+                        },
+                        {
+                            "id": "tl-msg",
+                            "label": "Message Tool",
+                            "description": "Send messages to specific channel:chat_id."
+                        },
+                        {
+                            "id": "tl-spawn",
+                            "label": "Spawn Tool",
+                            "description": "Create subagents for background tasks."
+                        },
+                        {
+                            "id": "tl-cron",
+                            "label": "Cron Tool",
+                            "description": "Schedule recurring tasks."
+                        },
+                        {
+                            "id": "tl-mcp",
+                            "label": "MCP Servers",
+                            "description": "External tool integrations via stdio or HTTP."
+                        }
+                    ]
+                },
+                {
+                    "id": "skills",
+                    "label": "📦 Skills",
+                    "description": "Progressive loading: always-on skills injected, on-demand loaded via read_file.",
+                    "style": {
+                        "color": "#14b8a6"
+                    },
+                    "children": [
+                        {
+                            "id": "sk-mem",
+                            "label": "memory (always-on)",
+                            "description": "Two-layer memory skill. Loaded into every prompt."
+                        },
+                        {
+                            "id": "sk-sum",
+                            "label": "summarize",
+                            "description": "URL/file/YouTube summarization via summarize.sh CLI."
+                        },
+                        {
+                            "id": "sk-vt",
+                            "label": "voice-transcribe",
+                            "description": "Audio transcription using local Whisper model."
+                        },
+                        {
+                            "id": "sk-web",
+                            "label": "web-artifacts-builder",
+                            "description": "React + shadcn/ui artifact builder."
+                        },
+                        {
+                            "id": "sk-gh",
+                            "label": "github",
+                            "description": "GitHub integration skill."
+                        },
+                        {
+                            "id": "sk-ch",
+                            "label": "clawhub",
+                            "description": "Search and install public agent skills from ClawHub."
+                        },
+                        {
+                            "id": "sk-cr",
+                            "label": "cron",
+                            "description": "Scheduled task management."
+                        },
+                        {
+                            "id": "sk-wt",
+                            "label": "weather",
+                            "description": "Weather information skill."
+                        }
+                    ]
+                },
+                {
+                    "id": "providers",
+                    "label": "🤖 LLM Providers",
+                    "description": "14 provider slots. Auto-match by model name keyword. Gateway fallback.",
+                    "style": {
+                        "color": "#f43f5e"
+                    },
+                    "children": [
+                        {
+                            "id": "pr-an",
+                            "label": "Anthropic",
+                            "description": "Claude models."
+                        },
+                        {
+                            "id": "pr-oa",
+                            "label": "OpenAI",
+                            "description": "GPT models."
+                        },
+                        {
+                            "id": "pr-ds",
+                            "label": "DeepSeek",
+                            "description": "DeepSeek-R1 and others."
+                        },
+                        {
+                            "id": "pr-vl",
+                            "label": "vLLM / Ollama",
+                            "description": "Local models via OpenAI-compatible API."
+                        },
+                        {
+                            "id": "pr-gm",
+                            "label": "Gemini",
+                            "description": "Google Gemini models."
+                        },
+                        {
+                            "id": "pr-or",
+                            "label": "OpenRouter",
+                            "description": "Multi-model gateway."
+                        },
+                        {
+                            "id": "pr-more",
+                            "label": "+ 8 more",
+                            "description": "Groq, Moonshot, MiniMax, Zhipu, DashScope, SiliconFlow, AiHubMix, GitHub Copilot."
+                        }
+                    ]
+                },
+                {
+                    "id": "config",
+                    "label": "⚙️ Config",
+                    "description": "Single JSON file at ~/.nanobot/config.json. Pydantic schema with camelCase aliases.",
+                    "style": {
+                        "color": "#64748b"
+                    },
+                    "children": [
+                        {
+                            "id": "cf-file",
+                            "label": "config.json",
+                            "description": "JSON with channels, providers, agents, tools, gateway sections."
+                        },
+                        {
+                            "id": "cf-schema",
+                            "label": "Pydantic Schema",
+                            "description": "340-line schema.py with validation, defaults, and environment variable overrides."
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "edges": [
+        {
+            "source": "nb-root",
+            "target": "channels"
+        },
+        {
+            "source": "nb-root",
+            "target": "memory"
+        },
+        {
+            "source": "nb-root",
+            "target": "agent"
+        },
+        {
+            "source": "nb-root",
+            "target": "tools"
+        },
+        {
+            "source": "nb-root",
+            "target": "skills"
+        },
+        {
+            "source": "nb-root",
+            "target": "providers"
+        },
+        {
+            "source": "nb-root",
+            "target": "config"
+        },
+        {
+            "source": "channels",
+            "target": "ch-tg"
+        },
+        {
+            "source": "channels",
+            "target": "ch-dc"
+        },
+        {
+            "source": "channels",
+            "target": "ch-wa"
+        },
+        {
+            "source": "channels",
+            "target": "ch-fs"
+        },
+        {
+            "source": "channels",
+            "target": "ch-sl"
+        },
+        {
+            "source": "channels",
+            "target": "ch-dt"
+        },
+        {
+            "source": "channels",
+            "target": "ch-em"
+        },
+        {
+            "source": "channels",
+            "target": "ch-qq"
+        },
+        {
+            "source": "channels",
+            "target": "ch-mc"
+        },
+        {
+            "source": "memory",
+            "target": "mem-lt"
+        },
+        {
+            "source": "memory",
+            "target": "mem-hi"
+        },
+        {
+            "source": "memory",
+            "target": "mem-se"
+        },
+        {
+            "source": "memory",
+            "target": "mem-co"
+        },
+        {
+            "source": "mem-lt",
+            "target": "mem-lt-1"
+        },
+        {
+            "source": "mem-lt",
+            "target": "mem-lt-2"
+        },
+        {
+            "source": "mem-hi",
+            "target": "mem-hi-1"
+        },
+        {
+            "source": "mem-hi",
+            "target": "mem-hi-2"
+        },
+        {
+            "source": "mem-se",
+            "target": "mem-se-1"
+        },
+        {
+            "source": "mem-se",
+            "target": "mem-se-2"
+        },
+        {
+            "source": "mem-co",
+            "target": "mem-co-1"
+        },
+        {
+            "source": "mem-co",
+            "target": "mem-co-2"
+        },
+        {
+            "source": "mem-co",
+            "target": "mem-co-3"
+        },
+        {
+            "source": "agent",
+            "target": "ag-loop"
+        },
+        {
+            "source": "agent",
+            "target": "ag-ctx"
+        },
+        {
+            "source": "agent",
+            "target": "ag-sub"
+        },
+        {
+            "source": "tools",
+            "target": "tl-file"
+        },
+        {
+            "source": "tools",
+            "target": "tl-exec"
+        },
+        {
+            "source": "tools",
+            "target": "tl-web"
+        },
+        {
+            "source": "tools",
+            "target": "tl-msg"
+        },
+        {
+            "source": "tools",
+            "target": "tl-spawn"
+        },
+        {
+            "source": "tools",
+            "target": "tl-cron"
+        },
+        {
+            "source": "tools",
+            "target": "tl-mcp"
+        },
+        {
+            "source": "skills",
+            "target": "sk-mem"
+        },
+        {
+            "source": "skills",
+            "target": "sk-sum"
+        },
+        {
+            "source": "skills",
+            "target": "sk-vt"
+        },
+        {
+            "source": "skills",
+            "target": "sk-web"
+        },
+        {
+            "source": "skills",
+            "target": "sk-gh"
+        },
+        {
+            "source": "skills",
+            "target": "sk-ch"
+        },
+        {
+            "source": "skills",
+            "target": "sk-cr"
+        },
+        {
+            "source": "skills",
+            "target": "sk-wt"
+        },
+        {
+            "source": "providers",
+            "target": "pr-an"
+        },
+        {
+            "source": "providers",
+            "target": "pr-oa"
+        },
+        {
+            "source": "providers",
+            "target": "pr-ds"
+        },
+        {
+            "source": "providers",
+            "target": "pr-vl"
+        },
+        {
+            "source": "providers",
+            "target": "pr-gm"
+        },
+        {
+            "source": "providers",
+            "target": "pr-or"
+        },
+        {
+            "source": "providers",
+            "target": "pr-more"
+        },
+        {
+            "source": "config",
+            "target": "cf-file"
+        },
+        {
+            "source": "config",
+            "target": "cf-schema"
+        },
+        {
+            "source": "ag-ctx",
+            "target": "mem-lt",
+            "label": "injects"
+        },
+        {
+            "source": "mem-co",
+            "target": "mem-lt",
+            "label": "extracts facts"
+        },
+        {
+            "source": "mem-co",
+            "target": "mem-hi",
+            "label": "appends summary"
+        },
+        {
+            "source": "ag-loop",
+            "target": "providers",
+            "label": "calls LLM"
+        },
+        {
+            "source": "channels",
+            "target": "ag-loop",
+            "label": "routes messages"
+        },
+        {
+            "source": "memory",
+            "target": "agent-patterns",
+            "label": "← Related: Agent Patterns"
+        }
+    ]
+}
