@@ -4,6 +4,19 @@ import logo from '../assets/logo.jpeg'
 
 const navItems = [
     {
+        label: 'Consciousness',
+        to: '/consciousness',
+        icon: (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2v8" />
+                <path d="m16 4-4 4-4-4" />
+                <path d="m7 12 5 5 5-5" />
+                <path d="M12 22v-5" />
+                <circle cx="12" cy="12" r="10" />
+            </svg>
+        ),
+    },
+    {
         label: 'Dashboard',
         to: '/',
         icon: (
@@ -52,30 +65,6 @@ const navItems = [
                 <path d="M6 8a6 6 0 0 0 12 0c0 8-3 13-6 13S6 16 6 8z" />
                 <circle cx="10" cy="10" r="1" fill="currentColor" />
                 <circle cx="14" cy="10" r="1" fill="currentColor" />
-            </svg>
-        ),
-    },
-    {
-        label: 'Wisdom Map',
-        to: '/wisdom-graph',
-        icon: (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="2" />
-                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
-                <path d="M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0z" />
-            </svg>
-        ),
-    },
-    {
-        label: 'Consciousness',
-        to: '/consciousness',
-        icon: (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 2v8" />
-                <path d="m16 4-4 4-4-4" />
-                <path d="m7 12 5 5 5-5" />
-                <path d="M12 22v-5" />
-                <circle cx="12" cy="12" r="10" />
             </svg>
         ),
     },
