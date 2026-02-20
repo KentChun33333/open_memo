@@ -165,11 +165,11 @@ export default function NanobotStatus() {
         if (token) headers['Authorization'] = `Bearer ${token}`;
 
         Promise.all([
-            fetch('/api/nanobot-status/cron/jobs.json', { headers }).then(r => {
+            fetch('/nanobot-status/cron/jobs.json', { headers }).then(r => {
                 if (!r.ok) throw new Error(`cron/jobs: HTTP ${r.status}`)
                 return r.json()
             }),
-            fetch('/api/nanobot-status/workspace/memory/MEMORY.md', { headers }).then(r => {
+            fetch('/nanobot-status/workspace/memory/MEMORY.md', { headers }).then(r => {
                 if (!r.ok) throw new Error(`workspace/memory: HTTP ${r.status}`)
                 return r.text()
             }),

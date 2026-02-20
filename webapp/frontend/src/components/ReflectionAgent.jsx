@@ -13,7 +13,7 @@ export default function ReflectionAgent() {
                 const headers = {};
                 // if (token) headers['Authorization'] = `Bearer ${ token } `; 
 
-                const res = await fetch('/api/nanobot-status/reflections.json', { headers });
+                const res = await fetch('/nanobot-status/reflections.json', { headers });
                 if (res.ok) {
                     const data = await res.json();
                     setReflections(data);

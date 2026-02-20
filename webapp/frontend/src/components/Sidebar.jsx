@@ -106,11 +106,17 @@ export default function Sidebar({ collapsed, onToggle }) {
         return location.pathname === item.to || location.pathname.startsWith(item.to + '/')
     }
 
+    const handleLinkClick = () => {
+        if (window.innerWidth <= 768 && !collapsed) {
+            onToggle()
+        }
+    }
+
     return (
         <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
             {/* Brand */}
             <div className="sidebar-brand">
-                <Link to="/">
+                <Link to="/" onClick={handleLinkClick}>
                     <img src={logo} alt="Logo" className="sidebar-logo-img" />
                     {!collapsed && (
                         <span className="sidebar-title">
@@ -131,6 +137,7 @@ export default function Sidebar({ collapsed, onToggle }) {
                                     to={item.to}
                                     className={`sidebar-link ${isActive(item) ? 'active' : ''}`}
                                     title={collapsed ? item.label : undefined}
+                                    onClick={handleLinkClick}
                                 >
                                     <span className="sidebar-icon">{item.icon}</span>
                                     {!collapsed && <span className="sidebar-label">{item.label}</span>}
@@ -150,6 +157,7 @@ export default function Sidebar({ collapsed, onToggle }) {
                                 to={item.to}
                                 className={`sidebar-link ${isActive(item) ? 'active' : ''}`}
                                 title={collapsed ? item.label : undefined}
+                                onClick={handleLinkClick}
                             >
                                 <span className="sidebar-icon">{item.icon}</span>
                                 {!collapsed && <span className="sidebar-label">{item.label}</span>}

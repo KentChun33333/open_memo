@@ -1073,6 +1073,10 @@ img {
 }
 
 /* ===== Responsive ===== */
+.mobile-header {
+  display: none;
+}
+
 @media (max-width: 768px) {
   .hero h1 {
     font-size: 2rem;
@@ -1092,6 +1096,56 @@ img {
 
   .navbar-links {
     gap: var(--space-md);
+  }
+
+  .sidebar {
+    transform: translateX(0);
+    z-index: 1000;
+  }
+
+  .sidebar.collapsed {
+    transform: translateX(-100%);
+    width: 260px;
+  }
+
+  .main-content {
+    margin-left: 0;
+  }
+
+  .sidebar-collapsed .main-content {
+    margin-left: 0;
+  }
+
+  .mobile-header {
+    display: flex;
+    align-items: center;
+    padding: var(--space-md);
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 90;
+  }
+
+  .mobile-menu-btn {
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    cursor: pointer;
+    margin-right: var(--space-md);
+    padding: var(--space-xs);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .mobile-brand {
+    font-size: 1.2rem;
+    font-weight: 700;
+  }
+
+  .mobile-brand .accent {
+    color: var(--accent);
   }
 }
 
