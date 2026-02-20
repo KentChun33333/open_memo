@@ -1,8 +1,10 @@
 """FastAPI application entry point."""
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+from backend.auth import get_current_user, User
 
 from backend.auth import router as auth_router
 from backend.config import settings
@@ -38,24 +40,46 @@ async def health():
     return {"status": "ok", "app": settings.app_name}
 
 
-# Mount content assets (images, etc.) at /content-assets/
-# to avoid conflicting with Vite's /assets/ path
-assets_dir = settings.content_dir / "assets"
-if assets_dir.exists():
-    app.mount(
-        "/content-assets",
-        StaticFiles(directory=str(assets_dir), html=False),
-        name="content-assets",
-    )
+# Serve content assets securely (requires auth)
+@app.get("/content-assets/{file_path:path}")
+async def get_content_asset(file_path: str, current_user: User = Depends(get_current_user)):
+    assets_dir = settings.content_dir / "assets"
+    file = assets_dir / file_path
+    if not file.exists() or not file.is_file():
+        raise HTTPException(status_code=404, detail="Asset not found")
+    
+    # Security check to prevent directory traversal
+    try:
+        file.resolve().relative_to(assets_dir.resolve())
+    except ValueError:
+         raise HTTPException(status_code=403, detail="Forbidden")
+         
+    return FileResponse(file)
 
-# Mount nanobot-status data (cron jobs, memory) as static files
-nanobot_dir = settings.content_dir / "nanobot-status"
-if nanobot_dir.exists():
-    app.mount(
-        "/nanobot-status",
-        StaticFiles(directory=str(nanobot_dir), html=False),
-        name="nanobot-status",
-    )
+# Serve nanobot status files
+@app.get("/nanobot-status/{file_path:path}")
+async def get_nanobot_status(file_path: str, current_user: User = Depends(get_current_user)):
+    # Exception: allow public access to reflections.json for frontend "Active Consciousness" feature
+    is_public_reflection = file_path == "reflections.json"
+    
+    if not is_public_reflection and not current_user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required for nanobot session logs",
+        )
+        
+    nanobot_dir = settings.content_dir / "nanobot-status"
+    file = nanobot_dir / file_path
+    if not file.exists() or not file.is_file():
+        raise HTTPException(status_code=404, detail="Status file not found")
+        
+    # Security check to prevent directory traversal
+    try:
+        file.resolve().relative_to(nanobot_dir.resolve())
+    except ValueError:
+         raise HTTPException(status_code=403, detail="Forbidden")
+         
+    return FileResponse(file)
 
 # Serve React frontend (production only — when dist/ exists)
 frontend_dir = settings.frontend_dist

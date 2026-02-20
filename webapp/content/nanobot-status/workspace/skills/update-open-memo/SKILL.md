@@ -1,19 +1,19 @@
 ---
 name: update-open-memo
-description: Git update skill for the open_memo repository. Repo must be located at `/Users/kentchiu/Documents/Github/open_memo`. Use this skill when the user asks to update, commit, or push changes in the open_memo project.
+description: Git update skill for the open_memo repository. Repo must be located at `/Users/kentchiu/Documents/Github/open_memo`. Always use this skill when the user asks to update the open_memo project.
 ---
 
 # Intro
 
 This skill automates the process of syncing nanobot data and updating the `open_memo` repository.
 
-When the user asks to "update open_memo repo" or "push changes on open_memo", execute the bundled sync and update script.
+When the user asks to "update open_memo repo" or "push changes on open_memo", execute the bundled sync and update script. not read but bash run it
 
 ## Running the Update Script
 
 ```bash
 # Set a custom commit message if provided by the user
-./scripts/update.sh "Your commit message"
+bash /scripts/update.sh "Your commit message"
 ```
 
 If no message is provided, the script defaults to "update".

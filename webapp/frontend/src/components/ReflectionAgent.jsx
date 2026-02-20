@@ -6,15 +6,30 @@ export default function ReflectionAgent() {
     const [typing, setTyping] = useState(true)
 
     useEffect(() => {
-        fetch('/nanobot-status/reflections.json')
-            .then(r => r.json())
-            .then(data => {
-                setReflections(data)
-                setLoading(false)
+        const loadReflections = async () => {
+            try {
+                // If the backend requires auth for this, you can fetch the token from localStorage
+                // e.g. const token = localStorage.getItem("token")
+                const headers = {};
+                // if (token) headers['Authorization'] = `Bearer ${ token } `; 
+
+                const res = await fetch('/api/nanobot-status/reflections.json', { headers });
+                if (res.ok) {
+                    const data = await res.json();
+                    setReflections(data);
+                } else {
+                    console.error("Failed to fetch reflections:", res.status, res.statusText);
+                }
+            } catch (err) {
+                console.error("Error loading reflections:", err);
+            } finally {
+                setLoading(false);
                 // Simulate thinking time for "Wow" factor
-                setTimeout(() => setTyping(false), 1500)
-            })
-            .catch(() => setLoading(false))
+                setTimeout(() => setTyping(false), 1500);
+            }
+        };
+
+        loadReflections();
     }, [])
 
     if (loading) return null
@@ -27,7 +42,7 @@ export default function ReflectionAgent() {
                     <h3 className="reflection-title">Active Consciousness</h3>
                     <p className="reflection-subtitle">Proactive insights from your Nanobot Agent</p>
                 </div>
-                <div className={`reflection-status ${typing ? 'pulse' : ''}`}>
+                <div className={`reflection - status ${typing ? 'pulse' : ''} `}>
                     {typing ? 'Thinking...' : 'Active'}
                 </div>
             </div>
@@ -55,11 +70,11 @@ export default function ReflectionAgent() {
                                             className="reflection-link"
                                         >
                                             <span className="icon">❓</span> {q}
-                                        </a>
-                                    </li>
+                                        </a >
+                                    </li >
                                 ))}
-                            </ul>
-                        </div>
+                            </ul >
+                        </div >
 
                         <div className="reflection-section">
                             <h4>🚀 Recommended Actions</h4>
@@ -79,11 +94,11 @@ export default function ReflectionAgent() {
                         </div>
                     </>
                 )}
-            </div>
+            </div >
 
             <div className="reflection-footer">
                 Last updated: {new Date(reflections?.last_updated).toLocaleString()}
             </div>
-        </div>
+        </div >
     )
 }

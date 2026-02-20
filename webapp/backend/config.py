@@ -27,5 +27,34 @@ class Settings(BaseSettings):
 
     model_config = {"env_prefix": "OPENMEMO_", "env_file": ".env"}
 
+    from pydantic import model_validator
+
+    @model_validator(mode="after")
+    def check_production_secrets(self):
+        """Ensure default secrets are not used in production."""
+        if not self.debug:
+            if self.admin_password == "openmemo":
+                raise ValueError(
+                    "\n\n🚨 CRITICAL SECURITY ERROR 🚨\n"
+                    "You are running OpenMemo in production (debug=False), "
+                    "but you are using the default admin password ('openmemo').\n"
+                    "This means ANYONE on the internet can log in as Admin.\n\n"
+                    "HOW TO FIX:\n"
+                    "Set the OPENMEMO_ADMIN_PASSWORD environment variable in your "
+                    "deployment platform (like GCP Cloud Run, Railway, or Docker) "
+                    "to a strong, unique password.\n"
+                )
+            if self.secret_key == "change-me-in-production-please":
+                raise ValueError(
+                    "\n\n🚨 CRITICAL SECURITY ERROR 🚨\n"
+                    "You are running OpenMemo in production (debug=False), "
+                    "but you are using the default secret_key.\n"
+                    "This means attackers can forge login tokens and bypass authentication.\n\n"
+                    "HOW TO FIX:\n"
+                    "Generate a long random string (e.g. `openssl rand -hex 32`) and set it "
+                    "as the OPENMEMO_SECRET_KEY environment variable in your deployment platform.\n"
+                )
+        return self
+
 
 settings = Settings()

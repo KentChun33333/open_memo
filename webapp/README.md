@@ -125,3 +125,11 @@ The frontend fetches these files directly as static assets (no backend API neede
 1. Connect your GitHub repo to Cloud Build
 2. Every push to `main` triggers a new build
 3. Cloud Run performs blue/green deployment automatically
+
+Go to the Google Cloud Console.
+Navigate to Cloud Run and click on your open_memo service.
+Click Edit & Deploy New Revision.
+Scroll down, click Variables & Secrets -> Environment variables.
+Click Add Variable and create the following two overrides:
+Name: OPENMEMO_ADMIN_PASSWORD Value: <Type a really strong password here>
+Name: OPENMEMO_SECRET_KEY Value: <Paste a long random string of letters and numbers here>
