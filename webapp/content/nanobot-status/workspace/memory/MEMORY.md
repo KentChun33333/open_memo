@@ -1,7 +1,1 @@
-## Additional Facts (2026-02-20)
-
-- open_memo repo synced again at 2026-02-20T00:37 via `skills/update.sh`, commit `8129d1a5`, with 18 files changed (+436 insertions, -150 deletions). Key additions include `webapp/backend/routers/notes.py`, `NoteList.jsx`, `NotePost.jsx`, and updated cron/nanobot data.
-- User confirmed preference for using top-level `skills/update.sh` for repo maintenance over manual git commands.
-- Notes feature is newly under active development and may require user review.
-- Voice-to-memory pipeline (auto-transcribe Telegram voice notes) remains pending and is part of next-step items.
-- Reuters AI cron job still pending; fallback to Google News confirmed as primary fallback option.
+open_memo repo: On 2026-02-20T09:13, user approved git sync via skill execution in workspace. Changes staged, committed (message: 'feat: add searxng-tool, notes on deployment/security/telegram, and update README/backend/frontend'), and pushed to remote. New untracked content includes searxng-tool directory and three analysis notes (openmemo-deployment-security-guide.md, telegram-analysis-report.md, telegram_error_analysis.md). Modified files reflect updates to webapp components and backend configuration, likely tied to ongoing development. No new personal or technical facts beyond prior entries.

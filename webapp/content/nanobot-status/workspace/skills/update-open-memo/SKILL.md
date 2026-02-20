@@ -7,9 +7,7 @@ description: Git update skill for the open_memo repository. Repo must be located
 
 This skill automates the process of syncing nanobot data and updating the `open_memo` repository.
 
-When the user asks to "update open_memo repo" or "push changes on open_memo", execute the bundled sync and update script. not read but bash run it
-
-## Running the Update Script
+## Just Running the Script - The only way
 
 ```bash
 # Set a custom commit message if provided by the user

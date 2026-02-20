@@ -160,12 +160,16 @@ export default function NanobotStatus() {
     const [error, setError] = useState(null)
 
     useEffect(() => {
+        const token = localStorage.getItem('token');
+        const headers = {};
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
         Promise.all([
-            fetch('/nanobot-status/cron/jobs.json').then(r => {
+            fetch('/api/nanobot-status/cron/jobs.json', { headers }).then(r => {
                 if (!r.ok) throw new Error(`cron/jobs: HTTP ${r.status}`)
                 return r.json()
             }),
-            fetch('/nanobot-status/workspace/memory/MEMORY.md').then(r => {
+            fetch('/api/nanobot-status/workspace/memory/MEMORY.md', { headers }).then(r => {
                 if (!r.ok) throw new Error(`workspace/memory: HTTP ${r.status}`)
                 return r.text()
             }),
