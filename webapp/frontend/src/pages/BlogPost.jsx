@@ -87,7 +87,7 @@ export default function BlogPost() {
             {post && (
                 <>
                     <h1 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <img src={logo} alt="avatar" style={{ width: '40px', height: '40px', borderRadius: '50%' }} />
+                        <img src={logo} alt="avatar" style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0, border: '2px solid var(--accent)' }} />
                         {post.title}
                     </h1>
                     <div className="post-meta">

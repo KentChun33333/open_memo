@@ -10,13 +10,7 @@ During the CNY, after snowboarding in Yuzawa, I got an idea to build a personal 
 
 After spending 2 days, I am surprised that I have built a working prototype of **OpenMemo**, a project that evolved from a simple note-taking web application into a autonomous, intelligent digital personal agent.
 
-The core of this evolution relies on customized **Nanobot**, a highly capable personal AI agent running locally via Ollama, and orchestrated via **Telegram**.
-
-This post explores the full architecture of how OpenMemo functions as an automated cognitive system, allowing me to build, deploy, and interact with my knowledge base effortlessly.
-
 ## The OpenMemo Agent Architecture
-
-The architectural philosophy behind OpenMemo is to eliminate manual DevOps and server management overhead. Instead of me writing code, pushing to GitHub, deploying to a PaaS, and writing API integrations, Nanobot handles all of it autonomously from my local environment, projecting the results into the cloud.
 
 <FlowDiagram 
   height="600px" 
@@ -45,6 +39,11 @@ The architectural philosophy behind OpenMemo is to eliminate manual DevOps and s
     { id: 'e5-1', source: '5', target: '1', type: 'smoothstep', animated: true, label: 'Read Output', labelStyle: { fill: '#9ca3af', fontWeight: 500 }, style: { stroke: '#f59e0b', strokeWidth: 1, strokeDasharray: '5,5' } }
   ]}
 />
+
+The core of this evolution relies on customized **Nanobot**, a highly capable personal AI agent running locally via Ollama, and orchestrated via **Telegram**.
+
+This post explores the full architecture of how OpenMemo functions as an automated cognitive system, allowing me to build, deploy, and interact with my knowledge base effortlessly.
+
 
 ### 1. Telegram as the Unified Interface
 
