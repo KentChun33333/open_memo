@@ -64,16 +64,35 @@ function getRadarData(blogs) {
     return entries.map(([domain, count]) => ({ domain, count, fullMark: max }))
 }
 
-function getContentTimeline(blogs, mindmaps) {
-    // Aggregate all content by date
+function getContentTimeline(blogs, notes, mindmaps) {
     const dateMap = {}
-    blogs.forEach(b => {
-        if (!b.date) return
-        const key = b.date
-        if (!dateMap[key]) dateMap[key] = { date: key, blogs: 0, mindmaps: 0 }
-        dateMap[key].blogs++
-    })
-    return Object.values(dateMap).sort((a, b) => a.date.localeCompare(b.date))
+
+    const addDate = (item, type) => {
+        const dateStr = item.date || item.created_at || item.updated_at
+        if (!dateStr) return
+        const d = new Date(dateStr)
+
+        let key = ''
+        if (typeof dateStr === 'string' && dateStr.includes('T')) {
+            key = dateStr.split('T')[0]
+        } else if (typeof dateStr === 'string' && dateStr.length >= 10) {
+            key = dateStr.substring(0, 10)
+        } else {
+            key = d.toISOString().split('T')[0]
+        }
+
+        if (!dateMap[key]) dateMap[key] = { date: key, blogs: 0, notes: 0, mindmaps: 0 }
+        dateMap[key][type]++
+    }
+
+    blogs.forEach(b => addDate(b, 'blogs'))
+    notes.forEach(n => addDate(n, 'notes'))
+    mindmaps.forEach(m => addDate(m, 'mindmaps'))
+
+    // Sort by date ascending, then take the last (most recent) 180 days that actually have activity
+    return Object.values(dateMap)
+        .sort((a, b) => a.date.localeCompare(b.date))
+        .slice(-180)
 }
 
 function getWritingStreak(blogs) {
@@ -161,15 +180,18 @@ function DomainPill({ name, count, color, active, onClick }) {
 export default function Home() {
     const [blogs, setBlogs] = useState([])
     const [mindmaps, setMindmaps] = useState([])
+    const [notes, setNotes] = useState([])
     const [loading, setLoading] = useState(true)
     const [activeDomain, setActiveDomain] = useState(null)
+    const [activeActivity, setActiveActivity] = useState(null)
 
     useEffect(() => {
         Promise.all([
             fetch('/api/blogs').then(r => r.json()),
             fetch('/api/mindmaps').then(r => r.json()),
+            fetch('/api/notes').then(r => r.json()),
         ])
-            .then(([b, m]) => { setBlogs(b); setMindmaps(m) })
+            .then(([b, m, n]) => { setBlogs(b); setMindmaps(m); setNotes(n); })
             .catch(() => { })
             .finally(() => setLoading(false))
     }, [])
@@ -184,7 +206,7 @@ export default function Home() {
     const monthlyData = useMemo(() => getMonthlyData(filteredBlogs), [filteredBlogs])
     const tagData = useMemo(() => getTagData(blogs), [blogs])
     const radarData = useMemo(() => getRadarData(blogs), [blogs])
-    const timeline = useMemo(() => getContentTimeline(filteredBlogs, mindmaps), [filteredBlogs, mindmaps])
+    const timeline = useMemo(() => getContentTimeline(blogs, notes, mindmaps), [blogs, notes, mindmaps])
     const uniqueTags = useMemo(() => new Set(blogs.flatMap(b => b.tags || [])).size, [blogs])
     const streak = useMemo(() => getWritingStreak(blogs), [blogs])
 
@@ -213,12 +235,44 @@ export default function Home() {
                 </div>
             </div>
 
-            {/* Stat Cards */}
+
+
+            {/* Activity Bars - Full Width, Top */}
+            < div className="chart-card" style={{ marginBottom: 'var(--space-xl)' }} >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
+                    <h3 className="chart-title" style={{ margin: 0 }}>
+                        📊 Writing Activity by Date (Latest 180 Active Days)
+                    </h3>
+                    <div className="domain-pills" style={{ marginTop: 0 }}>
+                        <DomainPill name="Blogs" count={timeline.reduce((s, d) => s + d.blogs, 0)} color="#6366f1" active={activeActivity === 'blogs'} onClick={() => setActiveActivity(activeActivity === 'blogs' ? null : 'blogs')} />
+                        <DomainPill name="Notes" count={timeline.reduce((s, d) => s + d.notes, 0)} color="#14b8a6" active={activeActivity === 'notes'} onClick={() => setActiveActivity(activeActivity === 'notes' ? null : 'notes')} />
+                        <DomainPill name="Mind Maps" count={timeline.reduce((s, d) => s + d.mindmaps, 0)} color="#84cc16" active={activeActivity === 'mindmaps'} onClick={() => setActiveActivity(activeActivity === 'mindmaps' ? null : 'mindmaps')} />
+                    </div>
+                </div>
+                <ResponsiveContainer width="100%" height={280}>
+                    <BarChart data={timeline} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                        <XAxis dataKey="date" stroke="#6c6c8a" fontSize={11} />
+                        <YAxis stroke="#6c6c8a" fontSize={12} allowDecimals={false} />
+                        <Tooltip content={<ChartTooltip />} />
+                        {(!activeActivity || activeActivity === 'blogs') && <Bar dataKey="blogs" name="Blog Posts" stackId="a" fill="#6366f1" radius={[4, 4, 0, 0]} maxBarSize={50} />}
+                        {(!activeActivity || activeActivity === 'notes') && <Bar dataKey="notes" name="Notes" stackId="a" fill="#14b8a6" radius={[4, 4, 0, 0]} maxBarSize={50} />}
+                        {(!activeActivity || activeActivity === 'mindmaps') && <Bar dataKey="mindmaps" name="Mind Maps" stackId="a" fill="#84cc16" radius={[4, 4, 0, 0]} maxBarSize={50} />}
+                    </BarChart>
+                </ResponsiveContainer>
+            </div >
+
+            {/* Stat Cards - Moved Below Activity Bars */}
             < div className="stat-grid" >
                 <StatCard
                     icon="📝" label="Blog Posts" value={filteredBlogs.length}
                     sub={activeDomain ? `of ${blogs.length} total` : `across ${uniqueTags} domains`}
                     color="var(--accent)"
+                />
+                <StatCard
+                    icon="📓" label="Notes" value={notes.length}
+                    sub={`total notes`}
+                    color="var(--info)"
                 />
                 <StatCard
                     icon="🧠" label="Mind Maps" value={mindmaps.length}
@@ -237,6 +291,8 @@ export default function Home() {
                 />
             </div >
 
+
+
             {/* Domain Filter Bar */}
             < div className="domain-bar" >
                 <h3 className="chart-title">🏷️ Explore by Domain</h3>
@@ -254,68 +310,8 @@ export default function Home() {
                 </div>
             </div >
 
-            {/* Charts Row */}
-            < div className="chart-row" >
-                {/* Monthly Activity */}
-                < div className="chart-card chart-card-wide" >
-                    <h3 className="chart-title">
-                        📈 Content Timeline
-                        {activeDomain && <span className="chart-filter-hint">— showing "{activeDomain}"</span>}
-                    </h3>
-                    <ResponsiveContainer width="100%" height={280}>
-                        <AreaChart data={monthlyData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-                            <defs>
-                                <linearGradient id="gradientPosts" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="0%" stopColor="#6366f1" stopOpacity={0.4} />
-                                    <stop offset="100%" stopColor="#6366f1" stopOpacity={0.05} />
-                                </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
-                            <XAxis dataKey="month" stroke="#6c6c8a" fontSize={12} />
-                            <YAxis stroke="#6c6c8a" fontSize={12} allowDecimals={false} />
-                            <Tooltip content={<ChartTooltip />} />
-                            <Area
-                                type="monotone" dataKey="posts" name="Posts"
-                                stroke="#6366f1" strokeWidth={2.5}
-                                fill="url(#gradientPosts)"
-                                dot={{ fill: '#6366f1', r: 5, stroke: '#1a1a2e', strokeWidth: 2 }}
-                                activeDot={{ r: 7, stroke: '#fff', strokeWidth: 2 }}
-                            />
-                        </AreaChart>
-                    </ResponsiveContainer>
-                </div >
-
-                {/* Domain Distribution Pie */}
-                < div className="chart-card" >
-                    <h3 className="chart-title">🧩 Domain Distribution</h3>
-                    <ResponsiveContainer width="100%" height={280}>
-                        <PieChart>
-                            <Pie
-                                data={tagData}
-                                cx="50%" cy="50%"
-                                innerRadius="45%" outerRadius="75%"
-                                paddingAngle={3}
-                                dataKey="value"
-                                stroke="none"
-                                style={{ cursor: 'pointer' }}
-                                onClick={(d) => handleDomainClick(d.name)}
-                            >
-                                {tagData.map((entry, i) => (
-                                    <Cell
-                                        key={i}
-                                        fill={entry.color}
-                                        opacity={activeDomain && activeDomain !== entry.name ? 0.3 : 1}
-                                    />
-                                ))}
-                            </Pie>
-                            <Tooltip content={<PieTooltip />} />
-                        </PieChart>
-                    </ResponsiveContainer>
-                </div >
-            </div >
-
-            {/* Second Row: Radar + Activity Timeline */}
-            < div className="chart-row" >
+            {/* Depth Row */}
+            < div className="chart-row" style={{ gridTemplateColumns: '1fr' }} >
                 {/* Radar */}
                 < div className="chart-card" >
                     <h3 className="chart-title">🕸️ Domain Depth</h3>
@@ -343,27 +339,6 @@ export default function Home() {
                             </div>
                         )
                     }
-                </div >
-
-                {/* Activity Bars */}
-                < div className="chart-card chart-card-wide" >
-                    <h3 className="chart-title">
-                        📊 Writing Activity by Date
-                        {activeDomain && <span className="chart-filter-hint">— showing "{activeDomain}"</span>}
-                    </h3>
-                    <ResponsiveContainer width="100%" height={280}>
-                        <BarChart data={timeline} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
-                            <XAxis dataKey="date" stroke="#6c6c8a" fontSize={11} />
-                            <YAxis stroke="#6c6c8a" fontSize={12} allowDecimals={false} />
-                            <Tooltip content={<ChartTooltip />} />
-                            <Bar
-                                dataKey="blogs" name="Blog Posts"
-                                fill="#6366f1" radius={[4, 4, 0, 0]}
-                                maxBarSize={50}
-                            />
-                        </BarChart>
-                    </ResponsiveContainer>
                 </div >
             </div >
 

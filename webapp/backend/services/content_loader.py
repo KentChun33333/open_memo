@@ -43,8 +43,8 @@ class ContentLoader:
         if not self.target_dir.exists():
             return items
 
-        for md_file in sorted(self.target_dir.glob("*.md"), reverse=True):
-            item = self._parse_item(md_file, excerpt_only=True)
+        for path in list(self.target_dir.glob("*.md")) + list(self.target_dir.glob("*.mdx")):
+            item = self._parse_item(path, excerpt_only=True)
             if item:
                 items.append(item)
 
@@ -55,9 +55,13 @@ class ContentLoader:
     def get_item(self, slug: str) -> Optional[ContentItem]:
         """Get a single content item by slug."""
         md_file = self.target_dir / f"{slug}.md"
-        if not md_file.exists():
+        mdx_file = self.target_dir / f"{slug}.mdx"
+        
+        target_file = md_file if md_file.exists() else mdx_file
+        
+        if not target_file.exists():
             return None
-        return self._parse_item(md_file, excerpt_only=False)
+        return self._parse_item(target_file, excerpt_only=False)
 
     def _parse_item(self, path: Path, excerpt_only: bool = False) -> Optional[ContentItem]:
         """Parse a markdown file into a ContentItem."""

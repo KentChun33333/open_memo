@@ -25,6 +25,7 @@ class MindMapMeta(BaseModel):
     title: str
     description: str = ""
     node_count: int = 0
+    date: str = ""
 
 
 class MindMap(BaseModel):
@@ -33,6 +34,7 @@ class MindMap(BaseModel):
     id: str
     title: str
     description: str = ""
+    date: str = ""
     nodes: list[MindMapNode] = []
     edges: list[dict[str, Any]] = []
 
@@ -46,6 +48,8 @@ class MindMapLoader:
     def list_maps(self) -> list[MindMapMeta]:
         """List all available mind maps."""
         maps = []
+        import datetime
+        import os
         if not self.maps_dir.exists():
             return maps
 
@@ -53,12 +57,20 @@ class MindMapLoader:
             try:
                 data = json.loads(json_file.read_text(encoding="utf-8"))
                 node_count = self._count_nodes(data.get("nodes", []))
+                
+                # Fetch date from JSON or fallback to file modified time
+                date_str = data.get("date") or data.get("created_at")
+                if not date_str:
+                    mtime = os.path.getmtime(json_file)
+                    date_str = datetime.datetime.fromtimestamp(mtime).strftime("%Y-%m-%d")
+
                 maps.append(
                     MindMapMeta(
                         id=json_file.stem,
                         title=data.get("title", json_file.stem.replace("-", " ").title()),
                         description=data.get("description", ""),
                         node_count=node_count,
+                        date=date_str,
                     )
                 )
             except (json.JSONDecodeError, Exception):
@@ -73,14 +85,22 @@ class MindMapLoader:
             return None
 
         try:
+            import datetime
+            import os
             data = json.loads(json_file.read_text(encoding="utf-8"))
             nodes = [self._parse_node(n) for n in data.get("nodes", [])]
             edges = data.get("edges", [])
+
+            date_str = data.get("date") or data.get("created_at")
+            if not date_str:
+                mtime = os.path.getmtime(json_file)
+                date_str = datetime.datetime.fromtimestamp(mtime).strftime("%Y-%m-%d")
 
             return MindMap(
                 id=map_id,
                 title=data.get("title", map_id.replace("-", " ").title()),
                 description=data.get("description", ""),
+                date=date_str,
                 nodes=nodes,
                 edges=edges,
             )
