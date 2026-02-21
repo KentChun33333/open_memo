@@ -10,7 +10,7 @@ During the CNY, after snowboarding in Yuzawa, I got an idea to build a personal 
 
 After spending 2 days, I am surprised that I have built a working prototype of **OpenMemo**, a project that evolved from a simple note-taking web application into a autonomous, intelligent digital personal agent.
 
-## The OpenMemo Agent Architecture
+## The Architecture
 
 <FlowDiagram 
   height="400px" 
@@ -43,27 +43,18 @@ After spending 2 days, I am surprised that I have built a working prototype of *
   ]}
 />
 
-The core of this evolution relies on customized **Nanobot**, a highly capable personal AI agent running locally via Ollama, and orchestrated via **Telegram**.
+The core of this evolution relies on a **Nanobot from HKUD**, a highly capable personal AI agent running locally, and orchestrated via **Telegram**.
 
-This post explores the full architecture of how OpenMemo functions as an automated cognitive system, allowing me to build, deploy, and interact with my knowledge base effortlessly.
+This post explores the full component-level architecture of how OpenMemo functions as an automated cognitive system, allowing me to build, deploy, and interact with my knowledge base effortlessly.
 
+### 1. Frontend: React & MDX
+The OpenMemo user interface is built entirely with **React**. For rendering the interactive diagrams and rich text, I rely heavily on **React Flow** and support for both standard Markdown (`.md`) and extended **MDX** (`.mdx`). This allows me to seamlessly embed live React components (like the architectural interactive flowchart above) directly inside my blog posts.
 
-### 1. Telegram as the Unified Interface
+### 2. Backend Engine: Local LLMs & Searxng
+The underlying backend intelligence is powered by my customized version of Nanobot from HKUD, safely running on local resources. By harnessing local LLMs through Ollama, I maintain absolute command over operational privacy and computing costs. For web discovery, the agent integrates with **Searxng**, an internet metasearch engine chosen specifically because it is completely free to self-host and query. 
 
-I chose Telegram as the sole interaction channel for Nanobot. Since Telegram is mobile-first and deeply integrated into my daily routine, I can issue commands to Nanobot whether I'm at my desk or on the go. As seen in the flowchart above, the output stream is completely seamless.
+### 3. Custom Agent Skills
+The true power of this system is how the local loop interacts with my globally accessible codebase. I built **customized agent skills** into Nanobot that allow it to operate autonomously. These tools enable the agent to do everything from creating animations to performing full-scale **DevOps** (reading, modifying, and deploying code without manual intervention).
 
-### 2. Local Nanobot Execution
-
-Nanobot represents the underlying backend intelligence safely running on local resources. I have tried openclawd but it is not as secure as nanobot. By harnessing local LLMs through Ollama, I maintain absolute command over the operational privacy and computing costs. Nanobot listens constantly, interpreting my Telegram tasks into a localized step-by-step logic loop. It can search the web, discover new ideas, and even create new blog posts and deploy them to the cloud.
-
-### 3. Orchestrating the OpenMemo Webapp via Custom Skills
-
-The true power of this system is how the local loop interacts with the globally accessible `open_memo` web app repository. I built **customized DevOps skills** into Nanobot that allow it to read, modify, and deploy code completely autonomously.
-
-When I ask Nanobot to create a new blog or update my mind maps, the system:
-1. Gathers context using local search and file reading skills.
-2. Writes the `.mdx` content or modifies `React` components.
-3. Automatically commits the changes and pushes directly to the remote GitHub repository.
-4. **GCP Cloud Run** triggers a redeploy on the new push, instantly updating the live webapp at `https://kentchiu-memo-662008816033.asia-southeast1.run.app/`.
-
-This means new knowledge goes from an idea in a Telegram chat to a live, interactive web page on GCP with zero manual intervention or API configuration on my part.
+### 4. Cloud Deployment on GCP Cloud Run
+When I ask Nanobot to create a new blog, it gathers context, writes the `.mdx` content, and automatically pushes directly to the remote GitHub repository. This push event seamlessly triggers **GCP Cloud Run** to redeploy the live webapp. I chose GCP Cloud Run because the first 1 million requests per month are completely free, making it incredibly cost-effective to host this autonomous web application.
