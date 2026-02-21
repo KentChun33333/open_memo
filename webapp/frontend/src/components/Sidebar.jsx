@@ -117,7 +117,6 @@ export default function Sidebar({ collapsed, onToggle }) {
             {/* Brand */}
             <div className="sidebar-brand">
                 <Link to="/" onClick={handleLinkClick}>
-                    <img src={logo} alt="Logo" className="sidebar-logo-img" />
                     {!collapsed && (
                         <span className="sidebar-title">
                             <span className="accent">Open</span>Memo

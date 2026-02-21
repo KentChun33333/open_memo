@@ -128,18 +128,22 @@ img {
   white-space: nowrap;
 }
 
-.sidebar-logo-img {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
+/* ===== Dashboard Avatar ===== */
+.dashboard-avatar-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 28px;
   object-fit: cover;
   border: 2px solid var(--accent);
-  transition: all var(--transition-normal);
 }
 
-.sidebar.collapsed .sidebar-logo-img {
-  width: 40px;
-  height: 40px;
+@media (max-width: 768px) {
+  .dashboard-avatar-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 24px;
+    border: 2px solid var(--accent);
+  }
 }
 
 .sidebar-title .accent {

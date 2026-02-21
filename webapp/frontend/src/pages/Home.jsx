@@ -5,6 +5,7 @@ import {
     PolarAngleAxis, PolarRadiusAxis, XAxis, YAxis, CartesianGrid,
     Tooltip, ResponsiveContainer, Cell, PieChart, Pie
 } from 'recharts'
+import logo from '../assets/logo.gif'
 
 /* ──────── color palette ──────── */
 
@@ -196,7 +197,8 @@ export default function Home() {
     return (
         <div className="dashboard">
             {/* Header */}
-            <div className="dashboard-header">
+            <div className="dashboard-header" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <img src={logo} alt="Avatar" className="dashboard-avatar-icon" />
                 <div>
                     <h1 className="dashboard-title">Dashboard</h1>
                     <p className="dashboard-subtitle">
@@ -212,7 +214,7 @@ export default function Home() {
             </div>
 
             {/* Stat Cards */}
-            <div className="stat-grid">
+            < div className="stat-grid" >
                 <StatCard
                     icon="📝" label="Blog Posts" value={filteredBlogs.length}
                     sub={activeDomain ? `of ${blogs.length} total` : `across ${uniqueTags} domains`}
@@ -233,10 +235,10 @@ export default function Home() {
                     sub="unique writing sessions"
                     color="#f43f5e"
                 />
-            </div>
+            </div >
 
             {/* Domain Filter Bar */}
-            <div className="domain-bar">
+            < div className="domain-bar" >
                 <h3 className="chart-title">🏷️ Explore by Domain</h3>
                 <div className="domain-pills">
                     {tagData.map(d => (
@@ -250,12 +252,12 @@ export default function Home() {
                         />
                     ))}
                 </div>
-            </div>
+            </div >
 
             {/* Charts Row */}
-            <div className="chart-row">
+            < div className="chart-row" >
                 {/* Monthly Activity */}
-                <div className="chart-card chart-card-wide">
+                < div className="chart-card chart-card-wide" >
                     <h3 className="chart-title">
                         📈 Content Timeline
                         {activeDomain && <span className="chart-filter-hint">— showing "{activeDomain}"</span>}
@@ -281,10 +283,10 @@ export default function Home() {
                             />
                         </AreaChart>
                     </ResponsiveContainer>
-                </div>
+                </div >
 
                 {/* Domain Distribution Pie */}
-                <div className="chart-card">
+                < div className="chart-card" >
                     <h3 className="chart-title">🧩 Domain Distribution</h3>
                     <ResponsiveContainer width="100%" height={280}>
                         <PieChart>
@@ -309,40 +311,42 @@ export default function Home() {
                             <Tooltip content={<PieTooltip />} />
                         </PieChart>
                     </ResponsiveContainer>
-                </div>
-            </div>
+                </div >
+            </div >
 
             {/* Second Row: Radar + Activity Timeline */}
-            <div className="chart-row">
+            < div className="chart-row" >
                 {/* Radar */}
-                <div className="chart-card">
+                < div className="chart-card" >
                     <h3 className="chart-title">🕸️ Domain Depth</h3>
-                    {radarData.length > 0 ? (
-                        <ResponsiveContainer width="100%" height={280}>
-                            <RadarChart outerRadius="65%" data={radarData}>
-                                <PolarGrid stroke="rgba(255,255,255,0.1)" />
-                                <PolarAngleAxis
-                                    dataKey="domain" stroke="#a0a0c0" fontSize={11}
-                                    tick={{ fill: '#a0a0c0', fontSize: 11 }}
-                                />
-                                <PolarRadiusAxis stroke="#6c6c8a" fontSize={10} />
-                                <Radar
-                                    name="Posts" dataKey="count"
-                                    stroke="#8b5cf6" fill="#8b5cf6"
-                                    fillOpacity={0.3} strokeWidth={2}
-                                />
-                                <Tooltip content={<ChartTooltip />} />
-                            </RadarChart>
-                        </ResponsiveContainer>
-                    ) : (
-                        <div className="chart-empty">
-                            <p>Add tags to your blogs to see domain depth</p>
-                        </div>
-                    )}
-                </div>
+                    {
+                        radarData.length > 0 ? (
+                            <ResponsiveContainer width="100%" height={280}>
+                                <RadarChart outerRadius="65%" data={radarData}>
+                                    <PolarGrid stroke="rgba(255,255,255,0.1)" />
+                                    <PolarAngleAxis
+                                        dataKey="domain" stroke="#a0a0c0" fontSize={11}
+                                        tick={{ fill: '#a0a0c0', fontSize: 11 }}
+                                    />
+                                    <PolarRadiusAxis stroke="#6c6c8a" fontSize={10} />
+                                    <Radar
+                                        name="Posts" dataKey="count"
+                                        stroke="#8b5cf6" fill="#8b5cf6"
+                                        fillOpacity={0.3} strokeWidth={2}
+                                    />
+                                    <Tooltip content={<ChartTooltip />} />
+                                </RadarChart>
+                            </ResponsiveContainer>
+                        ) : (
+                            <div className="chart-empty">
+                                <p>Add tags to your blogs to see domain depth</p>
+                            </div>
+                        )
+                    }
+                </div >
 
                 {/* Activity Bars */}
-                <div className="chart-card chart-card-wide">
+                < div className="chart-card chart-card-wide" >
                     <h3 className="chart-title">
                         📊 Writing Activity by Date
                         {activeDomain && <span className="chart-filter-hint">— showing "{activeDomain}"</span>}
@@ -360,56 +364,60 @@ export default function Home() {
                             />
                         </BarChart>
                     </ResponsiveContainer>
-                </div>
-            </div>
+                </div >
+            </div >
 
             {/* Recent Activity */}
-            <div className="dashboard-recent">
-                {filteredBlogs.length > 0 && (
-                    <section>
-                        <div className="section-header">
-                            <h3>📝 {activeDomain ? `"${activeDomain}" Posts` : 'Recent Posts'}</h3>
-                            <Link to="/blogs">View all →</Link>
-                        </div>
-                        <div className="card-grid card-grid-2">
-                            {filteredBlogs.slice(0, 4).map(blog => (
-                                <Link key={blog.slug} to={`/blogs/${blog.slug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                                    <div className="card card-compact">
-                                        <h4>{blog.title}</h4>
-                                        <div className="meta">
-                                            <span>📅 {blog.date}</span>
-                                            {blog.tags?.slice(0, 3).map(tag => (
-                                                <span key={tag} className="tag">{tag}</span>
-                                            ))}
+            < div className="dashboard-recent" >
+                {
+                    filteredBlogs.length > 0 && (
+                        <section>
+                            <div className="section-header">
+                                <h3>📝 {activeDomain ? `"${activeDomain}" Posts` : 'Recent Posts'}</h3>
+                                <Link to="/blogs">View all →</Link>
+                            </div>
+                            <div className="card-grid card-grid-2">
+                                {filteredBlogs.slice(0, 4).map(blog => (
+                                    <Link key={blog.slug} to={`/blogs/${blog.slug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                                        <div className="card card-compact">
+                                            <h4>{blog.title}</h4>
+                                            <div className="meta">
+                                                <span>📅 {blog.date}</span>
+                                                {blog.tags?.slice(0, 3).map(tag => (
+                                                    <span key={tag} className="tag">{tag}</span>
+                                                ))}
+                                            </div>
                                         </div>
-                                    </div>
-                                </Link>
-                            ))}
-                        </div>
-                    </section>
-                )}
+                                    </Link>
+                                ))}
+                            </div>
+                        </section>
+                    )
+                }
 
-                {mindmaps.length > 0 && (
-                    <section style={{ marginTop: 'var(--space-xl)' }}>
-                        <div className="section-header">
-                            <h3>🧠 Mind Maps</h3>
-                            <Link to="/mindmaps">View all →</Link>
-                        </div>
-                        <div className="card-grid card-grid-3">
-                            {mindmaps.map(mm => (
-                                <Link key={mm.id} to={`/mindmaps/${mm.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                                    <div className="card card-compact">
-                                        <h4>{mm.title}</h4>
-                                        <div className="meta">
-                                            <span>🔗 {mm.node_count} nodes</span>
+                {
+                    mindmaps.length > 0 && (
+                        <section style={{ marginTop: 'var(--space-xl)' }}>
+                            <div className="section-header">
+                                <h3>🧠 Mind Maps</h3>
+                                <Link to="/mindmaps">View all →</Link>
+                            </div>
+                            <div className="card-grid card-grid-3">
+                                {mindmaps.map(mm => (
+                                    <Link key={mm.id} to={`/mindmaps/${mm.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                                        <div className="card card-compact">
+                                            <h4>{mm.title}</h4>
+                                            <div className="meta">
+                                                <span>🔗 {mm.node_count} nodes</span>
+                                            </div>
                                         </div>
-                                    </div>
-                                </Link>
-                            ))}
-                        </div>
-                    </section>
-                )}
-            </div>
-        </div>
+                                    </Link>
+                                ))}
+                            </div>
+                        </section>
+                    )
+                }
+            </div >
+        </div >
     )
 }
