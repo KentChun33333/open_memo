@@ -7,6 +7,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import Breadcrumb from '../components/Breadcrumb'
 import GiscusComments from '../components/GiscusComments'
+import logo from '../assets/logo.gif'
 
 // Mermaid renderer component
 function Mermaid({ chart }) {
@@ -59,7 +60,10 @@ export default function NotePost() {
                 { label: note.title }
             ]} />
 
-            <h1>{note.title}</h1>
+            <h1 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <img src={logo} alt="avatar" style={{ width: '40px', height: '40px', borderRadius: '50%' }} />
+                {note.title}
+            </h1>
             <div className="post-meta">
                 📅 {note.date}
                 {note.tags?.length > 0 && (

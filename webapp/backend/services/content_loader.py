@@ -18,6 +18,7 @@ class ContentItem(BaseModel):
     title: str
     date: str
     tags: list[str] = []
+    icon: str = ""
     excerpt: str = ""
     html: str = ""
     raw: str = ""
@@ -72,6 +73,7 @@ class ContentLoader:
             # Extract metadata from frontmatter
             title = post.get("title", path.stem.replace("-", " ").replace("_", " ").title())
             date = str(post.get("date", "2025-01-01"))
+            icon = post.get("icon", "")
             tags = post.get("tags", [])
             if isinstance(tags, str):
                 tags = [t.strip() for t in tags.split(",")]
@@ -93,6 +95,7 @@ class ContentLoader:
                 title=title,
                 date=date,
                 tags=tags,
+                icon=icon,
                 excerpt=excerpt_text,
                 html=html,
                 raw=body if not excerpt_only else "",

@@ -1,10 +1,11 @@
 # Step 1: Build the React Frontend
 FROM node:20-slim AS frontend-build
-WORKDIR /app/frontend
-COPY frontend/package*.json ./
-RUN npm install
-COPY frontend/ .
-RUN npm run build
+WORKDIR /app
+COPY frontend/package*.json ./frontend/
+RUN cd frontend && npm install
+COPY frontend/ ./frontend/
+COPY content/ ./content/
+RUN cd frontend && npm run build
 
 # Step 2: Setup the Python Backend
 FROM python:3.11-slim
