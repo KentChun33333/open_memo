@@ -1,0 +1,14 @@
+# Ignore local npm dependencies
+**/node_modules
+# Ignore git directory
+.git
+**/.git
+# Ignore build artifacts pointing to local paths
+**/dist
+**/build
+# Ignore local environment files
+**/.env
+**/.env.local
+**/.env.*.local
+# Ignore macOS files
+**/.DS_Store
