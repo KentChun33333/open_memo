@@ -1,0 +1,6 @@
+# Custom vocabulary hints for Whisper
+# Add one word per line to improve recognition of names/jargon
+# Example:
+# Nanobot
+# OpenClaw
+# Clawdbot
