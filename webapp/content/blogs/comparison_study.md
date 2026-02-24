@@ -1,6 +1,6 @@
 ---
 title: "Comparison Study: Agent vs. Professional Design Requirements"
-date: "2025-02-04"
+date: "2026-02-04"
 tags: ["comparison", "production", "gap-analysis"]
 ---
 
