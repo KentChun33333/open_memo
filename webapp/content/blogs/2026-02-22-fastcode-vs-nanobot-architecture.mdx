@@ -5,8 +5,6 @@ tags: ["architecture", "agents", "memory-systems", "fastcode", "nanobot"]
 summary: "A professional comparison of the design philosophies behind FastCode's Iterative Agent and Nanobot's Orchestrator, focusing on their distinct approaches to agent loops and memory."
 ---
 
-import { ShikiCodeBlock } from '../../frontend/src/components/ShikiCodeBlock'
-
 # Architectural Deep Dive: FastCode vs. Nanobot
 
 As `openmemo` evolves, it houses two distinctly powerful agent architectures: **FastCode** and **Nanobot** (encompassing `mcp_skill_agent`). While both are built to enhance developer productivity, they employ radically different design philosophies in how they process information (Agent Loops) and retain context (Memory Systems).
@@ -23,21 +21,6 @@ The "Agent Loop" defines how an AI reasons through a task, decides what to do ne
 
 FastCode is designed around a **confidence-driven, highly autonomous RAG (Retrieval-Augmented Generation) loop**.
 
-<ShikiCodeBlock language="python">
-{`
-# FastCode: Confidence-Driven Loop
-def retrieve_with_iteration(self, query):
-    confidence, complexity = self._round_one(query)
-    
-    if confidence < 95 and self.budget > 0:
-        # Agent decides what tools to use to increase confidence
-        results = self._execute_tool_calls_with_selection(tool_calls)
-        self.budget -= cost(results)
-        
-    return final_elements
-`}
-</ShikiCodeBlock>
-
 * **The Design:** FastCode utilizes an `IterativeAgent` that operates on a multi-round assessment model. Instead of blindly executing tools, Phase 1 is a "dry run" assessment where the agent determines its own *Confidence Score* and *Query Complexity*.
 * **The Loop Control:** The loop is tightly controlled by **Budget and ROI (Return on Investment)**. The loop only iterates if the confidence is below a threshold (e.g., 95%) and stops immediately if the budget is exhausted or if it achieves its target.
 * **Strengths:** Excellent for massive, unstructured codebases where the agent must "hunt" for the right file recursively. It is highly adaptive and dynamically adjusts parameters (like search depths) based on ongoing complexity analysis.
@@ -45,24 +28,6 @@ def retrieve_with_iteration(self, query):
 ### Nanobot: The Deterministic Orchestrator (`Orchestrator` & `AgentLoop`)
 
 Nanobot takes a highly structured, **event-driven and pipeline-based approach**.
-
-<ShikiCodeBlock language="python">
-{`
-# Nanobot: Deterministic Pipeline
-async def run(self, query: str):
-    # Phase 1: Librarian
-    skill_context = self._discover_skill_context(query)
-    
-    # Phase 2: Architect
-    plan = self._plan_atomic_steps(skill_context, query)
-    
-    # Phase 3: Execution & Critic loop
-    for step in plan:
-        output = await self.execute(step)
-        if not self._run_critic_phase(output):
-            raise Exception("Critic rejected step execution")
-`}
-</ShikiCodeBlock>
 
 * **The Design:** In `mcp_skill_agent/orchestrator.py`, the loop is broken down into strict, deterministic phases:
   1. *The Librarian (Discovery)*: Fetches all available tools and contexts upfront.

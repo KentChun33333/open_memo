@@ -1,3 +1,10 @@
+---
+title: "Building an Autonomous Coding Agent"
+date: "2026-02-25"
+tags: ["architecture", "agent", "analysis"]
+summary: "An analysis report on agent architecture."
+---
+
 This technical report outlines the architecture for building a high-autonomy coding agent similar to Claude Code (Anthropic's agentic CLI) or Antigravity (a reference to "proactive" agent IDEs like Cursor/Windsurf or Google's internal tools).The core differentiator of these systems is that they move beyond "autocomplete" to a Plan $\to$ Act $\to$ Observe loop.Technical Report: Building an Autonomous Coding AgentObjective: Architect a system capable of long-horizon tasks, stateful memory, and procedural skill execution (skill.md).1. System Architecture: The "Loop"Unlike a chatbot, an agent needs a recursive runtime loop. The standard architecture for state-of-the-art agents (like SWE-agent or OpenHands) consists of three components:The Brain (LLM): Generates thoughts and tool calls (JSON/Function Calling).The Runtime (Sandboxed Environment): A Docker container where bash, python, and git commands run.The State Manager (The "OS"): A control loop that manages memory, task lists, and parsing.High-Level Control Loop (Python Pseudo-code)Pythonclass AgentRuntime:
     def run_loop(self, user_goal):
         state = State(goal=user_goal, task_queue=[], memory=[])
