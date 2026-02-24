@@ -4,10 +4,13 @@ import mdx from '@mdx-js/rollup'
 
 import remarkFrontmatter from 'remark-frontmatter'
 import remarkMdxFrontmatter from 'remark-mdx-frontmatter'
+import remarkMath from 'remark-math'
+import remarkGfm from 'remark-gfm'
+import rehypeKatex from 'rehype-katex'
 
 export default defineConfig({
     plugins: [
-        { enforce: 'pre', ...mdx({ remarkPlugins: [remarkFrontmatter, remarkMdxFrontmatter] }) },
+        { enforce: 'pre', ...mdx({ remarkPlugins: [remarkGfm, remarkFrontmatter, remarkMdxFrontmatter, remarkMath], rehypePlugins: [rehypeKatex] }) },
         react({ include: /\.(jsx|js|mdx|md|tsx|ts)$/ })
     ],
     server: {
