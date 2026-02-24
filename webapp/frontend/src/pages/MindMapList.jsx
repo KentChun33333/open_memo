@@ -23,7 +23,7 @@ export default function MindMapList() {
             ]} />
 
             <div className="section-header">
-                <h2>🧠 All Mind Maps</h2>
+                <h2>🧠 Mind Maps</h2>
                 <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
                     {mindmaps.length} map{mindmaps.length !== 1 ? 's' : ''}
                 </span>

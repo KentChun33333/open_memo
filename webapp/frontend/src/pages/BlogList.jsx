@@ -29,7 +29,7 @@ export default function BlogList() {
             ]} />
 
             <div className="section-header">
-                <h2>📝 All Blog Posts</h2>
+                <h2>📝 Blog Posts</h2>
                 <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
                     {filtered.length} post{filtered.length !== 1 ? 's' : ''}
                 </span>

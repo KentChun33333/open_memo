@@ -29,7 +29,7 @@ export default function NoteList() {
             ]} />
 
             <div className="section-header">
-                <h2>📝 All Notes</h2>
+                <h2>📝 Notes</h2>
                 <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
                     {filtered.length} note{filtered.length !== 1 ? 's' : ''}
                 </span>
