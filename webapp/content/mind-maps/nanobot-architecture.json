@@ -1,5 +1,6 @@
 {
     "title": "Nanobot Architecture",
+    "date": "2026-02-18",
     "description": "Architecture overview of Nanobot — Ultra-lightweight AI assistant (~3,700 LOC)",
     "nodes": [
         {

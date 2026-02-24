@@ -36,7 +36,8 @@ export default function MindMapList() {
                             <h3>{mm.title}</h3>
                             <p>{mm.description}</p>
                             <div className="meta">
-                                <span>🔗 {mm.node_count} nodes</span>
+                                <span>📅 {mm.date || 'Unknown date'}</span>
+                                <span style={{ marginLeft: '1rem' }}>🔗 {mm.node_count} nodes</span>
                             </div>
                         </div>
                     </Link>

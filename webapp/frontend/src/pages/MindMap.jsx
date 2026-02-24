@@ -167,7 +167,14 @@ export default function MindMapPage() {
             <div className="mindmap-container">
                 {/* Markmap info bar */}
                 <div className="mindmap-toolbar">
-                    <h2 className="mindmap-title">{mapData.title}</h2>
+                    <h2 className="mindmap-title">
+                        {mapData.title}
+                        {mapData.date && (
+                            <span style={{ fontSize: '1rem', fontWeight: 'normal', color: 'var(--text-muted)', marginLeft: '1rem' }}>
+                                📅 {mapData.date}
+                            </span>
+                        )}
+                    </h2>
                     <div className="mindmap-actions">
                         <button
                             className="btn btn-sm"
