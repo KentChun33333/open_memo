@@ -31,7 +31,7 @@ def main():
         sys.exit(1)
 
     # Basic schema validation
-    required_keys = ['title', 'description', 'nodes', 'edges']
+    required_keys = ['title', 'description', 'date', 'nodes', 'edges']
     for key in required_keys:
         if key not in data:
             print(f"Error: Missing required key '{key}' in JSON payload.")

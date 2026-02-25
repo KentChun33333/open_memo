@@ -21,6 +21,7 @@ The extracted mind map MUST follow this structure:
 ```json
 {
     "title": "Main Topic Title",
+    "date": "2026-02-19",
     "description": "A high-level overview of the mind map topic.",
     "nodes": [
         {
