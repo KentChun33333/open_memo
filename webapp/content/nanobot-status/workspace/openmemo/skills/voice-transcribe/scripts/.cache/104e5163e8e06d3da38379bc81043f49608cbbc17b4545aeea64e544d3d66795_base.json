@@ -1,0 +1,19 @@
+{
+  "text": "Please use the scales in the workspace in the open memo that there's a voice translator skills I built for you. It can pass in the OGG files.",
+  "language": "en",
+  "duration": 0.8734130859375,
+  "model": "base",
+  "file": "AwACAgUAAxkBAAPU.ogg",
+  "segments": [
+    {
+      "start": 0.0,
+      "end": 5.94,
+      "text": "Please use the scales in the workspace in the open memo that there's a voice"
+    },
+    {
+      "start": 5.94,
+      "end": 11.48,
+      "text": "translator skills I built for you. It can pass in the OGG files."
+    }
+  ]
+}

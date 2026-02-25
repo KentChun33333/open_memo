@@ -1,0 +1,14 @@
+{
+  "text": "Hi there, can you hear me clearly?",
+  "language": "en",
+  "duration": 3.9322760105133057,
+  "model": "base",
+  "file": "AwACAgUAAxkBAANB.ogg",
+  "segments": [
+    {
+      "start": 0.0,
+      "end": 3.0,
+      "text": "Hi there, can you hear me clearly?"
+    }
+  ]
+}

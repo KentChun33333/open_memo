@@ -1,0 +1,26 @@
+use_default_settings: true
+
+server:
+  # Secret key for the instance (change this!)
+  secret_key: "agent_secret_key_123"
+  limiter: false # Disable rate limiting for your local agent
+  image_proxy: true
+
+search:
+  safe_search: 0
+  autocomplete: ""
+  formats:
+    - html
+    - json # Critical: Allows SearxSearchWrapper to communicate
+
+# Engines to aggregate from
+engines:
+  - name: google
+    engine: google
+    shortcut: g
+  - name: duckduckgo
+    engine: duckduckgo
+    shortcut: ddg
+  - name: wikipedia
+    engine: wikipedia
+    shortcut: w

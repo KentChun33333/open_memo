@@ -1,0 +1,119 @@
+{
+    "title": "Memory Systems",
+    "date": "2026-02-19",
+    "description": "How AI agents maintain context, state, and long-term knowledge",
+    "nodes": [
+        {
+            "id": "mem-root",
+            "label": "Agent Memory",
+            "description": "Different memory layers in agent architectures",
+            "children": [
+                {
+                    "id": "session",
+                    "label": "Session History",
+                    "description": "Per-chat conversation memory. Typically a sliding window of recent messages.",
+                    "style": {
+                        "color": "#6366f1"
+                    },
+                    "children": [
+                        {
+                            "id": "session-jsonl",
+                            "label": "JSONL Storage",
+                            "description": "Nanobot stores session history as JSONL files — append-friendly, human-readable"
+                        },
+                        {
+                            "id": "session-gap",
+                            "label": "⚠️ Tool Call Gap",
+                            "description": "Tool calls and results are lost between turns — only final text is saved to session"
+                        }
+                    ]
+                },
+                {
+                    "id": "working",
+                    "label": "Working Memory",
+                    "description": "The messages array during a single turn — grows with each tool call, discarded after turn ends.",
+                    "style": {
+                        "color": "#f59e0b"
+                    }
+                },
+                {
+                    "id": "daily",
+                    "label": "Daily Notes",
+                    "description": "Date-partitioned notes (YYYY-MM-DD.md). Agent writes here. Last 7 days loaded into prompt.",
+                    "style": {
+                        "color": "#10b981"
+                    }
+                },
+                {
+                    "id": "longterm",
+                    "label": "Long-Term Memory",
+                    "description": "MEMORY.md — persistent facts and preferences. Always in system prompt.",
+                    "style": {
+                        "color": "#ec4899"
+                    }
+                },
+                {
+                    "id": "semantic",
+                    "label": "🔮 Semantic Search",
+                    "description": "Not yet implemented. Would use embeddings + vector store for relevant retrieval.",
+                    "style": {
+                        "color": "#64748b"
+                    }
+                },
+                {
+                    "id": "back-link",
+                    "label": "← Back to Learning Path",
+                    "description": "Return to the main learning path",
+                    "targetFile": "learning-path.json",
+                    "style": {
+                        "color": "#64748b"
+                    }
+                }
+            ]
+        }
+    ],
+    "edges": [
+        {
+            "source": "mem-root",
+            "target": "session"
+        },
+        {
+            "source": "mem-root",
+            "target": "working"
+        },
+        {
+            "source": "mem-root",
+            "target": "daily"
+        },
+        {
+            "source": "mem-root",
+            "target": "longterm"
+        },
+        {
+            "source": "mem-root",
+            "target": "semantic"
+        },
+        {
+            "source": "session",
+            "target": "session-jsonl"
+        },
+        {
+            "source": "session",
+            "target": "session-gap"
+        },
+        {
+            "source": "working",
+            "target": "session",
+            "label": "summarized into"
+        },
+        {
+            "source": "daily",
+            "target": "longterm",
+            "label": "promoted to"
+        },
+        {
+            "source": "mem-root",
+            "target": "back-link"
+        }
+    ]
+}

@@ -1,0 +1,134 @@
+{
+    "title": "Agent Patterns",
+    "date": "2026-02-17",
+    "description": "Common architectural patterns for building AI agents",
+    "nodes": [
+        {
+            "id": "ap-root",
+            "label": "Agent Patterns",
+            "description": "Patterns for reasoning and acting",
+            "children": [
+                {
+                    "id": "react",
+                    "label": "ReAct Pattern",
+                    "description": "Reason + Act loop. Think → Act → Observe → Repeat. Simple, efficient, best for 3-7 step tasks.",
+                    "style": {
+                        "color": "#6366f1"
+                    },
+                    "children": [
+                        {
+                            "id": "react-pros",
+                            "label": "✅ Strengths",
+                            "description": "Low latency (1 LLM call per step), adaptive, no planning overhead"
+                        },
+                        {
+                            "id": "react-cons",
+                            "label": "⚠️ Weaknesses",
+                            "description": "Loses track on long tasks (10+ steps), no explicit plan state"
+                        }
+                    ]
+                },
+                {
+                    "id": "plan-execute",
+                    "label": "Plan & Execute",
+                    "description": "Generate plan upfront, then execute sequentially. Used by mcp_skill_agent.",
+                    "style": {
+                        "color": "#f59e0b"
+                    },
+                    "children": [
+                        {
+                            "id": "pe-pros",
+                            "label": "✅ Strengths",
+                            "description": "Structured, auditable, handles complex multi-step tasks"
+                        },
+                        {
+                            "id": "pe-cons",
+                            "label": "⚠️ Weaknesses",
+                            "description": "High overhead (4+ LLM calls minimum), rigid replanning"
+                        }
+                    ]
+                },
+                {
+                    "id": "reflexion",
+                    "label": "Reflexion",
+                    "description": "Execute → Self-critique → Retry with learned lessons",
+                    "style": {
+                        "color": "#10b981"
+                    }
+                },
+                {
+                    "id": "lats",
+                    "label": "LATS",
+                    "description": "Language Agent Tree Search — tree of possibilities with backtracking",
+                    "style": {
+                        "color": "#ec4899"
+                    }
+                },
+                {
+                    "id": "adapt",
+                    "label": "ADaPT",
+                    "description": "Recursive decomposition — if sub-task fails, decompose further",
+                    "style": {
+                        "color": "#8b5cf6"
+                    }
+                },
+                {
+                    "id": "back-link",
+                    "label": "← Back to Learning Path",
+                    "description": "Return to the main learning path",
+                    "targetFile": "learning-path.json",
+                    "style": {
+                        "color": "#64748b"
+                    }
+                }
+            ]
+        }
+    ],
+    "edges": [
+        {
+            "source": "ap-root",
+            "target": "react"
+        },
+        {
+            "source": "ap-root",
+            "target": "plan-execute"
+        },
+        {
+            "source": "ap-root",
+            "target": "reflexion"
+        },
+        {
+            "source": "ap-root",
+            "target": "lats"
+        },
+        {
+            "source": "ap-root",
+            "target": "adapt"
+        },
+        {
+            "source": "react",
+            "target": "react-pros"
+        },
+        {
+            "source": "react",
+            "target": "react-cons"
+        },
+        {
+            "source": "plan-execute",
+            "target": "pe-pros"
+        },
+        {
+            "source": "plan-execute",
+            "target": "pe-cons"
+        },
+        {
+            "source": "react",
+            "target": "reflexion",
+            "label": "enhanced by"
+        },
+        {
+            "source": "ap-root",
+            "target": "back-link"
+        }
+    ]
+}

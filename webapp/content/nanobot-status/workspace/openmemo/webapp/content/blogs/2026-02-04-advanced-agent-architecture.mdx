@@ -1,0 +1,86 @@
+---
+title: "Advanced Agent Architecture: Antigravity vs MCP Agent"
+date: "2026-02-04"
+tags: ["architecture", "antigravity", "mcp-agent"]
+---
+
+import { ShikiCodeBlock } from '../../frontend/src/components/ShikiCodeBlock'
+import { FlowDiagram } from '../../frontend/src/components/FlowDiagram'
+
+# Advanced Agent Architecture: Antigravity vs MCP Agent
+
+This document analyzes the gap between high-level agents (like Antigravity/Claude Code) and the default `mcp-agent` flow, and proposes an enhanced architecture for `main.py`.
+
+## Comparison
+
+| Feature | Antigravity / Claude Code | Default `mcp-agent` |
+| :--- | :--- | :--- |
+| **Lifecycle** | **Stateful Loop**: Plan → Execute → Verify → Report | **Single Shot**: Request → React Loop → Final Answer |
+| **Planning** | Explicit `task.md` / Checklist. Tasks are tracked and updated. | Implicit / Hidden in Chain of thought. No persistent artifact. |
+| **Context** | Active Context Management (Read specific files, search codebase). | Passive. Relies on what's injected in prompt. |
+| **Persistence** | Writes state to disk (Artifacts). Can resume. | In-memory only. Lost on exit. |
+| **Tooling** | "Meta-tools" (Task Boundary, Artifacts) + Domain Tools. | Domain tools only. |
+
+## The "Missing Link" in `main.py`
+
+The current `main.py` uses a simple `llm.generate_str(query)` call. This relies entirely on the LLM's internal "Chain of Thought" to manage complexity. For multi-step tasks, one-shot execution often fails because of Context Window Pressure, Premature Completion, and Lack of Structure.
+
+## Proposed Architecture: The "Plan-Execute" Loop
+
+We will enhance `main.py` to implement a simplified version of the Antigravity loop.
+
+<FlowDiagram 
+  height="300px" 
+  initialNodes={[
+    { id: '1', position: { x: 50, y: 50 }, data: { label: '1. Plan (Checklist)' }, type: 'input' },
+    { id: '2', position: { x: 250, y: 50 }, data: { label: '2. Execute Step' } },
+    { id: '3', position: { x: 450, y: 50 }, data: { label: '3. Verify' } },
+    { id: '4', position: { x: 650, y: 50 }, data: { label: '4. Complete' }, type: 'output' }
+  ]}
+  initialEdges={[
+    { id: 'e1-2', source: '1', target: '2', animated: true },
+    { id: 'e2-3', source: '2', target: '3', animated: true },
+    { id: 'e3-4', source: '3', target: '4', animated: true },
+    { id: 'e3-2', source: '3', target: '2', animated: true, type: 'step', label: 'Retry on fail' }
+  ]}
+/>
+
+### 1. Explicit Planning Phase
+Before running tools, the agent must generate a **Plan**.
+- **Input**: User Query
+- **Output**: A structured checklist
+
+### 2. Execution Loop
+The agent iterates through the plan sequentially.
+
+### 3. Verification
+Explicit verification step before finishing.
+
+## Implementation Details
+
+We split `main()` into explicit stages:
+
+<ShikiCodeBlock language="python">
+{`async def main(query):
+    # Setup ...
+    agent = Agent(...)
+    
+    # 1. PLANNING
+    print("🧠 Generating Plan...")
+    plan_prompt = f"Goal: {query}\\n\\nCreate a numbered checklist of steps..."
+    plan = await agent.llm.generate_str(plan_prompt, force_no_tools=True)
+    print(f"Plan:\\n{plan}")
+    
+    # 2. EXECUTION
+    print("🛠️ Executing Plan...")
+    execution_prompt = (
+        f"Goal: {query}\\n"
+        f"Approved Plan:\\n{plan}\\n\\n"
+        "Execute this plan step-by-step. Verify each step."
+    )
+    result = await agent.llm.generate_str(execution_prompt)
+    print(f"Result:\\n{result}")
+`}
+</ShikiCodeBlock>
+
+*Note: If `mcp-agent` doesn't support `force_no_tools`, we can instruct it verbally.*

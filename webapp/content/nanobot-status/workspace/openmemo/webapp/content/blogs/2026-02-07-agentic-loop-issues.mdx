@@ -1,0 +1,180 @@
+---
+title: "Agentic Loop Issues Analysis"
+date: "2026-02-07"
+tags: ["architecture", "agent", "analysis"]
+summary: "An analysis report on agent architecture."
+---
+
+# Agentic Loop Issues Analysis
+
+**Date**: 2026-02-07  
+**Context**: Analysis of MCP server restarts and repeated work in logs
+
+---
+
+## Problem Summary
+
+After completing a task successfully (bundle.html created at 23:54:56), the MCP server restarted at 23:55:26 and the agent re-ran `init-artifact.sh`, effectively duplicating work.
+
+---
+
+## Root Causes
+
+### 1. Ephemeral Worker Pattern
+
+**Location**: `step_executor.py:61-64`
+
+```python
+worker = Agent(
+    name=worker_name,
+    instruction=subagent_instruction,
+    server_names=["file-tools"] 
+)
+async with worker:  # Creates/destroys MCP connection per step
+```
+
+**Impact**: Each step creates a new Agent with a fresh MCP connection. When the worker exits, the MCP server may restart.
+
+---
+
+### 2. No Overall Task Completion Check
+
+**Location**: `orchestrator.py:54-195`
+
+The orchestrator continues to the next step after completing each step, but there's no check to see if the overall task is already done.
+
+```python
+while step_idx < len(steps):
+    # Execute step...
+    # No check: "Is the final artifact already created?"
+    step_idx += 1
+```
+
+**Impact**: Even after `bundle.html` is created, the loop may continue and spawn new workers.
+
+---
+
+### 3. MCP Connection Per Worker
+
+**Location**: `step_executor.py:74`
+
+```python
+async with worker:
+    llm = await worker.attach_llm(OpenAIAugmentedLLM)
+```
+
+The `async with` context manager creates and destroys MCP connections for each worker.
+
+**Evidence from logs**:
+
+```
+23:55:15 - write_file: final_bundle.html  ← Step completes
+23:55:26 - Starting file-tools MCP server...  ← New worker spawns
+23:55:32 - init-artifact.sh runs AGAIN  ← Worker has no memory
+```
+
+---
+
+### 4. State Amnesia Across Workers
+
+**Location**: `step_executor.py:40-44`
+
+Workers are given a handover context, but it doesn't include:
+
+- What files already exist
+- What commands have already been run
+- What the final artifact status is
+
+```python
+handover = self._build_worker_context(
+    current_step=current_step,
+    task_input=task_input,
+    retry_feedback=retry_feedback
+)
+```
+
+---
+
+## Log Evidence
+
+### Timeline (2026-02-06)
+
+| Time | Event | Analysis |
+|------|-------|----------|
+| 23:46:33 | init-artifact.sh (1st) | Creates project in /open_memo |
+| 23:47:03 | **MCP RESTART** | 30s after init started |
+| 23:47:07 | init-artifact.sh (2nd) | Creates in /.agent/skills/... (different CWD!) |
+| 23:54:56 | ls bundle.html | Task DONE |
+| 23:55:15 | write final_bundle.html | Output saved |
+| 23:55:26 | **MCP RESTART** | 11s after completion |
+| 23:55:32 | init-artifact.sh (3rd) | Unnecessary re-init |
+
+---
+
+## Recommended Fixes
+
+### Priority 1: Task Completion Guard
+
+Add early exit in orchestrator if final artifact exists:
+
+```python
+# In orchestrator.py, before executing next step
+if self._is_task_complete(task_input):
+    logger.info("Final artifact exists. Mission complete.")
+    break
+```
+
+### Priority 2: Reuse MCP Connections
+
+Modify step_executor to reuse a shared MCP connection:
+
+```python
+# Instead of per-worker connection
+class StepExecutor:
+    def __init__(self, ..., shared_agent=None):
+        self.shared_agent = shared_agent  # Reuse across steps
+```
+
+### Priority 3: Skill-Level Guard
+
+Update `init-artifact.sh` to skip if project exists:
+
+```bash
+if [ -d "$PROJECT_NAME" ]; then
+    echo "Project '$PROJECT_NAME' already exists. Skipping init."
+    exit 0
+fi
+```
+
+### Priority 4: Enrich Worker Handover
+
+Include existing artifacts in worker context:
+
+```python
+handover = self._build_worker_context(
+    current_step=current_step,
+    task_input=task_input,
+    retry_feedback=retry_feedback,
+    existing_artifacts=self.memory_manager.get_all_artifacts()  # Add this
+)
+```
+
+---
+
+## Metrics
+
+| Metric | Observed | Optimal |
+|--------|----------|---------|
+| MCP server restarts | 6+ | 1 |
+| init-artifact.sh runs | 3 | 1 |
+| Total time | ~10 min | ~3 min |
+| Redundant operations | ~40% | 0% |
+
+---
+
+## Next Steps
+
+1. [ ] Implement task completion guard in orchestrator
+2. [ ] Add project existence check to init-artifact.sh
+3. [ ] Consider MCP connection pooling
+4. [ ] Enrich worker handover with artifact state
