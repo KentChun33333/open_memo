@@ -1,6 +1,6 @@
 ---
 name: add-notes-in-openmemo
-description: "Take quick notes, meeting minutes, or record life events and save them directly to OpenMemo (open_memo). The Repo must be located at `/Users/kentchiu/Documents/Github/open_memo`"
+description: "Take quick notes, meeting minutes, or record life events and save them directly to OpenMemo (open_memo). The Repo must be located at `~/.nanobot/workspace/openmemo`"
 ---
 
 # add-notes-in-openmemo
@@ -35,4 +35,4 @@ The script will:
 
 - Automatically generate a slug-based filename with a timestamp.
 - Add frontmatter (title, date, tags).
-- Save the file to `/Users/kentchiu/Documents/Github/open_memo/webapp/content/notes/`.
+- Save the file to `~/.nanobot/workspace/openmemo/webapp/content/notes/`.

@@ -51,7 +51,7 @@ summary: "{clean_title[:100]}..."
 
 if __name__ == "__main__":
     # Enforced full path from SKILL.md
-    DEFAULT_REPO_PATH = "/Users/kentchiu/Documents/Github/open_memo"
+    DEFAULT_REPO_PATH = os.path.expanduser("~/.nanobot/workspace/openmemo")
     
     if len(sys.argv) < 2:
         print("Usage: python write_openmemo_notes.py <note_content>")

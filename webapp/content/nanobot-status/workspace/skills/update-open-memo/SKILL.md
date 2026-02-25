@@ -1,6 +1,6 @@
 ---
 name: update-open-memo
-description: Git update skill for the open_memo repository. Repo must be located at `/Users/kentchiu/Documents/Github/open_memo`. Always use this skill when the user asks to update the open_memo project.
+description: Git update skill for the open_memo repository. Repo must be located at `~/.nanobot/workspace/openmemo`. Always use this skill when the user asks to update the open_memo project.
 ---
 
 # Intro

@@ -1,0 +1,485 @@
+2026-02-08 22:17:21,453 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-08 22:17:21,453 - mcp_tools - INFO - WORKSPACE_ROOT: /Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent
+2026-02-08 22:18:12,707 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-08 22:18:12,707 - mcp_tools - INFO - WORKSPACE_ROOT: /Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent
+2026-02-08 22:18:32,832 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-08 22:18:32,833 - mcp_tools - INFO - WORKSPACE_ROOT: /Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent
+2026-02-08 22:56:15,169 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-08 22:56:15,169 - mcp_tools - INFO - WORKSPACE_ROOT: /Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent
+2026-02-08 22:56:15,172 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-08 22:56:39,645 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-08 22:56:39,645 - mcp_tools - INFO - WORKSPACE_ROOT: /Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent
+2026-02-08 22:56:39,648 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-08 22:56:47,249 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'bash /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/init-artifact.sh mcp-demo', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder'}
+2026-02-08 22:56:47,249 - mcp_tools - INFO - Extended timeout (300s) for pattern: init-artifact.sh
+2026-02-08 22:56:47,250 - mcp_tools - INFO - EXEC SHELL: 'bash /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/init-artifact.sh mcp-demo' in '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder' (timeout=300s)
+2026-02-08 22:57:02,009 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo'}
+2026-02-08 22:57:08,477 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo/src'}
+2026-02-08 22:57:10,418 - mcp_tools - INFO - TOOL: read_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo/src/App.tsx'}
+2026-02-08 22:57:14,163 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo/src/components'}
+2026-02-08 22:57:17,877 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'ls /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo/src/components/ui | head -20', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder'}
+2026-02-08 22:57:17,877 - mcp_tools - INFO - EXEC SHELL: 'ls /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo/src/components/ui | head -20' in '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder' (timeout=60s)
+2026-02-08 22:57:23,170 - mcp_tools - INFO - TOOL: read_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo/postcss.config.js'}
+2026-02-08 22:57:27,484 - mcp_tools - INFO - TOOL: write_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo/.postcssrc', 'content_len': 45}
+2026-02-08 22:59:33,898 - mcp_tools - INFO - TOOL: write_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo/src/App.tsx', 'content_len': 16858}
+2026-02-08 22:59:37,675 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'ls /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo/src/components/ui | grep textarea', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder'}
+2026-02-08 22:59:37,675 - mcp_tools - INFO - EXEC SHELL: 'ls /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo/src/components/ui | grep textarea' in '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder' (timeout=60s)
+2026-02-08 22:59:42,158 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'cd /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo && bash /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/bundle-artifact.sh', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder'}
+2026-02-08 22:59:42,159 - mcp_tools - INFO - Extended timeout (300s) for pattern: bundle-artifact.sh
+2026-02-08 22:59:42,159 - mcp_tools - INFO - EXEC SHELL: 'cd /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo && bash /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/bundle-artifact.sh' in '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder' (timeout=300s)
+2026-02-08 22:59:56,005 - mcp_tools - INFO - TOOL: read_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo/src/App.tsx'}
+2026-02-08 23:00:08,231 - mcp_tools - INFO - TOOL: edit_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo/src/App.tsx', 'old_len': 112, 'new_len': 108}
+2026-02-08 23:00:17,472 - mcp_tools - INFO - TOOL: edit_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo/src/App.tsx', 'old_len': 360, 'new_len': 362}
+2026-02-08 23:00:30,364 - mcp_tools - INFO - TOOL: edit_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo/src/App.tsx', 'old_len': 564, 'new_len': 564}
+2026-02-08 23:02:50,957 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'bash /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/init-artifact.sh mcp-demo', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder'}
+2026-02-08 23:02:50,958 - mcp_tools - INFO - Extended timeout (300s) for pattern: init-artifact.sh
+2026-02-08 23:02:50,958 - mcp_tools - INFO - EXEC SHELL: 'bash /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/init-artifact.sh mcp-demo' in '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder' (timeout=300s)
+2026-02-08 23:07:50,956 - mcp_tools - WARNING - TIMEOUT after 300s: bash /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/init-artifact.sh mcp-demo
+2026-02-08 23:08:33,810 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo'}
+2026-02-08 23:10:40,249 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-08 23:10:40,249 - mcp_tools - INFO - WORKSPACE_ROOT: /Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent
+2026-02-08 23:10:40,252 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-08 23:10:44,491 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'bash /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/init-artifact.sh mcp-demo', 'cwd': '/Users/kentchiu/Documents/Github/open_memo'}
+2026-02-08 23:10:44,492 - mcp_tools - INFO - Extended timeout (300s) for pattern: init-artifact.sh
+2026-02-08 23:10:44,492 - mcp_tools - INFO - EXEC SHELL: 'bash /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/init-artifact.sh mcp-demo' in '/Users/kentchiu/Documents/Github/open_memo' (timeout=300s)
+2026-02-08 23:11:05,119 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/mcp-demo'}
+2026-02-08 23:11:09,512 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'rm -f /Users/kentchiu/Documents/Github/open_memo/mcp-demo/postcss.config.js', 'cwd': '/Users/kentchiu/Documents/Github/open_memo'}
+2026-02-08 23:11:11,201 - mcp_tools - INFO - TOOL: read_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/mcp-demo/postcss.config.js'}
+2026-02-08 23:11:13,700 - mcp_tools - INFO - TOOL: write_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/mcp-demo/.postcssrc', 'content_len': 45}
+2026-02-08 23:11:16,320 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'cd /Users/kentchiu/Documents/Github/open_memo/mcp-demo && npm run dev &', 'cwd': '/Users/kentchiu/Documents/Github/open_memo'}
+2026-02-08 23:11:16,320 - mcp_tools - INFO - Extended timeout (300s) for pattern: npm run dev
+2026-02-08 23:11:16,320 - mcp_tools - INFO - EXEC SHELL: 'cd /Users/kentchiu/Documents/Github/open_memo/mcp-demo && npm run dev &' in '/Users/kentchiu/Documents/Github/open_memo' (timeout=300s)
+2026-02-08 23:16:16,324 - mcp_tools - WARNING - TIMEOUT after 300s: cd /Users/kentchiu/Documents/Github/open_memo/mcp-demo && npm run dev &
+2026-02-08 23:16:39,553 - mcp_tools - INFO - TOOL: read_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/mcp-demo/src/App.tsx'}
+2026-02-08 23:16:46,222 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-08 23:16:46,222 - mcp_tools - INFO - WORKSPACE_ROOT: /Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent
+2026-02-08 23:16:46,224 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-08 23:16:50,569 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'bash /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/init-artifact.sh mcp-demo', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder'}
+2026-02-08 23:16:50,571 - mcp_tools - INFO - Extended timeout (300s) for pattern: init-artifact.sh
+2026-02-08 23:16:50,571 - mcp_tools - INFO - EXEC SHELL: 'bash /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/init-artifact.sh mcp-demo' in '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder' (timeout=300s)
+2026-02-08 23:21:50,578 - mcp_tools - WARNING - TIMEOUT after 300s: bash /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/init-artifact.sh mcp-demo
+2026-02-08 23:22:09,755 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo'}
+2026-02-08 23:23:03,155 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-08 23:23:03,155 - mcp_tools - INFO - WORKSPACE_ROOT: /Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent
+2026-02-08 23:23:03,157 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-08 23:23:10,275 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'node --version && pnpm --version', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent'}
+2026-02-08 23:23:10,276 - mcp_tools - INFO - EXEC SHELL: 'node --version && pnpm --version' in '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent' (timeout=60s)
+2026-02-08 23:23:15,141 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-08 23:23:15,141 - mcp_tools - INFO - WORKSPACE_ROOT: /Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent
+2026-02-08 23:23:15,144 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-08 23:23:18,314 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'node --version && pnpm --version', 'cwd': '(null)'}
+2026-02-08 23:23:18,315 - mcp_tools - INFO - EXEC SHELL: 'node --version && pnpm --version' in '(null)' (timeout=60s)
+2026-02-08 23:23:21,246 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'node --version && pnpm --version', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent'}
+2026-02-08 23:23:21,246 - mcp_tools - INFO - EXEC SHELL: 'node --version && pnpm --version' in '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent' (timeout=60s)
+2026-02-08 23:23:26,081 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-08 23:23:26,081 - mcp_tools - INFO - WORKSPACE_ROOT: /Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent
+2026-02-08 23:23:26,084 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-08 23:24:11,447 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-08 23:24:11,447 - mcp_tools - INFO - WORKSPACE_ROOT: /Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent
+2026-02-08 23:24:11,450 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-08 23:24:18,507 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder'}
+2026-02-08 23:24:21,391 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'cd /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder && bash scripts/init-artifact.sh mcp-demo', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder'}
+2026-02-08 23:24:21,392 - mcp_tools - INFO - Extended timeout (300s) for pattern: init-artifact.sh
+2026-02-08 23:24:21,392 - mcp_tools - INFO - EXEC SHELL: 'cd /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder && bash scripts/init-artifact.sh mcp-demo' in '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder' (timeout=300s)
+2026-02-08 23:29:21,600 - mcp_tools - WARNING - TIMEOUT after 300s: cd /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder && bash scripts/init-artifact.sh mcp-demo
+2026-02-08 23:29:41,663 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo'}
+2026-02-08 23:34:15,455 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-08 23:34:15,455 - mcp_tools - INFO - WORKSPACE_ROOT: /Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent
+2026-02-08 23:34:15,457 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-08 23:34:23,026 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'bash /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/init-artifact.sh mcp-demo', 'cwd': '/Users/kentchiu/Documents/Github/open_memo'}
+2026-02-08 23:34:23,028 - mcp_tools - INFO - Extended timeout (300s) for pattern: init-artifact.sh
+2026-02-08 23:34:23,028 - mcp_tools - INFO - EXEC SHELL: 'bash /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/init-artifact.sh mcp-demo' in '/Users/kentchiu/Documents/Github/open_memo' (timeout=300s)
+2026-02-08 23:39:23,044 - mcp_tools - WARNING - TIMEOUT after 300s: bash /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/init-artifact.sh mcp-demo
+2026-02-08 23:39:42,319 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo'}
+2026-02-08 23:46:58,092 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-08 23:46:58,092 - mcp_tools - INFO - WORKSPACE_ROOT: /Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent
+2026-02-08 23:46:58,094 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-08 23:47:04,165 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'bash /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/init-artifact.sh mcp-demo', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder'}
+2026-02-08 23:47:04,167 - mcp_tools - INFO - Extended timeout (300s) for pattern: init-artifact.sh
+2026-02-08 23:47:04,167 - mcp_tools - INFO - EXEC SHELL: 'bash /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/init-artifact.sh mcp-demo' in '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder' (timeout=300s)
+2026-02-08 23:52:04,183 - mcp_tools - WARNING - TIMEOUT after 300s: bash /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/init-artifact.sh mcp-demo
+2026-02-08 23:52:25,971 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/demo-test-123'}
+2026-02-09 12:50:05,464 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-09 12:50:05,464 - mcp_tools - INFO - WORKSPACE_ROOT: /Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent
+2026-02-09 12:50:05,467 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-09 12:50:28,374 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-09 12:50:28,374 - mcp_tools - INFO - WORKSPACE_ROOT: /Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent
+2026-02-09 12:50:28,377 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-09 12:50:35,102 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'bash /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/init-artifact.sh mcp-demo-artifact', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent'}
+2026-02-09 12:50:35,103 - mcp_tools - INFO - Extended timeout (300s) for pattern: init-artifact.sh
+2026-02-09 12:50:35,103 - mcp_tools - INFO - EXEC SHELL: 'bash /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/init-artifact.sh mcp-demo-artifact' in '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent' (timeout=300s)
+2026-02-09 12:50:52,503 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent/mcp-demo-artifact/src'}
+2026-02-09 12:50:54,313 - mcp_tools - INFO - TOOL: read_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent/mcp-demo-artifact/src/App.tsx'}
+2026-02-09 12:59:37,434 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-09 12:59:37,434 - mcp_tools - INFO - WORKSPACE_ROOT: /Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent
+2026-02-09 12:59:37,437 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-09 12:59:42,839 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo-artifact'}
+2026-02-09 12:59:45,352 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'cd /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder && bash scripts/init-artifact.sh mcp-demo-artifact', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent'}
+2026-02-09 12:59:45,352 - mcp_tools - INFO - Extended timeout (300s) for pattern: init-artifact.sh
+2026-02-09 12:59:45,352 - mcp_tools - INFO - EXEC SHELL: 'cd /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder && bash scripts/init-artifact.sh mcp-demo-artifact' in '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent' (timeout=300s)
+2026-02-09 13:00:00,288 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo-artifact'}
+2026-02-09 13:00:03,817 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo-artifact/src'}
+2026-02-09 13:00:10,138 - mcp_tools - INFO - TOOL: read_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo-artifact/src/App.tsx'}
+2026-02-09 13:00:16,662 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'cd /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo-artifact && rm -f postcss.config.js', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent'}
+2026-02-09 13:00:20,082 - mcp_tools - INFO - TOOL: write_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo-artifact/.postcssrc', 'content_len': 45}
+2026-02-09 13:00:23,338 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'rm /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo-artifact/postcss.config.js', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent'}
+2026-02-09 13:00:23,339 - mcp_tools - INFO - EXEC SHELL: 'rm /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo-artifact/postcss.config.js' in '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent' (timeout=60s)
+2026-02-09 13:02:39,787 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'cd /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo-artifact && mv postcss.config.js postcss.config.js.backup', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent'}
+2026-02-09 13:02:39,788 - mcp_tools - INFO - EXEC SHELL: 'cd /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo-artifact && mv postcss.config.js postcss.config.js.backup' in '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent' (timeout=60s)
+2026-02-09 13:07:01,883 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo-artifact'}
+2026-02-09 13:09:17,046 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'cd /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo-artifact && ls -la postcss.config.js 2>/dev/null || echo "File not found"', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent'}
+2026-02-09 13:09:17,046 - mcp_tools - INFO - EXEC SHELL: 'cd /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo-artifact && ls -la postcss.config.js 2>/dev/null || echo "File not found"' in '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent' (timeout=60s)
+2026-02-09 13:16:23,546 - mcp_tools - INFO - TOOL: write_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo-artifact/src/App.tsx', 'content_len': 15606}
+2026-02-09 13:32:14,830 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo-artifact'}
+2026-02-09 13:32:23,201 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'ls -la /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo-artifact/index.html', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent'}
+2026-02-09 13:32:23,201 - mcp_tools - INFO - EXEC SHELL: 'ls -la /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo-artifact/index.html' in '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent' (timeout=60s)
+2026-02-09 13:32:31,039 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'cd /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo-artifact && bash /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/bundle-artifact.sh', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent'}
+2026-02-09 13:32:31,040 - mcp_tools - INFO - Extended timeout (300s) for pattern: bundle-artifact.sh
+2026-02-09 13:32:31,040 - mcp_tools - INFO - EXEC SHELL: 'cd /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo-artifact && bash /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/bundle-artifact.sh' in '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent' (timeout=300s)
+2026-02-09 13:32:45,114 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo-artifact'}
+2026-02-09 13:32:57,555 - mcp_tools - INFO - TOOL: read_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo-artifact/bundle.html'}
+2026-02-09 13:53:20,915 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'bash /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/init-artifact.sh mcp-demo-artifact', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder'}
+2026-02-09 13:53:20,915 - mcp_tools - INFO - Extended timeout (300s) for pattern: init-artifact.sh
+2026-02-09 13:53:20,915 - mcp_tools - INFO - EXEC SHELL: 'bash /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/init-artifact.sh mcp-demo-artifact' in '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder' (timeout=300s)
+2026-02-09 13:58:20,906 - mcp_tools - WARNING - TIMEOUT after 300s: bash /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/init-artifact.sh mcp-demo-artifact
+2026-02-09 13:59:07,314 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder'}
+2026-02-09 15:45:01,752 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-09 15:45:01,752 - mcp_tools - INFO - WORKSPACE_ROOT: /Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent
+2026-02-09 15:45:01,754 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-09 15:45:10,646 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'bash /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/init-artifact.sh mcp-demo-artifact', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder'}
+2026-02-09 15:45:10,647 - mcp_tools - INFO - Extended timeout (300s) for pattern: init-artifact.sh
+2026-02-09 15:45:10,647 - mcp_tools - INFO - EXEC SHELL: 'bash /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/init-artifact.sh mcp-demo-artifact' in '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder' (timeout=300s)
+2026-02-09 16:08:02,654 - mcp_tools - WARNING - TIMEOUT after 300s: bash /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/init-artifact.sh mcp-demo-artifact
+2026-02-09 16:08:34,795 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder'}
+2026-02-09 17:27:56,508 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-09 17:27:56,508 - mcp_tools - INFO - WORKSPACE_ROOT: /Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent
+2026-02-09 17:27:56,511 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-09 17:28:07,432 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'node --version && pnpm --version', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent'}
+2026-02-09 17:28:07,433 - mcp_tools - INFO - EXEC SHELL: 'node --version && pnpm --version' in '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent' (timeout=60s)
+2026-02-09 17:28:14,596 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-09 17:28:14,596 - mcp_tools - INFO - WORKSPACE_ROOT: /Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent
+2026-02-09 17:28:14,598 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-09 17:28:21,543 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'node --version && pnpm --version', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder'}
+2026-02-09 17:28:21,544 - mcp_tools - INFO - EXEC SHELL: 'node --version && pnpm --version' in '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder' (timeout=60s)
+2026-02-09 17:28:29,237 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-09 17:28:29,237 - mcp_tools - INFO - WORKSPACE_ROOT: /Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent
+2026-02-09 17:28:29,239 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-09 17:28:34,314 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'node --version && pnpm --version', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent'}
+2026-02-09 17:28:34,315 - mcp_tools - INFO - EXEC SHELL: 'node --version && pnpm --version' in '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent' (timeout=60s)
+2026-02-09 17:29:16,491 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-09 17:29:16,491 - mcp_tools - INFO - WORKSPACE_ROOT: /Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent
+2026-02-09 17:29:16,493 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-09 17:29:46,964 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-09 17:29:46,964 - mcp_tools - INFO - WORKSPACE_ROOT: /Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent
+2026-02-09 17:29:46,969 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-09 17:29:57,077 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder'}
+2026-02-09 17:30:06,155 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo-artifact'}
+2026-02-09 17:30:15,795 - mcp_tools - INFO - TOOL: read_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/bundle-artifact.sh'}
+2026-02-09 17:45:28,421 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'cd /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo-artifact && bash /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/bundle-artifact.sh', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent'}
+2026-02-09 17:45:28,422 - mcp_tools - INFO - Extended timeout (300s) for pattern: bundle-artifact.sh
+2026-02-09 17:45:28,422 - mcp_tools - INFO - EXEC SHELL: 'cd /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo-artifact && bash /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/bundle-artifact.sh' in '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent' (timeout=300s)
+2026-02-09 17:45:38,420 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo-artifact'}
+2026-02-09 17:45:43,907 - mcp_tools - INFO - TOOL: read_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo-artifact/README.md'}
+2026-02-09 17:46:00,077 - mcp_tools - INFO - TOOL: write_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo-artifact/README.md', 'content_len': 925}
+2026-02-09 17:46:07,387 - mcp_tools - INFO - TOOL: read_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo-artifact/src/App.tsx'}
+2026-02-09 17:46:21,310 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo-artifact/src/components'}
+2026-02-09 17:46:26,557 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo-artifact/src/components/ui'}
+2026-02-09 17:46:32,681 - mcp_tools - INFO - TOOL: read_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo-artifact/src/App.tsx'}
+2026-02-09 17:46:51,777 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'cd /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo-artifact && bash /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/bundle-artifact.sh 2>&1 | tail -20', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent'}
+2026-02-09 17:46:51,777 - mcp_tools - INFO - Extended timeout (300s) for pattern: bundle-artifact.sh
+2026-02-09 17:46:51,777 - mcp_tools - INFO - EXEC SHELL: 'cd /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo-artifact && bash /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/bundle-artifact.sh 2>&1 | tail -20' in '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent' (timeout=300s)
+2026-02-09 17:46:59,906 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'cd /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo-artifact && ls -lh bundle.html', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent'}
+2026-02-09 17:46:59,906 - mcp_tools - INFO - EXEC SHELL: 'cd /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo-artifact && ls -lh bundle.html' in '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent' (timeout=60s)
+2026-02-09 17:47:05,936 - mcp_tools - INFO - TOOL: read_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo-artifact/bundle.html'}
+2026-02-09 18:13:45,200 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'cd /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder && bash scripts/init-artifact.sh mcp-demo-artifact', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent'}
+2026-02-09 18:13:45,200 - mcp_tools - INFO - Extended timeout (300s) for pattern: init-artifact.sh
+2026-02-09 18:13:45,200 - mcp_tools - INFO - EXEC SHELL: 'cd /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder && bash scripts/init-artifact.sh mcp-demo-artifact' in '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent' (timeout=300s)
+2026-02-09 18:18:45,216 - mcp_tools - WARNING - TIMEOUT after 300s: cd /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder && bash scripts/init-artifact.sh mcp-demo-artifact
+2026-02-09 18:19:07,285 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo-artifact'}
+2026-02-09 18:29:42,570 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-09 18:29:42,570 - mcp_tools - INFO - WORKSPACE_ROOT: /Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent
+2026-02-09 18:29:42,573 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-09 18:29:51,067 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder'}
+2026-02-09 18:29:51,072 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts'}
+2026-02-09 18:29:53,650 - mcp_tools - INFO - TOOL: read_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/bundle-artifact.sh'}
+2026-02-09 18:29:57,063 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'pwd', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent'}
+2026-02-09 18:29:57,064 - mcp_tools - INFO - EXEC SHELL: 'pwd' in '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent' (timeout=60s)
+2026-02-09 18:30:00,409 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo-artifact'}
+2026-02-09 18:30:11,153 - mcp_tools - INFO - TOOL: read_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo-artifact/index.html'}
+2026-02-09 18:30:16,172 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'cd /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo-artifact && rm -f "index.html\'\'"', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent'}
+2026-02-09 18:30:19,189 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'cd "/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo-artifact" && rm -f "index.html"', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent'}
+2026-02-09 18:30:22,514 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'cd "/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo-artifact" && mv "index.html\'\'" "index.html.backup"', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent'}
+2026-02-09 18:30:22,514 - mcp_tools - INFO - EXEC SHELL: 'cd "/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo-artifact" && mv "index.html''" "index.html.backup"' in '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent' (timeout=60s)
+2026-02-09 18:30:26,175 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'cd "/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo-artifact" && bash "/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/bundle-artifact.sh"', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent'}
+2026-02-09 18:30:26,175 - mcp_tools - INFO - Extended timeout (300s) for pattern: bundle-artifact.sh
+2026-02-09 18:30:26,175 - mcp_tools - INFO - EXEC SHELL: 'cd "/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo-artifact" && bash "/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/bundle-artifact.sh"' in '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent' (timeout=300s)
+2026-02-09 18:30:32,528 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo-artifact'}
+2026-02-09 18:30:36,771 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'head -n 3 "/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo-artifact/bundle.html"', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent'}
+2026-02-09 18:30:36,771 - mcp_tools - INFO - EXEC SHELL: 'head -n 3 "/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo-artifact/bundle.html"' in '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent' (timeout=60s)
+2026-02-09 18:31:12,794 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-09 18:31:12,794 - mcp_tools - INFO - WORKSPACE_ROOT: /Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent
+2026-02-09 18:31:12,797 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-09 18:31:24,177 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-09 18:31:24,177 - mcp_tools - INFO - WORKSPACE_ROOT: /Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent
+2026-02-09 18:31:24,180 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-09 18:31:34,634 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-09 18:31:34,634 - mcp_tools - INFO - WORKSPACE_ROOT: /Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent
+2026-02-09 18:31:34,637 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-09 18:31:43,179 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder'}
+2026-02-09 18:31:43,184 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo'}
+2026-02-09 18:32:33,569 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-09 18:32:33,569 - mcp_tools - INFO - WORKSPACE_ROOT: /Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent
+2026-02-09 18:32:33,571 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-09 18:32:39,998 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-09 18:32:39,998 - mcp_tools - INFO - WORKSPACE_ROOT: /Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent
+2026-02-09 18:32:40,001 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-09 18:32:44,410 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent'}
+2026-02-09 18:32:47,239 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo'}
+2026-02-09 18:32:50,336 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills'}
+2026-02-09 18:32:53,622 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder'}
+2026-02-09 18:32:58,865 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-demo-artifact'}
+2026-02-09 18:33:02,347 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts'}
+2026-02-09 18:33:04,395 - mcp_tools - INFO - TOOL: read_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/init-artifact.sh'}
+2026-02-09 18:33:11,277 - mcp_tools - INFO - TOOL: read_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/bundle-artifact.sh'}
+2026-02-09 18:33:17,241 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'cd /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder && bash scripts/init-artifact.sh mcp-example', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent'}
+2026-02-09 18:33:17,242 - mcp_tools - INFO - Extended timeout (300s) for pattern: init-artifact.sh
+2026-02-09 18:33:17,242 - mcp_tools - INFO - EXEC SHELL: 'cd /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder && bash scripts/init-artifact.sh mcp-example' in '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent' (timeout=300s)
+2026-02-09 18:33:36,521 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-example'}
+2026-02-09 18:33:40,250 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-example/src'}
+2026-02-09 18:33:43,027 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-example/components'}
+2026-02-09 18:33:46,122 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-example/src/components'}
+2026-02-09 18:33:49,139 - mcp_tools - INFO - TOOL: read_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-example/src/App.tsx'}
+2026-02-09 18:33:56,901 - mcp_tools - INFO - TOOL: read_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-example/postcss.config.js'}
+2026-02-09 18:34:00,649 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'cd /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-example && rm postcss.config.js', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent'}
+2026-02-09 18:34:00,649 - mcp_tools - INFO - EXEC SHELL: 'cd /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-example && rm postcss.config.js' in '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent' (timeout=60s)
+2026-02-09 18:34:04,169 - mcp_tools - INFO - TOOL: write_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-example/.postcssrc', 'content_len': 45}
+2026-02-09 18:34:07,982 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-example/public'}
+2026-02-09 18:34:10,997 - mcp_tools - INFO - TOOL: read_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-example/public/vite.svg'}
+2026-02-09 18:36:10,152 - mcp_tools - INFO - TOOL: write_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-example/src/App.tsx', 'content_len': 15856}
+2026-02-09 18:36:15,420 - mcp_tools - INFO - TOOL: read_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-example/src/App.css'}
+2026-02-09 18:36:27,349 - mcp_tools - INFO - TOOL: write_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-example/src/App.css', 'content_len': 732}
+2026-02-09 18:36:30,863 - mcp_tools - INFO - TOOL: read_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-example/src/main.tsx'}
+2026-02-09 18:36:34,760 - mcp_tools - INFO - TOOL: read_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-example/src/index.css'}
+2026-02-09 18:36:40,019 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-example/src/components/ui'}
+2026-02-09 18:36:43,738 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'cd /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-example && pnpm dev', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent'}
+2026-02-09 18:36:43,738 - mcp_tools - INFO - EXEC SHELL: 'cd /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-example && pnpm dev' in '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent' (timeout=60s)
+2026-02-09 18:37:43,745 - mcp_tools - WARNING - TIMEOUT after 60s: cd /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-example && pnpm dev
+2026-02-09 18:37:49,765 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'cd /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-example && pnpm build 2>&1 | head -100', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent'}
+2026-02-09 18:37:49,765 - mcp_tools - INFO - Extended timeout (300s) for pattern: pnpm build
+2026-02-09 18:37:49,765 - mcp_tools - INFO - EXEC SHELL: 'cd /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-example && pnpm build 2>&1 | head -100' in '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent' (timeout=300s)
+2026-02-09 18:37:51,953 - mcp_tools - CRITICAL - SERVER CRASH: unhandled errors in a TaskGroup (1 sub-exception)
+  + Exception Group Traceback (most recent call last):
+  |   File "/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent/tools/file_server.py", line 346, in <module>
+  |     mcp.run()
+  |     ~~~~~~~^^
+  |   File "/opt/anaconda3/lib/python3.13/site-packages/mcp/server/fastmcp/server.py", line 296, in run
+  |     anyio.run(self.run_stdio_async)
+  |     ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  |   File "/opt/anaconda3/lib/python3.13/site-packages/anyio/_core/_eventloop.py", line 77, in run
+  |     return async_backend.run(func, args, {}, backend_options)
+  |            ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |   File "/opt/anaconda3/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 2342, in run
+  |     return runner.run(wrapper())
+  |            ~~~~~~~~~~^^^^^^^^^^^
+  |   File "/opt/anaconda3/lib/python3.13/asyncio/runners.py", line 118, in run
+  |     return self._loop.run_until_complete(task)
+  |            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  |   File "/opt/anaconda3/lib/python3.13/asyncio/base_events.py", line 725, in run_until_complete
+  |     return future.result()
+  |            ~~~~~~~~~~~~~^^
+  |   File "/opt/anaconda3/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 2325, in wrapper
+  |     return await func(*args)
+  |            ^^^^^^^^^^^^^^^^^
+  |   File "/opt/anaconda3/lib/python3.13/site-packages/mcp/server/fastmcp/server.py", line 749, in run_stdio_async
+  |     async with stdio_server() as (read_stream, write_stream):
+  |                ~~~~~~~~~~~~^^
+  |   File "/opt/anaconda3/lib/python3.13/contextlib.py", line 235, in __aexit__
+  |     await self.gen.athrow(value)
+  |   File "/opt/anaconda3/lib/python3.13/site-packages/mcp/server/stdio.py", line 85, in stdio_server
+  |     async with anyio.create_task_group() as tg:
+  |                ~~~~~~~~~~~~~~~~~~~~~~~^^
+  |   File "/opt/anaconda3/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 783, in __aexit__
+  |     raise BaseExceptionGroup(
+  |         "unhandled errors in a TaskGroup", self._exceptions
+  |     ) from None
+  | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+  +-+---------------- 1 ----------------
+    | Exception Group Traceback (most recent call last):
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/mcp/server/stdio.py", line 88, in stdio_server
+    |     yield read_stream, write_stream
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/mcp/server/fastmcp/server.py", line 750, in run_stdio_async
+    |     await self._mcp_server.run(
+    |     ...<3 lines>...
+    |     )
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/mcp/server/lowlevel/server.py", line 649, in run
+    |     async with AsyncExitStack() as stack:
+    |                ~~~~~~~~~~~~~~^^
+    |   File "/opt/anaconda3/lib/python3.13/contextlib.py", line 768, in __aexit__
+    |     raise exc
+    |   File "/opt/anaconda3/lib/python3.13/contextlib.py", line 751, in __aexit__
+    |     cb_suppress = await cb(*exc_details)
+    |                   ^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/mcp/shared/session.py", line 238, in __aexit__
+    |     return await self._task_group.__aexit__(exc_type, exc_val, exc_tb)
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/opt/anaconda3/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 783, in __aexit__
+    |     raise BaseExceptionGroup(
+    |         "unhandled errors in a TaskGroup", self._exceptions
+    |     ) from None
+    | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+    +-+---------------- 1 ----------------
+      | Exception Group Traceback (most recent call last):
+      |   File "/opt/anaconda3/lib/python3.13/site-packages/mcp/server/lowlevel/server.py", line 666, in run
+      |     async with anyio.create_task_group() as tg:
+      |                ~~~~~~~~~~~~~~~~~~~~~~~^^
+      |   File "/opt/anaconda3/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 783, in __aexit__
+      |     raise BaseExceptionGroup(
+      |         "unhandled errors in a TaskGroup", self._exceptions
+      |     ) from None
+      | ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)
+      +-+---------------- 1 ----------------
+        | Traceback (most recent call last):
+        |   File "/opt/anaconda3/lib/python3.13/site-packages/mcp/server/lowlevel/server.py", line 689, in _handle_message
+        |     await self._handle_request(message, req, session, lifespan_context, raise_exceptions)
+        |   File "/opt/anaconda3/lib/python3.13/site-packages/mcp/server/lowlevel/server.py", line 774, in _handle_request
+        |     await message.respond(response)
+        |   File "/opt/anaconda3/lib/python3.13/site-packages/mcp/shared/session.py", line 134, in respond
+        |     await self._session._send_response(  # type: ignore[reportPrivateUsage]
+        |         request_id=self.request_id, response=response
+        |     )
+        |   File "/opt/anaconda3/lib/python3.13/site-packages/mcp/shared/session.py", line 349, in _send_response
+        |     await self._write_stream.send(session_message)
+        |   File "/opt/anaconda3/lib/python3.13/site-packages/anyio/streams/memory.py", line 249, in send
+        |     self.send_nowait(item)
+        |     ~~~~~~~~~~~~~~~~^^^^^^
+        |   File "/opt/anaconda3/lib/python3.13/site-packages/anyio/streams/memory.py", line 218, in send_nowait
+        |     raise ClosedResourceError
+        | anyio.ClosedResourceError
+        +------------------------------------
+2026-02-09 18:43:08,952 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-09 18:43:08,952 - mcp_tools - INFO - WORKSPACE_ROOT: /Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent
+2026-02-09 18:43:08,955 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-09 18:43:14,369 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts'}
+2026-02-09 18:43:17,290 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo'}
+2026-02-09 18:43:22,560 - mcp_tools - INFO - TOOL: read_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/init-artifact.sh'}
+2026-02-09 18:43:31,111 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'cd /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder && bash scripts/init-artifact.sh mcp-artifact', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent'}
+2026-02-09 18:43:31,111 - mcp_tools - INFO - Extended timeout (300s) for pattern: init-artifact.sh
+2026-02-09 18:43:31,111 - mcp_tools - INFO - EXEC SHELL: 'cd /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder && bash scripts/init-artifact.sh mcp-artifact' in '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent' (timeout=300s)
+2026-02-09 18:43:46,688 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-artifact'}
+2026-02-09 18:43:50,242 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-artifact/src'}
+2026-02-09 18:43:53,910 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-artifact/src/components'}
+2026-02-09 18:43:57,674 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-artifact/src/components/ui'}
+2026-02-09 18:44:04,420 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo'}
+2026-02-09 18:44:06,412 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/mcp-demo'}
+2026-02-09 18:44:16,149 - mcp_tools - INFO - TOOL: read_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-artifact/src/App.tsx'}
+2026-02-09 18:53:02,903 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-artifact/src'}
+2026-02-09 18:55:25,767 - mcp_tools - INFO - TOOL: write_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-artifact/src/App.tsx', 'content_len': 791}
+2026-02-09 18:57:04,279 - mcp_tools - INFO - TOOL: write_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-artifact/src/App.tsx', 'content_len': 13777}
+2026-02-09 18:57:11,691 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'cd /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-artifact && pnpm dev --host 0.0.0.0 --port 5173', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent'}
+2026-02-09 18:57:11,692 - mcp_tools - INFO - EXEC SHELL: 'cd /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-artifact && pnpm dev --host 0.0.0.0 --port 5173' in '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent' (timeout=60s)
+2026-02-09 18:58:11,702 - mcp_tools - WARNING - TIMEOUT after 60s: cd /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/mcp-artifact && pnpm dev --host 0.0.0.0 --port 5173
+2026-02-09 18:58:17,641 - mcp_tools - INFO - TOOL: read_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/bundle-artifact.sh'}
+2026-02-09 21:11:32,873 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-09 21:11:32,873 - mcp_tools - INFO - WORKSPACE_ROOT: /Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent
+2026-02-09 21:11:32,875 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-09 21:11:49,786 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-09 21:11:49,787 - mcp_tools - INFO - WORKSPACE_ROOT: /Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent
+2026-02-09 21:11:49,789 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-09 21:12:00,228 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo'}
+2026-02-09 21:12:07,491 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills'}
+2026-02-09 21:12:14,942 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder'}
+2026-02-09 21:12:24,230 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts'}
+2026-02-09 21:12:28,885 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/mcp-demo'}
+2026-02-09 21:12:34,424 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/mcp-demo/src'}
+2026-02-09 21:12:39,805 - mcp_tools - INFO - TOOL: read_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/mcp-demo/src/App.tsx'}
+2026-02-09 21:13:01,727 - mcp_tools - INFO - TOOL: read_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/bundle-artifact.sh'}
+2026-02-09 21:13:13,033 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/mcp-demo'}
+2026-02-09 21:13:24,631 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'ls -la /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/mcp-demo/ | grep postcss', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent'}
+2026-02-09 21:13:24,632 - mcp_tools - INFO - EXEC SHELL: 'ls -la /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/mcp-demo/ | grep postcss' in '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent' (timeout=60s)
+2026-02-09 21:13:32,845 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/mcp-demo/src/assets'}
+2026-02-09 21:13:39,765 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'grep -r "/vite.svg\\|/public/" /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/mcp-demo/src/ 2>/dev/null || echo "No problematic asset paths found"', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent'}
+2026-02-09 21:13:39,765 - mcp_tools - INFO - EXEC SHELL: 'grep -r "/vite.svg\|/public/" /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/mcp-demo/src/ 2>/dev/null || echo "No problematic asset paths found"' in '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent' (timeout=60s)
+2026-02-09 21:13:51,072 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'grep -r "import.*from \'/" /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/mcp-demo/src/ 2>/dev/null || echo "No root-relative imports found"', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent'}
+2026-02-09 21:13:51,072 - mcp_tools - INFO - EXEC SHELL: 'grep -r "import.*from '/" /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/mcp-demo/src/ 2>/dev/null || echo "No root-relative imports found"' in '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent' (timeout=60s)
+2026-02-09 21:14:02,993 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'ls -la /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/mcp-demo/bundle.html /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/mcp-demo/src/App.tsx', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent'}
+2026-02-09 21:14:02,994 - mcp_tools - INFO - EXEC SHELL: 'ls -la /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/mcp-demo/bundle.html /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/mcp-demo/src/App.tsx' in '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent' (timeout=60s)
+2026-02-09 21:14:24,244 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'cd /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/mcp-demo && bash /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/bundle-artifact.sh 2>&1', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent'}
+2026-02-09 21:14:24,244 - mcp_tools - INFO - Extended timeout (300s) for pattern: bundle-artifact.sh
+2026-02-09 21:14:24,244 - mcp_tools - INFO - EXEC SHELL: 'cd /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/mcp-demo && bash /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/bundle-artifact.sh 2>&1' in '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent' (timeout=300s)
+2026-02-09 21:14:50,419 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'ls -la /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/mcp-demo/bundle.html', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent'}
+2026-02-09 21:14:50,419 - mcp_tools - INFO - EXEC SHELL: 'ls -la /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/mcp-demo/bundle.html' in '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent' (timeout=60s)
+2026-02-09 21:14:56,984 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'head -20 /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/mcp-demo/bundle.html', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent'}
+2026-02-09 21:14:56,984 - mcp_tools - INFO - EXEC SHELL: 'head -20 /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/mcp-demo/bundle.html' in '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent' (timeout=60s)
+2026-02-09 21:20:42,549 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-09 21:20:42,549 - mcp_tools - INFO - WORKSPACE_ROOT: /Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent
+2026-02-09 21:20:42,552 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-09 21:20:47,995 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts'}
+2026-02-09 21:20:47,999 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo'}
+2026-02-09 21:20:51,404 - mcp_tools - INFO - TOOL: read_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/init-artifact.sh'}
+2026-02-09 21:21:01,209 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'bash /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/init-artifact.sh mcp-artifact', 'cwd': '/Users/kentchiu/Documents/Github/open_memo'}
+2026-02-09 21:21:01,210 - mcp_tools - INFO - Extended timeout (300s) for pattern: init-artifact.sh
+2026-02-09 21:21:01,210 - mcp_tools - INFO - EXEC SHELL: 'bash /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/init-artifact.sh mcp-artifact' in '/Users/kentchiu/Documents/Github/open_memo' (timeout=300s)
+2026-02-09 21:21:29,069 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/mcp-artifact'}
+2026-02-09 21:21:33,762 - mcp_tools - INFO - TOOL: read_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/mcp-artifact/src/App.tsx'}
+2026-02-09 21:21:38,878 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/mcp-demo'}
+2026-02-09 21:21:41,803 - mcp_tools - INFO - TOOL: read_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/mcp-demo/src/App.tsx'}
+2026-02-09 21:21:52,809 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/mcp-artifact/src'}
+2026-02-09 21:37:06,923 - mcp_tools - INFO - TOOL: write_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/mcp-artifact/src/App.tsx', 'content_len': 13927}
+2026-02-09 21:37:30,213 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/mcp-artifact/src/assets'}
+2026-02-09 21:37:35,420 - mcp_tools - INFO - TOOL: read_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/mcp-artifact/src/App.css'}
+2026-02-09 21:37:40,367 - mcp_tools - INFO - TOOL: read_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/mcp-artifact/index.html'}
+2026-02-09 21:37:54,737 - mcp_tools - INFO - TOOL: write_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/mcp-artifact/.postcssrc', 'content_len': 45}
+2026-02-09 21:55:25,658 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'rm /Users/kentchiu/Documents/Github/open_memo/mcp-artifact/postcss.config.js', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/mcp-artifact'}
+2026-02-09 21:55:25,658 - mcp_tools - INFO - EXEC SHELL: 'rm /Users/kentchiu/Documents/Github/open_memo/mcp-artifact/postcss.config.js' in '/Users/kentchiu/Documents/Github/open_memo/mcp-artifact' (timeout=60s)
+2026-02-09 21:55:32,976 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'cd /Users/kentchiu/Documents/Github/open_memo/mcp-artifact && ls -la', 'cwd': '/Users/kentchiu/Documents/Github/open_memo'}
+2026-02-09 21:55:32,976 - mcp_tools - INFO - EXEC SHELL: 'cd /Users/kentchiu/Documents/Github/open_memo/mcp-artifact && ls -la' in '/Users/kentchiu/Documents/Github/open_memo' (timeout=60s)
+2026-02-09 21:55:40,147 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'cd /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder && bash scripts/bundle-artifact.sh', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder'}
+2026-02-09 21:55:40,147 - mcp_tools - INFO - Extended timeout (300s) for pattern: bundle-artifact.sh
+2026-02-09 21:55:40,147 - mcp_tools - INFO - EXEC SHELL: 'cd /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder && bash scripts/bundle-artifact.sh' in '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder' (timeout=300s)
+2026-02-09 21:55:49,169 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'cd /Users/kentchiu/Documents/Github/open_memo/mcp-artifact && bash /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/bundle-artifact.sh', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/mcp-artifact'}
+2026-02-09 21:55:49,169 - mcp_tools - INFO - Extended timeout (300s) for pattern: bundle-artifact.sh
+2026-02-09 21:55:49,169 - mcp_tools - INFO - EXEC SHELL: 'cd /Users/kentchiu/Documents/Github/open_memo/mcp-artifact && bash /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/bundle-artifact.sh' in '/Users/kentchiu/Documents/Github/open_memo/mcp-artifact' (timeout=300s)
+2026-02-09 21:56:07,170 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'head -50 /Users/kentchiu/Documents/Github/open_memo/mcp-artifact/bundle.html', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/mcp-artifact'}
+2026-02-09 21:56:07,170 - mcp_tools - INFO - EXEC SHELL: 'head -50 /Users/kentchiu/Documents/Github/open_memo/mcp-artifact/bundle.html' in '/Users/kentchiu/Documents/Github/open_memo/mcp-artifact' (timeout=60s)
+2026-02-09 21:57:04,967 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-09 21:57:04,967 - mcp_tools - INFO - WORKSPACE_ROOT: /Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent
+2026-02-09 21:57:04,970 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-09 21:57:16,244 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-09 21:57:16,244 - mcp_tools - INFO - WORKSPACE_ROOT: /Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent
+2026-02-09 21:57:16,246 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-09 21:57:26,133 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts'}
+2026-02-09 21:57:26,137 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo'}
+2026-02-09 21:57:35,778 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/mcp-demo'}
+2026-02-09 21:57:35,782 - mcp_tools - INFO - TOOL: read_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/init-artifact.sh'}
+2026-02-09 21:57:49,979 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/mcp-demo/src'}
+2026-02-09 21:57:49,984 - mcp_tools - INFO - TOOL: read_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/mcp-demo/README.md'}
+2026-02-09 21:57:57,493 - mcp_tools - INFO - TOOL: read_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/mcp-demo/src/App.tsx'}
+2026-02-09 21:57:57,497 - mcp_tools - INFO - TOOL: read_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/bundle-artifact.sh'}
+2026-02-09 21:58:17,583 - mcp_tools - INFO - TOOL: read_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/mcp-demo/.postcssrc'}
+2026-02-09 21:58:17,587 - mcp_tools - INFO - TOOL: read_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/mcp-demo/package.json'}
+2026-02-09 21:58:25,381 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/mcp-demo'}
+2026-02-09 22:14:05,968 - mcp_tools - INFO - TOOL: read_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/mcp-demo/.parcelrc'}
+2026-02-09 22:14:13,355 - mcp_tools - INFO - TOOL: read_file | Args: {'path': "/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/mcp-demo/index.html''"}
+2026-02-09 22:14:13,359 - mcp_tools - INFO - TOOL: read_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/mcp-demo/index.html'}
+2026-02-09 22:14:20,563 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': "cd /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/mcp-demo && rm -f index.html'' && pwd && ls -la index.html", 'cwd': '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent'}
+2026-02-09 22:14:26,673 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'cd /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/mcp-demo && rm -f "index.html\'\'"', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent'}
+2026-02-09 22:14:33,041 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'cd /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/mcp-demo && ls -la | grep index', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent'}
+2026-02-09 22:14:33,041 - mcp_tools - INFO - EXEC SHELL: 'cd /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/mcp-demo && ls -la | grep index' in '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent' (timeout=60s)
+2026-02-09 22:14:39,786 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'cd /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/mcp-demo && ls -la *index*', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent'}
+2026-02-09 22:14:39,786 - mcp_tools - INFO - EXEC SHELL: 'cd /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/mcp-demo && ls -la *index*' in '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent' (timeout=60s)
+2026-02-09 22:14:50,047 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'python3 -c "import os, shutil; os.chdir(\'/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/mcp-demo\'); files = [f for f in os.listdir(\'.\') if f.startswith(\'index.html\')]; print(\'Files to remove:\', [f for f in files if f != \'index.html\']); [os.remove(f) for f in files if f != \'index.html\']"', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent'}
+2026-02-09 22:14:50,047 - mcp_tools - INFO - EXEC SHELL: 'python3 -c "import os, shutil; os.chdir('/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/mcp-demo'); files = [f for f in os.listdir('.') if f.startswith('index.html')]; print('Files to remove:', [f for f in files if f != 'index.html']); [os.remove(f) for f in files if f != 'index.html']"' in '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent' (timeout=60s)
+2026-02-09 22:15:00,046 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'cd /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/mcp-demo && bash /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/bundle-artifact.sh 2>&1 | tail -50', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent'}
+2026-02-09 22:15:00,046 - mcp_tools - INFO - Extended timeout (300s) for pattern: bundle-artifact.sh
+2026-02-09 22:15:00,046 - mcp_tools - INFO - EXEC SHELL: 'cd /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/mcp-demo && bash /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/bundle-artifact.sh 2>&1 | tail -50' in '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent' (timeout=300s)
+2026-02-09 22:21:38,987 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'ls -lh /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/mcp-demo/bundle.html', 'cwd': '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent'}
+2026-02-09 22:21:38,987 - mcp_tools - INFO - EXEC SHELL: 'ls -lh /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/mcp-demo/bundle.html' in '/Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent' (timeout=60s)
+2026-02-09 22:21:46,595 - mcp_tools - INFO - TOOL: read_file | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/mcp-demo/bundle.html'}
+2026-02-09 22:34:37,030 - mcp_tools - INFO - TOOL: execute_command | Args: {'command': 'bash /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/init-artifact.sh mcp-artifact', 'cwd': '/Users/kentchiu/Documents/Github/open_memo'}
+2026-02-09 22:34:37,030 - mcp_tools - INFO - Extended timeout (300s) for pattern: init-artifact.sh
+2026-02-09 22:34:37,030 - mcp_tools - INFO - EXEC SHELL: 'bash /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/init-artifact.sh mcp-artifact' in '/Users/kentchiu/Documents/Github/open_memo' (timeout=300s)
+2026-02-09 22:39:37,037 - mcp_tools - WARNING - TIMEOUT after 300s: bash /Users/kentchiu/Documents/Github/open_memo/.agent/skills/web-artifacts-builder/scripts/init-artifact.sh mcp-artifact
+2026-02-09 22:40:01,301 - mcp_tools - INFO - TOOL: list_dir | Args: {'path': '/Users/kentchiu/Documents/Github/open_memo'}
+2026-02-09 23:31:37,161 - mcp_tools - INFO - Starting file-tools MCP server...
+2026-02-09 23:31:37,161 - mcp_tools - INFO - WORKSPACE_ROOT: /Users/kentchiu/Documents/Github/open_memo/mcp_skill_agent
+2026-02-09 23:31:37,166 - mcp_tools - INFO - Starting file-tools MCP server...

@@ -4,7 +4,7 @@
 
 set -e
 
-REPO_PATH="/Users/kentchiu/Documents/Github/open_memo"
+REPO_PATH="$HOME/.nanobot/workspace/openmemo"
 NANOBOT_CONTENT="$REPO_PATH/webapp/content/nanobot-status"
 
 # Sync nanobot data into webapp content
