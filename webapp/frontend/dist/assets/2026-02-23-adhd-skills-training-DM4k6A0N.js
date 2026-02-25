@@ -1,0 +1,27 @@
+import{j as e}from"./index-B2GV5NfK.js";const r={title:"Understanding ADHD Skills Training: The Interest-Based Nervous System",date:"2026-02-23",tags:["adhd","mental-health","skills","psychology","executive-function"],summary:"ADHD Skills Training is a structured approach to managing executive function challenges. Learn about the Sprint vs. Marathon concept and the four pillars of ADHD motivation."};function s(n){const t={em:"em",h1:"h1",h2:"h2",h3:"h3",hr:"hr",li:"li",p:"p",strong:"strong",table:"table",tbody:"tbody",td:"td",th:"th",thead:"thead",tr:"tr",ul:"ul",...n.components};return e.jsxs(e.Fragment,{children:[e.jsx(t.h1,{children:"Understanding ADHD Skills Training"}),`
+`,e.jsxs(t.p,{children:[e.jsx(t.strong,{children:"ADHD Skills Training"}),` is a structured, behavioral approach designed to help individuals manage the executive function challenges that come with ADHD. Unlike traditional "talk therapy," which focuses on processing emotions, skills training is highly practical—it's about building "scaffolds" for your brain to handle things like time management, organization, and emotional regulation.`]}),`
+`,e.jsxs(t.p,{children:["Regarding the specific concept of task engagement, you are likely referring to the ",e.jsx(t.strong,{children:'"Interest-Based Nervous System"'})," or the ",e.jsx(t.strong,{children:'"Interest-Difficulty Trade-off."'})]}),`
+`,e.jsx(t.hr,{}),`
+`,e.jsx(t.h2,{children:'The Concept: "The Sprint vs. The Marathon"'}),`
+`,e.jsx(t.p,{children:"The phenomenon where the brain is highly energized at the start but finds it increasingly difficult to continue is often attributed to how the ADHD brain processes dopamine and task salience."}),`
+`,e.jsx(t.h3,{children:"1. The Initial Spark (Novelty)"}),`
+`,e.jsxs(t.p,{children:['At the beginning of a task, the novelty and the "challenge" of something new trigger a release of dopamine. This provides the "fuel" or energy to start, often leading to a state of ',e.jsx(t.strong,{children:"Hyperfocus"}),"."]}),`
+`,e.jsx(t.h3,{children:"2. The Energy Slump (Executive Fatigue)"}),`
+`,e.jsx(t.p,{children:'Once the novelty wears off and the task becomes routine or "grinding," the ADHD brain struggles to self-regulate its effort. Without that initial dopamine spike, the brain perceives the task as physically and mentally painful to continue.'}),`
+`,e.jsx(t.h3,{children:'3. The "Wall of Awful"'}),`
+`,e.jsx(t.p,{children:"A term coined by ADHD coach Brendan Mahan, this describes the emotional barrier of shame, failure, and frustration that builds up every time you try to restart a task that has lost its initial energy."}),`
+`,e.jsx(t.hr,{}),`
+`,e.jsx(t.h2,{children:"Key Pillars of ADHD Skills Training"}),`
+`,e.jsx(t.p,{children:"Programs based on the models of experts like Mary Solanto or Russell Barkley typically focus on these core areas:"}),`
+`,e.jsxs(t.table,{children:[e.jsx(t.thead,{children:e.jsxs(t.tr,{children:[e.jsx(t.th,{style:{textAlign:"left"},children:"Skill Category"}),e.jsx(t.th,{style:{textAlign:"left"},children:"Focus Area"})]})}),e.jsxs(t.tbody,{children:[e.jsxs(t.tr,{children:[e.jsx(t.td,{style:{textAlign:"left"},children:e.jsx(t.strong,{children:"Externalizing Time"})}),e.jsx(t.td,{style:{textAlign:"left"},children:'Using physical timers and "time-blocking" because the internal clock is often unreliable.'})]}),e.jsxs(t.tr,{children:[e.jsx(t.td,{style:{textAlign:"left"},children:e.jsx(t.strong,{children:"Breaking the Inertia"})}),e.jsx(t.td,{style:{textAlign:"left"},children:`Learning to break a 10-step project into "micro-steps" so small they don't trigger the "it's too hard" response.`})]}),e.jsxs(t.tr,{children:[e.jsx(t.td,{style:{textAlign:"left"},children:e.jsx(t.strong,{children:"Energy Mapping"})}),e.jsx(t.td,{style:{textAlign:"left"},children:'Identifying when your brain is naturally most "energized" and scheduling the hardest (least novel) tasks for those windows.'})]}),e.jsxs(t.tr,{children:[e.jsx(t.td,{style:{textAlign:"left"},children:e.jsx(t.strong,{children:"Emotional Regulation"})}),e.jsx(t.td,{style:{textAlign:"left"},children:'Managing the frustration that hits when the "energy" disappears halfway through a task.'})]})]})]}),`
+`,e.jsx(t.hr,{}),`
+`,e.jsx(t.h2,{children:'The ICNU Framework: Why the "Harder" Phase Happens'}),`
+`,e.jsxs(t.p,{children:["The underlying reason tasks become harder is that the ADHD brain relies on the ",e.jsx(t.strong,{children:"ICNU"})," framework to engage. A task must have at least one of these elements to sustain attention:"]}),`
+`,e.jsxs(t.ul,{children:[`
+`,e.jsxs(t.li,{children:[e.jsx(t.strong,{children:"I"}),"nterest"]}),`
+`,e.jsxs(t.li,{children:[e.jsx(t.strong,{children:"C"}),"hallenge / Competition"]}),`
+`,e.jsxs(t.li,{children:[e.jsx(t.strong,{children:"N"}),"ovelty"]}),`
+`,e.jsxs(t.li,{children:[e.jsx(t.strong,{children:"U"}),"rgency"]}),`
+`]}),`
+`,e.jsxs(t.p,{children:['When a task transitions from "Novel" to "Routine," it loses its ICNU status. ',e.jsx(t.strong,{children:"Skills training teaches you how to artificially inject one of those four elements back into the work to keep the engine running."})]}),`
+`,e.jsx(t.p,{children:e.jsx(t.em,{children:'Would you like me to look for specific ADHD coaching frameworks or practitioners that focus on these "Interest-Based" strategies?'})})]})}function l(n={}){const{wrapper:t}=n.components||{};return t?e.jsx(t,{...n,children:e.jsx(s,{...n})}):s(n)}export{l as default,r as frontmatter};
