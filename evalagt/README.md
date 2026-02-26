@@ -19,8 +19,12 @@ Because both agents use the same python module namespace (`nanobot.*`), attempti
 From the root `openmemo` workspace directory, run:
 
 ```bash
-python evalagt/main.py
+python evalagt/main.py --dataset realkie
 ```
+
+**Options:**
+- `--dataset gaia`: Run the multi-step mathematical and file attachment reasoning tests (Requires HF Token).
+- `--dataset realkie`: Run the FCC Invoices JSON extraction tests (Public, no auth needed).
 
 The script will:
 1. Fetch the first 5 test queries from the GAIA Validation (Level 1) set.

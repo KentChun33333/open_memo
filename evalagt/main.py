@@ -2,8 +2,14 @@ import os
 import sys
 import json
 import subprocess
+import argparse
 from datasets import load_dataset
 from huggingface_hub import snapshot_download
+
+def setup_realkie_data():
+    """Downloads the RealKIE FCC Invoices dataset."""
+    dataset = load_dataset("amazon-agi/RealKIE-FCC-Verified", split="test")
+    return dataset, None
 
 def setup_gaia_data():
     """Downloads GAIA metadata and attachments."""
@@ -124,8 +130,12 @@ Output your evaluation in this exact JSON format:
     except Exception as e:
         return {"error": str(e), "winner": "Unknown"}
 
-async def async_main():
-    dataset, root_dir = setup_gaia_data()
+async def async_main(dataset_name: str):
+    if dataset_name == "gaia":
+        dataset, root_dir = setup_gaia_data()
+    else:
+        dataset, root_dir = setup_realkie_data()
+        
     results = []
     
     # We'll take the first 5 tasks to keep testing realistic time-wise
@@ -136,18 +146,25 @@ async def async_main():
     agent_b_dir = os.path.join(base_dir, "nanobot-2")
 
     for item in test_subset:
-        task_id = item['task_id']
-        question = item['Question']
-        gold_answer = item['Final answer']
+        if dataset_name == "gaia":
+            task_id = item['task_id']
+            question = item['Question']
+            gold_answer = item['Final answer']
+            
+            # Handle file attachments if they exist
+            attachment = None
+            if item.get('file_path'):
+                attachment = os.path.join(root_dir, item['file_path'])
+        else:
+            task_id = str(item['id'])
+            question = f"Extract the key information according to this JSON schema:\n{item['json_schema']}\n\nDocument Text:\n{item['text'][:2000]}"
+            gold_answer = item['json_response']
+            attachment = None
+            
         print(f"\nTask: {task_id}")
         print(f"Question: {question}")
         print(f"Gold Answer: {gold_answer}")
         
-        # Handle file attachments if they exist
-        attachment = None
-        if item.get('file_path'):
-            attachment = os.path.join(root_dir, item['file_path'])
-
         print(f"\n==============================")
         print(f"Running Task: {task_id}")
         print(f"==============================")
@@ -179,8 +196,17 @@ async def async_main():
     print("\nBenchmark complete! Results saved to benchmark_results.json")
 
 def main():
+    parser = argparse.ArgumentParser(description="Run the evaluation framework.")
+    parser.add_argument(
+        "--dataset",
+        choices=["gaia", "realkie"],
+        default="gaia",
+        help="Choose the dataset to evaluate against."
+    )
+    args = parser.parse_args()
+    
     import asyncio
-    asyncio.run(async_main())
+    asyncio.run(async_main(args.dataset))
 
 if __name__ == "__main__":
     main()
