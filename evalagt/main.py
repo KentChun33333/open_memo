@@ -74,7 +74,7 @@ def run_agent_architecture(agent_dir, question, file_path):
             "trajectory": []
         }
 
-async def llm_judge(question, gold_answer, res_a, res_b):
+async def llm_judge(dataset_name, gold_answer, res_a, res_b):
     """Uses LLM to evaluate which agent performed better."""
     # Inject nanobot-2 into sys.path to access its local config provider
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -85,11 +85,9 @@ async def llm_judge(question, gold_answer, res_a, res_b):
     config = load_config()
     provider = _make_provider(config)
 
-    sys_prompt = "You are an expert AI evaluator grading two AI Agents on their execution traces on the GAIA benchmark."
+    sys_prompt = f"You are an expert AI evaluator grading two AI Agents on their execution traces on the {dataset_name} benchmark."
     
     human_prompt = f"""
-### Task Description:
-{question}
 
 ### Correct Gold Answer:
 {gold_answer}
@@ -176,7 +174,7 @@ async def async_main(dataset_name: str):
         res_b = run_agent_architecture(agent_b_dir, question, attachment)
         
         print("Running LLM Judge...")
-        judge_res = await llm_judge(question, gold_answer, res_a, res_b)
+        judge_res = await llm_judge(dataset_name, gold_answer, res_a, res_b)
         
         print(f"Judge Verdict: {judge_res.get('winner')} - A:{judge_res.get('agent_a_score')} B:{judge_res.get('agent_b_score')}")
 
@@ -190,7 +188,7 @@ async def async_main(dataset_name: str):
         })
 
     # Save for LLM-as-a-Judge analysis
-    with open(os.path.join(base_dir, "evalagt", "benchmark_results.json"), "w") as f:
+    with open(os.path.join(base_dir, "evalagt", f"benchmark_results_{dataset_name}.json"), "w") as f:
         json.dump(results, f, indent=2)
         
     print("\nBenchmark complete! Results saved to benchmark_results.json")

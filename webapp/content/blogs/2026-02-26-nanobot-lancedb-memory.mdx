@@ -1,0 +1,71 @@
+---
+title: "Leveling Up Nanobot with LanceDB: A Hybrid Memory Architecture"
+date: "2026-02-26"
+author: "Kent Chiu"
+description: "How integrating LanceDB transformed Nanobot-2's memory from simple text files to a sophisticated, self-organizing hybrid retrieval system."
+tags: ["AI", "Nanobot", "LanceDB", "RAG", "Memory"]
+---
+
+# Leveling Up Nanobot with LanceDB: A Hybrid Memory Architecture
+
+When building personal, autonomous AI agents like **Nanobot**, memory is everything. If your agent can't remember a complex architectural decision made three days ago without reading an entire 10,000-line Markdown history, its utility hits a hard ceiling.
+
+Previously, Nanobot relied on a very simple memory system: everything was just appended to `HISTORY.md` and `MEMORY.md` text files. While easy to inspect, this strategy quickly suffers from context bloat and repetitive hallucinations.
+
+Today, we've completely overhauled **Nanobot-2's** cognitive architecture by replacing those static text files with **LanceDB**, a high-performance columnar database explicitly built for AI. Here is a deep dive into how LanceDB makes Nanobot objectively better, detailing the new memory structures and how the agent actually uses them in practice.
+
+## Why LanceDB? The End of Context Poisoning
+
+LLMs suffer from "context poisoning"—if you feed an LLM too much irrelevant information, its attention mechanism degrades, and it hallucinates or forgets the main instruction. 
+
+By migrating to LanceDB, Nanobot-2 now possesses a **Hybrid Search Engine**. Instead of injecting the entire history log into the prompt, the agent runs a blazing-fast background query merging:
+1. **Semantic Vector Search**: Powered by local Ollama embeddings (`embeddinggemma`), understanding the *meaning* of the agent's problem.
+2. **BM25 Sparse Retrieval**: Using Tantivy for exact keyword matching, ensuring the agent retrieves precise code snippets or URLs without them getting lost in vector approximations.
+
+This means Nanobot-2 finds the needle in the haystack instantly, drastically reducing token usage and keeping the conversational context pure.
+
+## The New Memory Structure: Structured, Not Flat
+
+Instead of dumping raw text into a file, every thought, observation, and historical interaction is now strictly structured using a Pydantic `LanceModel` and saved locally in `workspace/memory/memory.lance`.
+
+The new schema looks like this:
+
+```python
+class MemoryItem(LanceModel):
+    id: str
+    vector: Vector(2048) # Automatically embedded via Ollama (embeddinggemma)
+    text: str
+    memory_type: str     # Categorizes memory: "long_term", "conversation", "observation"
+    scope: str           # Isolates memory (e.g., "global" vs "project_x")
+    timestamp: datetime
+```
+
+### The Power of `memory_type` and `scope`
+- **Memory Type Distinctions**: The agent can differentiate between a fleeting conversational comment and a hard-coded architectural rule.
+- **Multi-Scope Isolation**: If I switch Nanobot to work on my "OpenMemo" webapp, it won't accidentally hallucinate memory strings from my "Personal Finance" scripts.
+
+## Usage Scenarios: How Nanobot Uses Its New Memory
+
+We implemented a two-tiered architectural boundary—separating how the system automatically helps the agent, versus how the agent can help itself.
+
+### Scenario 1: Implicit Background RAG (The "Sixth Sense")
+
+Every time I send a message to Nanobot, it doesn't just read my message. Under the hood, the `ContextBuilder` intercepts my message and pipes it directly into the LanceDB `search_memory()` engine. 
+
+LanceDB fetches the **Top 3 most relevant historical snippets** and quietly injects them into the agent's System Prompt before it even starts generating a response. 
+
+**Result**: 
+*   **User**: "Fix the database error we talked about yesterday."
+*   **Nanobot**: *Already possesses the exact snippet from yesterday's log injected into its context.* Nanobot proceeds to fix the error instantly, without needing a single turn to "search" for the error.
+
+### Scenario 2: Explicit Memory Deep Dives (The "Library")
+
+Sometimes, the Top 3 implicit snippets aren't enough. If Nanobot needs to audit a long-term trend or explicitly write a new, unbreakable rule, it uses its new **Explicit Memory Skill**.
+
+Through the `skills/memory/SKILL.md` tool interface, Nanobot can:
+1.  **Deep Search**: Actively execute a Python snippet to query LanceDB for the last 50 occurrences of a specific variable name to track its mutation history.
+2.  **Force Memorization**: If Nanobot solves a brutal 3-hour bug, it can forcefully execute `write_long_term()` to commit the solution to the database, ensuring it never makes the same mistake again.
+
+## Conclusion
+
+Migrating to LanceDB has transformed Nanobot-2 from a reactive script-runner into an agent with persistent, efficient, and isolated cognitive recall. By pairing local embeddings (`embeddinggemma` via Ollama) with LanceDB's Zero-Copy columnar format, Nanobot now commands an enterprise-grade memory store while remaining entirely local, private, and blazing fast.
