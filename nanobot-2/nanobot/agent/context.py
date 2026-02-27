@@ -25,12 +25,14 @@ class ContextBuilder:
         self.memory = MemoryStore(workspace)
         self.skills = SkillsLoader(workspace)
     
-    def build_system_prompt(self, skill_names: list[str] | None = None, query: str | None = None) -> str:
+    def build_system_prompt(self, skill_names: list[str] | None = None, query: str | None = None, filters: dict[str, Any] | None = None) -> str:
         """
         Build the system prompt from bootstrap files, memory, and skills.
         
         Args:
             skill_names: Optional list of skills to include.
+            query: Optional query for memory search.
+            filters: Optional D-RAG filters.
         
         Returns:
             Complete system prompt.
@@ -46,7 +48,7 @@ class ContextBuilder:
             parts.append(bootstrap)
         
         # Memory context (Implicit RAG)
-        memory = self.memory.get_memory_context(query=query)
+        memory = self.memory.get_memory_context(query=query, filters=filters)
         if memory:
             parts.append(f"# Memory\n\n{memory}")
         
@@ -134,6 +136,7 @@ To recall past events, grep {workspace_path}/memory/HISTORY.md"""
         media: list[str] | None = None,
         channel: str | None = None,
         chat_id: str | None = None,
+        filters: dict[str, Any] | None = None,
     ) -> list[dict[str, Any]]:
         """
         Build the complete message list for an LLM call.
@@ -145,6 +148,7 @@ To recall past events, grep {workspace_path}/memory/HISTORY.md"""
             media: Optional list of local file paths for images/media.
             channel: Current channel (telegram, feishu, etc.).
             chat_id: Current chat/user ID.
+            filters: Optional metadata D-RAG filters.
 
         Returns:
             List of messages including system prompt.
@@ -152,7 +156,7 @@ To recall past events, grep {workspace_path}/memory/HISTORY.md"""
         messages = []
 
         # System prompt with implicit RAG based on current message
-        system_prompt = self.build_system_prompt(skill_names, query=current_message)
+        system_prompt = self.build_system_prompt(skill_names, query=current_message, filters=filters)
         if channel and chat_id:
             system_prompt += f"\n\n## Current Session\nChannel: {channel}\nChat ID: {chat_id}"
         messages.append({"role": "system", "content": system_prompt})

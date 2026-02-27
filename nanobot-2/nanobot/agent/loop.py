@@ -72,6 +72,9 @@ class AgentLoop:
         self.context = ContextBuilder(workspace)
         self.sessions = session_manager or SessionManager(workspace)
         self.tools = ToolRegistry()
+        from nanobot.agent.ddl import AutonomousDDLManager, SymbolicExtractor
+        self.ddl_manager = AutonomousDDLManager()
+        self.symbolic_extractor = SymbolicExtractor(provider, self.model)
         self.subagents = SubagentManager(
             provider=provider,
             workspace=workspace,
@@ -303,12 +306,19 @@ If NOT resolved: What is your next planned step? Have you verified the current s
             asyncio.create_task(self._consolidate_memory(session))
 
         self._set_tool_context(msg.channel, msg.chat_id)
+
+        active_dims = self.ddl_manager.optimized_dimensions
+        filters = {}
+        if active_dims:
+            filters = await self.symbolic_extractor.extract_filters(msg.content, active_dims)
+
         initial_messages = self.context.build_messages(
             history=session.get_history(max_messages=self.memory_window),
             current_message=msg.content,
             media=msg.media if msg.media else None,
             channel=msg.channel,
             chat_id=msg.chat_id,
+            filters=filters,
         )
         final_content, tools_used = await self._run_agent_loop(initial_messages)
 
@@ -352,11 +362,18 @@ If NOT resolved: What is your next planned step? Have you verified the current s
         session_key = f"{origin_channel}:{origin_chat_id}"
         session = self.sessions.get_or_create(session_key)
         self._set_tool_context(origin_channel, origin_chat_id)
+
+        active_dims = self.ddl_manager.optimized_dimensions
+        filters = {}
+        if active_dims:
+            filters = await self.symbolic_extractor.extract_filters(msg.content, active_dims)
+
         initial_messages = self.context.build_messages(
             history=session.get_history(max_messages=self.memory_window),
             current_message=msg.content,
             channel=origin_channel,
             chat_id=origin_chat_id,
+            filters=filters,
         )
         final_content, _ = await self._run_agent_loop(initial_messages)
 
@@ -445,10 +462,27 @@ Respond with ONLY valid JSON, no markdown fences."""
                 return
 
             if entry := result.get("history_entry"):
-                memory.append_history(entry)
+                metadata = await self.symbolic_extractor.extract_metadata(entry)
+                if metadata:
+                    promoted = self.ddl_manager.analyze_batch([metadata])
+                    if promoted:
+                        asyncio.create_task(self._backfill_schema(promoted))
+                    filtered_meta = self.ddl_manager.filter_valid_dimensions(metadata)
+                    memory.append_history(entry, metadata=filtered_meta)
+                else:
+                    memory.append_history(entry)
+
             if update := result.get("memory_update"):
                 if update != current_memory:
-                    memory.write_long_term(update)
+                    metadata = await self.symbolic_extractor.extract_metadata(update)
+                    if metadata:
+                        promoted = self.ddl_manager.analyze_batch([metadata])
+                        if promoted:
+                            asyncio.create_task(self._backfill_schema(promoted))
+                        filtered_meta = self.ddl_manager.filter_valid_dimensions(metadata)
+                        memory.write_long_term(update, metadata=filtered_meta)
+                    else:
+                        memory.write_long_term(update)
 
             if archive_all:
                 session.last_consolidated = 0
@@ -487,3 +521,59 @@ Respond with ONLY valid JSON, no markdown fences."""
         
         response = await self._process_message(msg, session_key=session_key)
         return response.content if response else ""
+
+    async def _backfill_schema(self, new_dimensions: list[str]) -> None:
+        """
+        Background Daemon: Retroactively apply new D-RAG Dimensions to historical vectors.
+        Uses Timestamp Watermarks to safely resume work without infinite loops.
+        """
+        import time
+        import pandas as pd
+        memory = MemoryStore(self.workspace)
+        if not hasattr(memory, 'get_records_for_backfill') or memory.table is None:
+            return
+            
+        logger.info(f"Starting async schema backfill for new dimensions: {new_dimensions}")
+        
+        for dim in new_dimensions:
+            # 1. Fetch bounds
+            promotion_ts = self.ddl_manager.dimension_promotion_times.get(dim, time.time())
+            watermark_ts = memory.watermarks.get(dim, 0.0)
+            
+            while True:
+                # 2. Fetch raw untagged records bounding the watermark
+                # Process in small chunks to respect LLM API limits
+                records = memory.get_records_for_backfill(dim, promotion_ts, watermark_ts, limit=20)
+                if not records:
+                    break
+                    
+                max_ts_in_batch = watermark_ts
+                
+                # 3. Batch LLM Processing
+                for rec in records:
+                    text = rec.get("text", "")
+                    doc_id = rec.get("id")
+                    
+                    if not text or not doc_id:
+                        continue
+                        
+                    # Evaluate the old block against the new schema dimension
+                    extracted_tags = await self.symbolic_extractor.extract_metadata(text)
+                    
+                    # Update LanceDB if the LLM explicitly returns the new dimension
+                    val = extracted_tags.get(dim)
+                    if val is not None:
+                        memory.update_memory_metadata(doc_id, {dim: val})
+                        
+                    # Track highest timestamp parsed
+                    rec_ts_float = pd.to_datetime(rec["timestamp"]).timestamp()
+                    max_ts_in_batch = max(max_ts_in_batch, rec_ts_float)
+                
+                # 4. Advance and save the Watermark so we definitively never process these again
+                watermark_ts = max_ts_in_batch + 0.0001
+                memory.save_watermark(dim, watermark_ts)
+                
+                # Gentle backoff between batches
+                await asyncio.sleep(2)
+                
+        logger.info(f"Schema backfill complete for {new_dimensions}.")

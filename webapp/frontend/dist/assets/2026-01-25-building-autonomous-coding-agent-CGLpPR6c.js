@@ -1,0 +1,46 @@
+import{j as e}from"./index-DL95azgn.js";const s={title:"Building an Autonomous Coding Agent",date:"2026-01-25",tags:["architecture","agent","analysis"],summary:"An analysis report on agent architecture."};function a(n){const t={annotation:"annotation",code:"code",li:"li",math:"math",mo:"mo",mrow:"mrow",ol:"ol",p:"p",pre:"pre",semantics:"semantics",span:"span",...n.components};return e.jsxs(e.Fragment,{children:[e.jsxs(t.p,{children:[`This technical report outlines the architecture for building a high-autonomy coding agent similar to Claude Code (Anthropic's agentic CLI) or Antigravity (a reference to "proactive" agent IDEs like Cursor/Windsurf or Google's internal tools).The core differentiator of these systems is that they move beyond "autocomplete" to a Plan `,e.jsxs(t.span,{className:"katex",children:[e.jsx(t.span,{className:"katex-mathml",children:e.jsx(t.math,{xmlns:"http://www.w3.org/1998/Math/MathML",children:e.jsxs(t.semantics,{children:[e.jsx(t.mrow,{children:e.jsx(t.mo,{children:"→"})}),e.jsx(t.annotation,{encoding:"application/x-tex",children:"\\to"})]})})}),e.jsx(t.span,{className:"katex-html","aria-hidden":"true",children:e.jsxs(t.span,{className:"base",children:[e.jsx(t.span,{className:"strut",style:{height:"0.3669em"}}),e.jsx(t.span,{className:"mrel",children:"→"})]})})]})," Act ",e.jsxs(t.span,{className:"katex",children:[e.jsx(t.span,{className:"katex-mathml",children:e.jsx(t.math,{xmlns:"http://www.w3.org/1998/Math/MathML",children:e.jsxs(t.semantics,{children:[e.jsx(t.mrow,{children:e.jsx(t.mo,{children:"→"})}),e.jsx(t.annotation,{encoding:"application/x-tex",children:"\\to"})]})})}),e.jsx(t.span,{className:"katex-html","aria-hidden":"true",children:e.jsxs(t.span,{className:"base",children:[e.jsx(t.span,{className:"strut",style:{height:"0.3669em"}}),e.jsx(t.span,{className:"mrel",children:"→"})]})})]}),' Observe loop.Technical Report: Building an Autonomous Coding AgentObjective: Architect a system capable of long-horizon tasks, stateful memory, and procedural skill execution (skill.md).1. System Architecture: The "Loop"Unlike a chatbot, an agent needs a recursive runtime loop. The standard architecture for state-of-the-art agents (like SWE-agent or OpenHands) consists of three components:The Brain (LLM): Generates thoughts and tool calls (JSON/Function Calling).The Runtime (Sandboxed Environment): A Docker container where bash, python, and git commands run.The State Manager (The "OS"): A control loop that manages memory, task lists, and parsing.High-Level Control Loop (Python Pseudo-code)']}),`
+`,e.jsx(t.pre,{children:e.jsx(t.code,{className:"language-python",children:`class AgentRuntime:
+    def run_loop(self, user_goal):
+        state = State(goal=user_goal, task_queue=[], memory=[])
+
+        while not state.is_finished:
+            # 1. Observe: Read terminal output, file content, and current task
+            context = build_context(state)
+            
+            # 2. Think: LLM generates a "Thought" and "Action"
+            response = llm.generate(context)
+            
+            # 3. Act: Execute tool (run script, edit file)
+            tool_output = sandbox.execute(response.action)
+            
+            # 4. Update: Update memory and task list based on output
+            state.update(tool_output)
+            
+            # 5. Reflection (Crucial for "Anti-Gravity" behavior)
+            if response.error or tool_output.exit_code != 0:
+                state.trigger_hook("on_error")
+`})}),`
+`,e.jsxs(t.ol,{start:"2",children:[`
+`,e.jsx(t.li,{children:'Implementation Deep DiveTopic 1: Executing Long Procedural Skills (skill.md)The goal is to let an agent read a Markdown file (e.g., deploy_SOP.md) and execute it step-by-step without hallucinating that it finished early.Mechanism: The "SOP Walker"Do not feed the whole file to the LLM and hope it remembers. You must parse the Markdown into a structured object (Abstract Syntax Tree) and feed it one "Block" at a time.Step A: Parse the skill.mdUse a Markdown parser to split the file by headers (##).'}),`
+`]}),`
+`,e.jsx(t.pre,{children:e.jsx(t.code,{className:"language-markdown",children:`## Step 1: Install Dependencies
+Run \`npm install\` and check for errors.
+
+## Step 2: Configure DB
+
+Edit \`.env\` file...
+`})}),`
+`,e.jsxs(t.p,{children:["Parsed Object: ",e.jsx(t.code,{children:'[{id: 1, title: "Install...", content: "..."}, {id: 2, ...}]'})]}),`
+`,e.jsx(t.p,{children:`Step B: The Injection PromptIn the system prompt, dynamically inject only the current step and the previous step's result.System Prompt Template:"You are following a strict procedure defined in skill.md.Current Status: Completed Step 1 (Success).ACTIVE GOAL: Execute Step 2: Configure DB.Instructions: Read the artifact data.json generated in Step 1. Modify .env as described."Step C: Artifact HandoffIf Step 1 generates a file, the Agent Runtime must detect this (via file watcher or explicit output) and explicitly add the path of that artifact to the prompt for Step 2.Topic 2: Avoiding "Blindness" (The Planner Pattern)"Blindness" occurs when the agent acts without knowing the global state. To fix this, you must enforce a Dual-State Memory:Conversation History: (The chat logs).The Plan Object: A structured JSON that persists outside the context window.Enforcement Strategy: Structured Output EnforcementForce the LLM to return a JSON structure every single turn, not just text.`}),`
+`,e.jsx(t.pre,{children:e.jsx(t.code,{className:"language-json",children:`// The required output schema for EVERY turn
+{
+  "thought": "I have finished installing npm packages. Now I need to run the tests.",
+  "task_list": [
+    {"id": 1, "task": "npm install", "status": "done"},
+    {"id": 2, "task": "run tests", "status": "active"},  // <-- The Agent MUST update this
+    {"id": 3, "task": "commit changes", "status": "pending"}
+  ],
+  "next_action": "run_terminal_command('npm test')"
+}
+`})}),`
+`,e.jsx(t.p,{children:`How to implement:Use Pydantic (Python) or Zod (JS) with your LLM provider's "Structured Output" mode (e.g., OpenAI response_format, Anthropic Tool use).The Guardrail: If the LLM tries to execute a tool without updating the task_list, the Runtime rejects the request and sends a system message: "Error: You must update the task list status before acting."Topic 3: Memory Management (Sub-agents & Hooks)Infinite context windows are expensive and slow. You need a "Context Compressor."A. The "Supervisor" Pattern (Sub-agents)Instead of one agent doing everything, use a "Supervisor" model (cheap, fast) to manage memory for the "Worker" model (smart, expensive).Worker: doing the coding. Context fills up.Supervisor Hook: Triggered when context > 20k tokens.Action: The Supervisor reads the last 50 turns.Output: Creates a summary: "User asked for feature X. We edited file Y and Z. Current error is 'ImportError'."Reset: The Worker's context is wiped and replaced with just this summary + the active file.B. Event HooksYou need "Middleware" in your agent loop.on_file_write:Trigger: Agent saves a file.Hook Action: Automatically run a Linter/Syntax Checker.Feedback: If syntax fails, intercept the success message and instead return: "File saved, but syntax error on line 10. Fix immediately."on_tool_error:Trigger: Bash command fails 3 times in a row.Hook Action: Inject a "Hint" into the context. "You have failed 3 times. Stop and read the file content again before trying."3. Recommended Tech Stack (Open Source)If you are building this today, do not start from scratch. Use these libraries which implement the patterns above:ComponentRecommended ToolWhy?OrchestrationLangGraph (Python/JS)Best for defining the "Cyclic Graph" (Loop) and managing state/memory persistence.SandboxingE2B or DaytonaProvides secure cloud implementations of the runtime (Docker containers for agents).Agent FrameworkOpenHands (formerly OpenDevin)The closest open-source equivalent to "Antigravity". Inspect their AgentController class.ProtocolMCP (Model Context Protocol)Use Anthropic's MCP to standardize how your agent reads files and connects to databases.4. Implementation Guidelines SummaryDon't use raw loops: Use a State Graph. Define nodes for Plan, Act, Reflect.The "Plan" is a variable: Maintain a global_plan variable that is passed into the prompt every time. Do not rely on the LLM scrolling up to find it.Read-Only Memory (ROM): Implement a CLAUDE.md or project_rules.md file that is always appended to the system prompt (or loaded into the KV cache) containing the "Soul" of the agent (coding style, forbidden libraries).The "Skill" Runner: Treat .md files as code. Write a regex parser to extract code blocks from skill.md and verify they run successfully before serving the next chunk of text to the LLM.`})]})}function r(n={}){const{wrapper:t}=n.components||{};return t?e.jsx(t,{...n,children:e.jsx(a,{...n})}):a(n)}export{r as default,s as frontmatter};

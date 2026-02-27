@@ -44,6 +44,10 @@ class MemoryStore:
         self.legacy_memory_file = self.memory_dir / "MEMORY.md"
         self.legacy_history_file = self.memory_dir / "HISTORY.md"
         
+        # Schema evolution backfill state
+        self.watermarks_file = self.memory_dir / "backfill_watermarks.json"
+        self._load_watermarks()
+        
         self.table = None
         if LANCEDB_AVAILABLE:
             try:
@@ -67,9 +71,9 @@ class MemoryStore:
             return self.legacy_memory_file.read_text(encoding="utf-8")
         return ""
 
-    def add_memory(self, text: str, memory_type: str, scope: str = "global") -> None:
-        """Add a new memory item to LanceDB."""
-        if not text.strip() or not self.table:
+    def add_memory(self, text: str, memory_type: str, scope: str = "global", metadata: dict | None = None) -> None:
+        """Add a new memory item to LanceDB with dynamic metadata columns."""
+        if not text.strip() or self.table is None:
             return
             
         item = {
@@ -80,8 +84,23 @@ class MemoryStore:
             "timestamp": datetime.now(),
             "is_valid": True
         }
+        
+        if metadata:
+            for k, v in metadata.items():
+                item[k] = str(v)
+
         try:
+            current_columns = self.table.schema.names
+            new_columns = {}
+            for k in item.keys():
+                if k not in current_columns:
+                    new_columns[k] = "''"  # default empty string syntax
+            
+            if new_columns:
+                self.table.add_columns(new_columns)
+
             self.table.add([item])
+            print("Successfully added item!")
             # Update FTS index if Tantivy is available
             try:
                 self.table.create_fts_index("text", replace=True)
@@ -89,31 +108,47 @@ class MemoryStore:
                 pass
         except Exception as e:
             print(f"Failed to add to LanceDB: {e}")
+            import traceback
+            traceback.print_exc()
 
-    def write_long_term(self, content: str) -> None:
+    def write_long_term(self, content: str, metadata: dict | None = None) -> None:
         """Legacy compatibility - writes to LanceDB as long_term memory."""
-        self.add_memory(content, memory_type="long_term")
+        self.add_memory(content, memory_type="long_term", metadata=metadata)
         # Keep legacy file updated just in case
         if content.strip():
             self.legacy_memory_file.write_text(content, encoding="utf-8")
 
-    def append_history(self, entry: str) -> None:
+    def append_history(self, entry: str, metadata: dict | None = None) -> None:
         """Legacy compatibility - writes to LanceDB as conversation history."""
-        self.add_memory(entry, memory_type="conversation")
+        self.add_memory(entry, memory_type="conversation", metadata=metadata)
         # Keep legacy file updated
         with open(self.legacy_history_file, "a", encoding="utf-8") as f:
             f.write(entry.rstrip() + "\n\n")
 
-    def search_memory(self, query: str, limit: int = 3) -> list[dict]:
-        """Perform Hybrid Search (Vector + BM25) on LanceDB."""
-        if not self.table:
+    def search_memory(self, query: str, limit: int = 3, filters: dict | None = None) -> list[dict]:
+        """Perform Hybrid Search (Vector + BM25) on LanceDB with D-RAG Subspace Filtering."""
+        if self.table is None:
             return []
+            
+        where_clauses = ["is_valid = true"]
+        if filters:
+            for k, v in filters.items():
+                if k in self.table.schema.names:
+                    # Short-term fallback: allow strict matches OR empty strings OR nulls
+                    # This guarantees we don't drop old documents when a schema evolves under them
+                    where_clauses.append(f"({k} = '{v}' OR {k} = '')")
+        
+        where_stmt = " AND ".join(where_clauses)
             
         if not query:
             try:
                 df = self.table.to_pandas()
                 if not df.empty:
                     df = df[df["is_valid"] == True]
+                    if filters:
+                        for k, v in filters.items():
+                            if k in df.columns:
+                                df = df[df[k] == str(v)]
                     df = df.sort_values(by="timestamp", ascending=False).head(limit)
                     return df.to_dict(orient="records")
             except Exception:
@@ -122,12 +157,12 @@ class MemoryStore:
             
         try:
             # Attempt Hybrid Search (requires tantivy to be properly indexed)
-            res = self.table.search(query, query_type="hybrid").where("is_valid = true").limit(limit).to_pandas()
+            res = self.table.search(query, query_type="hybrid").where(where_stmt).limit(limit).to_pandas()
             return res.to_dict(orient="records")
         except Exception:
             try:
                 # Fallback to vector-only search if FTS fails
-                res = self.table.search(query).where("is_valid = true").limit(limit).to_pandas()
+                res = self.table.search(query).where(where_stmt).limit(limit).to_pandas()
                 return res.to_dict(orient="records")
             except Exception:
                 return []
@@ -137,7 +172,7 @@ class MemoryStore:
         Soft-delete memories by their ID or type to resolve context contamination without removing the negative constraint.
         Returns the number of rows invalidated.
         """
-        if not self.table:
+        if self.table is None:
             return 0
             
         try:
@@ -153,7 +188,7 @@ class MemoryStore:
             
         return 0
 
-    def get_memory_context(self, query: Optional[str] = None) -> str:
+    def get_memory_context(self, query: Optional[str] = None, filters: Optional[dict] = None) -> str:
         """Retrieve the most relevant context for the current query/state."""
         # 1. Always include Long Term core facts (legacy or active)
         long_term = self.read_long_term()
@@ -163,7 +198,7 @@ class MemoryStore:
             
         # 2. Get dynamic Implicit RAG context from LanceDB based on user query
         if query and self.table:
-            results = self.search_memory(query, limit=3)
+            results = self.search_memory(query, limit=3, filters=filters)
             if results:
                 mem_texts = []
                 for r in results:
@@ -173,3 +208,63 @@ class MemoryStore:
                 parts.append("## Relevant Retrieved Memories\n" + "\n".join(mem_texts))
                 
         return "\n\n".join(parts) if parts else ""
+
+    def _load_watermarks(self) -> None:
+        import json
+        if self.watermarks_file.exists():
+            try:
+                self.watermarks = json.loads(self.watermarks_file.read_text(encoding="utf-8"))
+            except Exception:
+                self.watermarks = {}
+        else:
+            self.watermarks = {}
+
+    def save_watermark(self, dimension: str, timestamp_val: float) -> None:
+        import json
+        self.watermarks[dimension] = timestamp_val
+        self.watermarks_file.write_text(json.dumps(self.watermarks), encoding="utf-8")
+
+    def get_records_for_backfill(self, dimension: str, promotion_ts: float, watermark_ts: float, limit: int = 50) -> list[dict]:
+        """Fetch up to `limit` raw untagged records bounding the watermark period."""
+        if self.table is None or dimension not in self.table.schema.names:
+            return []
+            
+        try:
+            import pandas as pd
+            from datetime import datetime
+            # Pull via pandas for explicit timestamp comparison logic
+            df = self.table.search().limit(10000).to_pandas()
+            if df.empty:
+                return []
+                
+            df_ts = pd.to_datetime(df['timestamp'])
+            
+            # addition of 0.001 to handle precision truncation
+            promotion_dt = pd.to_datetime(datetime.fromtimestamp(promotion_ts + 0.001))
+            watermark_dt = pd.to_datetime(datetime.fromtimestamp(watermark_ts)) if watermark_ts > 1000 else pd.Timestamp.min
+            
+            # Timestamp window filter bounds
+            mask = (df_ts > watermark_dt) & (df_ts <= promotion_dt) & (df['is_valid'] == True)
+            
+            # Ensure it is currently empty string
+            if dimension in df.columns:
+                mask = mask & ((df[dimension] == '') | df[dimension].isnull())
+            else:
+                return []
+                
+            filtered = df[mask].sort_values(by="timestamp", ascending=True).head(limit)
+            return filtered.to_dict(orient="records")
+        except Exception as e:
+            print(f"Error fetching backfill records: {e}")
+            return []
+
+    def update_memory_metadata(self, memory_id: str, updates: dict) -> bool:
+        """Dynamically update metadata schema values on a specific vector memory."""
+        if self.table is None:
+            return False
+        try:
+            self.table.update(where=f"id = '{memory_id}'", values=updates)
+            return True
+        except Exception as e:
+            print(f"Failed memory backfill update: {e}")
+            return False
