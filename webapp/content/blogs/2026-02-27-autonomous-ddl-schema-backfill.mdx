@@ -28,7 +28,9 @@ To solve this efficiently at an enterprise scale, without paralyzing the system 
 
 ### Stage 1: Runtime Grace Period
 While the database is out-of-sync, the D-RAG Logical Partitioning Function injects an explicit safety net:
-$$ R(q,d) = \mathbb{1}[ \text{column} = X \, \lor \text{column} \, \text{is NULL} ] \times \text{Hybrid}(q, d) $$
+$$
+R(q,d) = Indicator[column = X \lor column = NULL] \times Hybrid(q, d) 
+$$
 
 This allows legacy nodes to pass the Deterministic Gate and flow into the Vector Ranker.
 

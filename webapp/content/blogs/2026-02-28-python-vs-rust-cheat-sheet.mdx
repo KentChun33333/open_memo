@@ -1,0 +1,118 @@
+---
+title: "Python vs Rust: A Comprehensive Developer's Cheat Sheet"
+date: "2026-02-28"
+author: "Kent Chiu"
+description: "A deep dive comparing Python's dynamic paradigms with Rust's systems-level architecture. From imports and classes to error handling and memory management."
+tags: ["Rust", "Python", "Architecture", "Engineering", "Cheat Sheet"]
+---
+
+# Python vs Rust: The Ultimate Paradigm Shift
+
+Transitioning from Python to Rust isn't just about learning new syntax; it requires a fundamental shift in how you think about memory, architecture, and errors. 
+
+While Python abstracts away the machine through its virtual machine (PVM) and Garbage Collector (GC), Rust forces you to confront the hardware directly—but equips you with a ruthless compiler to ensure you don't shoot yourself in the foot.
+
+Let's break down the major conceptual differences and provide direct 1-to-1 translations of common Python patterns into Rust.
+
+---
+
+## 1. Imports vs Modules (`import` vs `mod` / `use`)
+
+In Python, `import foo` does **two things at the exact same time**:
+1. It physicaly evaluates `foo.py` and loads it into memory (`sys.modules`).
+2. It brings the name `foo` into your current working namespace so you can type `foo.bar()`.
+
+**Rust separates building the tree from scoping the tree.**
+
+*   `mod foo;` tells the compiler: *"Look for a file named `foo.rs` (or a folder named `foo` with a `mod.rs`), compile it, and attach it to the overall project tree right here."* You only type `mod` **once per file** across your entire project.
+*   `use foo::bar;` tells the compiler: *"Create a shortcut in my current scope so I don't have to type the absolute path."* You can use `use` as many times as you want.
+
+| Python | Rust | Description |
+| :--- | :--- | :--- |
+| `import file`<br/>`file.fn()` | `mod file;`<br/>`file::fn();` | Declare the module exists, then call it from the tree. |
+| `from path import Func` | `use path::Func;` | Bring a specific item directly into local scope. |
+| `__init__.py` | `mod.rs` | The entry-point file that exposes a directory as a module block. |
+| `pip install X`<br/>`requirements.txt` | `cargo add X`<br/>`Cargo.toml` | Third-party dependency management and manifest declarations. |
+
+---
+
+## 2. Object-Oriented Programming (Classes vs Structs/Traits)
+
+Python uses traditional Object-Oriented Programming (OOP) where data and behavior are tightly coupled inside a `class`. It supports heavy inheritance schemes.
+
+Rust **does not have classes or inheritance**. Instead, it uses a Composition-over-Inheritance model that strictly separates data from behavior.
+
+| Python | Rust | Description |
+| :--- | :--- | :--- |
+| `class User:`<br/>`  name: str` | `struct User {`<br/>`  name: String,`<br/>`}` | **Data:** `struct` defines the memory layout. Equivalent to Python's `@dataclass`. |
+| `def method(self):` | `impl User {`<br/>`  fn method(&self) {}`<br/>`}` | **Behavior:** `impl` blocks attach methods to a `struct`. |
+| `class Admin(User):` | `trait Admin { ... }` | **Inheritance:** Rust uses `trait`s (interfaces) to define shared behaviors, similar to Python's `ABC` or `typing.Protocol`. You implement traits for structs. |
+| `class Enum(Enum):` | `enum TrafficLight {`<br/>`  Red,`<br/>`  Broken(String)`<br/>`}` | **Algebraic Types:** Rust enums are incredibly powerful and can hold payload data inside their variants. |
+
+---
+
+## 3. Variables & Mutability
+
+In Python, everything is mutable unless it's fundamentally a primitive (like a string/tuple) or explicitly protected. Variable reassignment is trivial.
+
+In Rust, variables are **immutable by default**. You must explicitly opt-in to mutability, allowing the compiler to heavily optimize memory and thread safety.
+
+| Python | Rust | Description |
+| :--- | :--- | :--- |
+| `x = 5` | `let x = 5;` | Safe, immutable binding. |
+| `x = 5`<br/>`x += 1` | `let mut x = 5;`<br/>`x += 1;` | Explicit mutable binding using `mut`. |
+| `self.name = "X"` | `&mut self` | Methods that modify the object must explicitly declare that they borrow `self` mutably. |
+| `None` | `Option::None` | Rust has **no null**. It wraps values that might not exist in an `Option<T>` enum (`Some(val)` or `None`). |
+| `dict` | `HashMap<K, V>` | Hash table implementation. |
+| `list` | `Vec<T>` | Dynamically growable, heap-allocated array. |
+
+---
+
+## 4. Error Handling (Exceptions vs Values)
+
+Python relies on stack-unwinding exceptions (`try / except`). You never truly know if a Python function might throw a hidden `ValueError` or `KeyError` unless you read its source code.
+
+Rust **does not have exceptions**. Errors are just values returned by functions via the `Result<T, E>` enum. If a function can fail, it explicitly says so in its signature.
+
+| Python | Rust | Description |
+| :--- | :--- | :--- |
+| `try:`<br/> `  run()`<br/>`except Err as e:`<br/> `  fail()` | `match run() {`<br/>`  Ok(val) => val,`<br/>`  Err(e) => fail(),`<br/>`}` | Pattern matching allows exhaustive handling of all possible outcomes. |
+| *No equivalent* | `let x = run()?;` | The **`?` operator**. If `run()` fails, `?` instantly returns the `Err` up the call stack. If it succeeds, it unwraps the `Ok(val)` into `x`. |
+| `raise Exception()` | `panic!("crash")` | Unrecoverable errors that instantly crash the thread (should rarely be used). |
+
+---
+
+## 5. Memory Management (Garbage Collection vs Ownership)
+
+This is the biggest hurdle. 
+
+*   **Python (GC):** Periodically halts your program to scan memory, count references, and sweep away unused objects. You never think about memory.
+*   **Rust (Ownership):** Uses a strict set of compile-time rules. Every piece of memory has exactly **one owner**. When the owner goes out of scope, the memory is instantly freed. No Runtime GC is required.
+
+To share memory without taking ownership, Rust uses **Borrowing** (`&` references) governed by **Lifetimes**, ensuring you can never have a "dangling pointer" pointing to freed memory.
+
+---
+
+## 6. Concurrency vs Parallelism
+
+*   **Python:** The Global Interpreter Lock (GIL) prevents true multi-threading for CPU-bound tasks. To get concurrency, Python uses `asyncio` (single-threaded event loop) or `multiprocessing` (heavy OS processes).
+*   **Rust:** "Fearless Concurrency." Because the Ownership and Mutability rules guarantee that a variable can only be mutated by one thread at a time, data races are entirely prevented at compile time. 
+    *   **Async/Await:** Rust uses lightweight zero-cost futures driven by external executor crates like `tokio`.
+
+| Python | Rust | Description |
+| :--- | :--- | :--- |
+| `async def` / `await` | `async fn` / `.await` | Syntactic sugar for futures. |
+| `threading.Thread` | `std::thread::spawn` | Native OS threads (True parallelism). |
+| `asyncio.gather()` | `tokio::join!()` | Execute multiple futures concurrently. |
+
+---
+
+## 7. Metaprogramming (Decorators vs Macros)
+
+| Python | Rust | Description |
+| :--- | :--- | :--- |
+| `@decorator` | `#[derive(Debug)]` | **Procedural Macros:** Code that consumes Rust tokens at compile time and outputs new Rust code (like auto-generating JSON serialization). |
+| `*args, **kwargs` | `println!("{}")` | **Declarative Macros (`macro_rules!`):** Used for variadic arguments and code generation, denoted by the `!` symbol. |
+
+## Closing Thoughts
+Writing Python feels like giving high-level instructions to a very smart assistant. Writing Rust feels like meticulously drafting an architectural blueprint. Rust forces you to handle every edge case upfront, which slows you down initially—but the resulting application runs blazingly fast and essentially never crashes in production.

@@ -1,0 +1,29 @@
+# Polymarket Configuration
+polymarket:
+  # The endpoint for trades and market data
+  rest_url: "https://clob.polymarket.com"
+  ws_url: "wss://ws-subscriptions-clob.polymarket.com/ws/market"
+  # Authentication
+  api_key: ""
+  api_secret: ""
+  api_passphrase: ""
+  # Polymarket contract token IDs (BTC in this example)
+  btc_contract_id: "0x...btc...token...id..."
+
+# Oracle Configurations
+oracles:
+  tradingview_ws_url: "wss://data.tradingview.com/socket.io/websocket"
+  cryptoquant_api_url: "https://api.cryptoquant.com/v1"
+  # Authentication for Oracles
+  tradingview_session: ""
+  cryptoquant_api_key: ""
+  cryptoquant_api_secret: ""
+
+# Strategy Parameters
+strategy:
+  # Trigger arbitrage string when lag is strictly greater than this
+  lag_threshold: 0.003 # 0.3%
+  # Max total exposure of portfolio for a single trade
+  max_trade_percent: 0.005 # 0.5%
+  # Stop trading for the day if total losses exceed
+  daily_loss_cap: 0.02 # 2.0%

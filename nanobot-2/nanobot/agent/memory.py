@@ -98,6 +98,12 @@ class MemoryStore:
             
             if new_columns:
                 self.table.add_columns(new_columns)
+                current_columns = self.table.schema.names
+
+            # Fill in any existing schema columns that are missing from the current item
+            for col in current_columns:
+                if col not in item and col != "vector":
+                    item[col] = ""
 
             self.table.add([item])
             print("Successfully added item!")

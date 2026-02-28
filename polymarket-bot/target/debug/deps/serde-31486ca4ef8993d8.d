@@ -1,0 +1,14 @@
+/Users/kentchiu/.nanobot/workspace/openmemo/polymarket-bot/target/debug/deps/serde-31486ca4ef8993d8.d: /Users/kentchiu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /Users/kentchiu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /Users/kentchiu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /Users/kentchiu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /Users/kentchiu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /Users/kentchiu/.nanobot/workspace/openmemo/polymarket-bot/target/debug/build/serde-1d84d94038952bdb/out/private.rs
+
+/Users/kentchiu/.nanobot/workspace/openmemo/polymarket-bot/target/debug/deps/libserde-31486ca4ef8993d8.rlib: /Users/kentchiu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /Users/kentchiu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /Users/kentchiu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /Users/kentchiu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /Users/kentchiu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /Users/kentchiu/.nanobot/workspace/openmemo/polymarket-bot/target/debug/build/serde-1d84d94038952bdb/out/private.rs
+
+/Users/kentchiu/.nanobot/workspace/openmemo/polymarket-bot/target/debug/deps/libserde-31486ca4ef8993d8.rmeta: /Users/kentchiu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /Users/kentchiu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /Users/kentchiu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /Users/kentchiu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /Users/kentchiu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /Users/kentchiu/.nanobot/workspace/openmemo/polymarket-bot/target/debug/build/serde-1d84d94038952bdb/out/private.rs
+
+/Users/kentchiu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs:
+/Users/kentchiu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs:
+/Users/kentchiu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs:
+/Users/kentchiu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs:
+/Users/kentchiu/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs:
+/Users/kentchiu/.nanobot/workspace/openmemo/polymarket-bot/target/debug/build/serde-1d84d94038952bdb/out/private.rs:
+
+# env-dep:OUT_DIR=/Users/kentchiu/.nanobot/workspace/openmemo/polymarket-bot/target/debug/build/serde-1d84d94038952bdb/out

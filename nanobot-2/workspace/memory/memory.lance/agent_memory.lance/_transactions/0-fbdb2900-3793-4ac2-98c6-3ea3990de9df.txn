@@ -1,0 +1,3 @@
+$fbdb2900-3793-4ac2-98c6-3ea3990de9df²Ïid ÿÿÿÿÿÿÿÿÿ*string84vector ÿÿÿÿÿÿÿÿÿ*fixed_size_list:float:76808text ÿÿÿÿÿÿÿÿÿ*string8$memory_type ÿÿÿÿÿÿÿÿÿ*string8scope ÿÿÿÿÿÿÿÿÿ*string8*	timestamp ÿÿÿÿÿÿÿÿÿ*timestamp:us:-8is_valid ÿÿÿÿÿÿÿÿÿ*bool8"!
+lance.auto_cleanup.interval20"'
+lance.auto_cleanup.older_than14days
