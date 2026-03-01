@@ -90,7 +90,10 @@ class MemoryStore:
                 item[k] = str(v)
 
         try:
-            current_columns = self.table.schema.names
+            # Get the exact current schema of the LanceDB table
+            current_schema = self.table.schema
+            current_columns = current_schema.names
+            
             new_columns = {}
             for k in item.keys():
                 if k not in current_columns:
@@ -98,12 +101,21 @@ class MemoryStore:
             
             if new_columns:
                 self.table.add_columns(new_columns)
-                current_columns = self.table.schema.names
+                current_schema = self.table.schema
+                current_columns = current_schema.names
 
             # Fill in any existing schema columns that are missing from the current item
+            # LanceDB requires that the dict exactly matches the explicit Schema fields
             for col in current_columns:
                 if col not in item and col != "vector":
-                    item[col] = ""
+                    # Determine the pyarrow type for the missing column to provide the right default
+                    field = current_schema.field(col)
+                    if "timestamp" in str(field.type).lower():
+                        item[col] = datetime.now()
+                    elif "bool" in str(field.type).lower():
+                        item[col] = False
+                    else:
+                        item[col] = ""
 
             self.table.add([item])
             print("Successfully added item!")
