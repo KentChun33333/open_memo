@@ -1,69 +1,58 @@
 ---
 name: "memory"
-description: "Explicitly query the LanceDB agent memory for historical depth, or memorize critical long-term facts."
+description: "Spawn a memory subagent to explicitly query LanceDB for historical depth, or memorize critical long-term facts cleanly."
 ---
 
 # memory
 
-This skill allows you to manually interact with the `memory.lance` hybrid database for cases where the implicit short-term context injected into your system prompt is not enough.
+This skill allows you to safely interact with the `memory.lance` backend database for cases where the implicit short-term context injected into your system prompt is not enough.
+
+Because raw database results (like matching 50 historical records) will easily clutter your context window and slow you down, **you must never query memory yourself.** Instead, you will orchestrate a dedicated Memory Synthesis Subagent.
 
 You should use this skill when:
-
 - You need to search far back into conversation history (>3 turns).
 - You want to retrieve precise architectural decisions or facts that weren't caught in the implicit prompt.
 - You want to forcefully commit a new structural rule or fact to your `long_term` memory.
 
+
 ## Usage Guide
 
-Instead of trying to manually open `memory.lance` (which is a complex Parquet/Vector structure), you will interact with the database using the following python script execution:
+Instead of writing Python scripts, you will use your `spawn_subagent` tool to create a worker. The worker has exclusive access to atomic JSON database tools (`search_memory`, `write_memory`, `delete_memory`).
 
 ### 1. Deep Search Memory
 
-If you want to search previous conversations or logs:
+If you want to search previous conversations or logs, spawn a subagent with a clear analytical task:
 
-```bash
-python -c "
-import sys; sys.path.insert(0, '/Users/kentchiu/.nanobot/workspace/openmemo/nanobot-2')
-from nanobot.agent.memory import MemoryStore
-from pathlib import Path
-m = MemoryStore(Path('/Users/kentchiu/.nanobot/workspace/openmemo/nanobot-2/workspace').expanduser())
-results = m.search_memory('your search query here', limit=10)
-for r in results:
-    print(f\"[{r['timestamp']}] ({r['memory_type']}): {r['text']}\")
-"
+```json
+{
+  "task": "Use your search_memory tool to find any mentions of the 'OCBC' API deployment architecture. Read through the results and synthesize a single clean summary of the final decision. Announce only that summary.",
+  "label": "Researching OCBC architecture"
+}
 ```
 
 ### 2. Force Rewrite Long Term Facts
 
 If you learn something very important (like a user's API key path, or a new project constraint) that you want to be permanently available in the "Core Long-term Memory" section of your prompt forever:
 
-```bash
-python -c "
-import sys; sys.path.insert(0, '/Users/kentchiu/.nanobot/workspace/openmemo/nanobot-2')
-from nanobot.agent.memory import MemoryStore
-from pathlib import Path
-m = MemoryStore(Path('/Users/kentchiu/.nanobot/workspace/openmemo/nanobot-2/workspace').expanduser())
-# Note: write_long_term completely overwrites the legacy MEMORY.md and adds a long_term LanceDB entry. 
-# Make sure to append your new fact to the existing facts before writing.
-m.write_long_term('''
-# Long Term Facts
-- User's preferred deployment target is GCP Cloud Run.
-- The project follows a strict No-Typescript policy.
-''')
-"
+```json
+{
+  "task": "Use your search_memory tool to read the current long-term facts. Then, use your write_memory tool to append the following new fact: 'User's preferred deployment target is GCP Cloud Run.' Do not overwrite existing facts without merging them.",
+  "label": "Updating GCP deployment preference"
+}
 ```
 
 ### 3. Resolving Memory Contamination
 
 If you realize that the `Implicit RAG` context is consistently injecting a bad, outdated, or hallucinated memory that is confusing you, you can permanently delete it by its `id`:
 
-```bash
-python -c "
-import sys; sys.path.insert(0, '/Users/kentchiu/.nanobot/workspace/openmemo/nanobot-2')
-from nanobot.agent.memory import MemoryStore
-from pathlib import Path
-m = MemoryStore(Path('/Users/kentchiu/.nanobot/workspace/openmemo/nanobot-2/workspace').expanduser())
-rows_deleted = m.delete_memory(memory_id='the-uuid-string-from-search-results')
-print(f'Deleted {rows_deleted} contaminated memories.')
-"
+```json
+{
+  "task": "Use your search_memory tool to locate the exact memory_id of the hallucinated fact about 'TypeScript'. Then use your delete_memory tool to permanently remove it.",
+  "label": "Purging hallucinated TypeScript fact"
+}
 ```
+
+**CRITICAL RULES:**
+
+- Do not attempt to write Python (`ExecTool`) scripts to interact with memory.
+- The subagent will do all the noisy data filtering and return only the clean, synthesized answer back to you.

@@ -201,19 +201,19 @@ class AgentLoop:
                         messages, tool_call.id, tool_call.name, result
                     )
                 remaining = self.max_iterations - iteration
-                reflection_msg = f"""Tool execution complete. Please carefully analyze the results above.
-You have {remaining} iterations remaining.
+#                 reflection_msg = f"""Tool execution complete. Please carefully analyze the results above.
+# You have {remaining} iterations remaining.
 
-**Workflow Orchestration Reminders:**
-1. **Plan Node Default**: For any non-trivial task, ensure you have created/updated a plan in `tasks/todo.md` before executing further.
-2. **Subagent Strategy**: Consider using a Subagent for complex research or parallel tasks to keep your main context clean.
-3. **Verification Before Done**: NEVER mark a task complete or respond to the user without proving it works (run tests, check logs). Is the solution elegant?
-4. **Self-Improvement**: If you are correcting a mistake, remember to update `tasks/lessons.md`.
+# **Workflow Orchestration Reminders:**
+# 1. **Plan Node Default**: For any non-trivial task, ensure you have created/updated a plan in `tasks/todo.md` before executing further.
+# 2. **Subagent Strategy**: Consider using a Subagent for complex research or parallel tasks to keep your main context clean.
+# 3. **Verification Before Done**: NEVER mark a task complete or respond to the user without proving it works (run tests, check logs). Is the solution elegant?
+# 4. **Self-Improvement**: If you are correcting a mistake, remember to update `tasks/lessons.md`.
 
-If the overall request is fully resolved AND verified: Provide a clear, final response to the user.
-If NOT resolved: What is your next planned step? Have you verified the current step? If stuck, STOP and replan."""
+# If the overall request is fully resolved AND verified: Provide a clear, final response to the user.
+# If NOT resolved: What is your next planned step? Have you verified the current step? If stuck, STOP and replan."""
                 
-                messages.append({"role": "user", "content": reflection_msg})
+#                 messages.append({"role": "user", "content": reflection_msg})
             else:
                 final_content = response.content
                 break
@@ -302,9 +302,7 @@ If NOT resolved: What is your next planned step? Have you verified the current s
             return OutboundMessage(channel=msg.channel, chat_id=msg.chat_id,
                                   content="🐈 nanobot commands:\n/new — Start a new conversation\n/help — Show available commands")
         
-        if len(session.messages) > self.memory_window:
-            asyncio.create_task(self._consolidate_memory(session))
-
+        # Consolidation check moved to the end of the pipeline so it does not collide with the main LLM thread
         self._set_tool_context(msg.channel, msg.chat_id)
 
         active_dims = self.ddl_manager.optimized_dimensions
@@ -333,6 +331,10 @@ If NOT resolved: What is your next planned step? Have you verified the current s
                             tools_used=tools_used if tools_used else None)
         self.sessions.save(session)
         
+        # Dispatch background memory indexing ONLY after the main LLM task has yielded
+        if len(session.messages) > self.memory_window:
+            asyncio.create_task(self._consolidate_memory(session))
+            
         return OutboundMessage(
             channel=msg.channel,
             chat_id=msg.chat_id,

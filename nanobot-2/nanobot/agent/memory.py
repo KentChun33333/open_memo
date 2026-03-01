@@ -118,7 +118,17 @@ class MemoryStore:
                         item[col] = ""
 
             self.table.add([item])
-            print("Successfully added item!")
+            
+            # Real tqdm progress bar
+            try:
+                from tqdm import tqdm
+                if getattr(self, '_pbar', None) is None:
+                    self._pbar = tqdm(desc="[LanceDB] 🧠 Indexing memory", unit=" rec")
+                self._pbar.update(1)
+            except ImportError:
+                # Fallback to in-place print if tqdm isn't installed
+                count = len(self.table)
+                print(f"\r[LanceDB] 🧠 Indexing memory... ⏳ Total saved: {count} records", end="", flush=True)
             # Update FTS index if Tantivy is available
             try:
                 self.table.create_fts_index("text", replace=True)
