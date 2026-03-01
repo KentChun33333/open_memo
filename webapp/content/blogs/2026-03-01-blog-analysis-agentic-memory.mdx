@@ -1,8 +1,9 @@
-# Blog Quality Analysis & Improvement Guide
-**Published**: 2026-03-01  
-**Author**: Kent Chiu (Jin-Chun Chiu)  
-**Topics**: Blog Quality, Content Strategy, Agentic Memory Architecture
-
+---
+title: "Blog Quality Analysis & Improvement Guide"
+date: "2026-03-01"
+author: "Kent Chiu"
+description: "A comprehensive analysis of recent blog content, offering actionable recommendations for improvement across technical depth, visual storytelling, and content strategy in agentic memory."
+tags: ["Blog Quality", "Content Strategy", "Agentic Memory", "Architecture"]
 ---
 
 ## 📊 Overview
@@ -201,6 +202,19 @@ You mention MRR (Mean Reciprocal Rank) but don't show how to measure memory qual
 | **MRR** | Average inverse rank of first hit | Cross-encoder rerank |
 | **Latency** | Query time p95 | < 100ms (LanceDB) |
 | **Coverage** | % of queries hitting DB | Track via analytics |
+
+### Real-World Testing with MemoryAgentBench
+To rigorously evaluate Long-Term Memory Agents (D-RAG) beyond simple one-shot prompts, we integrate with the **MemoryAgentBench** framework using a Dual-Phase Test Harness. 
+
+#### Phase 1: Generation Pipeline (`run_memory_bench.py`)
+This script simulates long-term conversation trajectories:
+1. **Contextual Injection:** It silently pipes hundreds of segmented conversation chunks into LanceDB simulating weeks of interaction history. This explicitly tests whether the agent naturally handles memory contamination or forgetting.
+2. **Blind Query Retrieval:** After the sandbox is seeded with messy, unordered memory vectors, the script asks the agent an exact "needle-in-a-haystack" query (e.g. *Accurate Retrieval Multi-Hop*). The agent must successfully trigger the `SearchMemoryTool` to yield a factual response, which is then serialized to a structured JSON output.
+
+#### Phase 2: LLM Evaluation (`longmem_qa_evaluate.py`)
+This subsequent "Judge" step strictly focuses on automated grading:
+- It processes the locally generated JSON results from Phase 1 without executing any new vector searches.
+- Utilizing a strong foundation model (e.g., `gpt-4o` or a local `qwen2.5` endpoint), it evaluates the semantic distance between the agent's retrieved factual answer and the Dataset Ground Truth, compiling the final Accuracy percentage rating.
 ```
 
 ### 3. Memory Self-Correction
